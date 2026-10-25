@@ -4,6 +4,7 @@ async (page) => {
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.addInitScript(()=>{const original=crypto.getRandomValues.bind(crypto);crypto.getRandomValues=array=>{if(array instanceof Uint32Array&&array.length===1){array[0]=location.hash.includes('/pairs')?123:1;return array;}return original(array);};});
   const cdp=await page.context().newCDPSession(page);
+  const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
   const portrait={width:390,height:844},landscape={width:844,height:390};
   const check=(name,passed,detail={})=>{checks.push({name,passed:!!passed,...detail});if(!passed)throw Error(JSON.stringify(checks.at(-1)));};
   const names={catch:'果园接接乐',bounce:'弹珠打砖块',pairs:'翻翻小花园',merge:'数字合合乐'};
@@ -15,14 +16,14 @@ async (page) => {
   const tap=async(x,y)=>{const p=await point(x,y);await page.touchscreen.tap(p.x,p.y);};
   async function drag(x1,y1,x2,y2){const a=await point(x1,y1),b=await point(x2,y2);await touch('touchStart',[a]);await touch('touchMove',[b]);await touch('touchEnd');}
   await page.setViewportSize(portrait);await page.goto(origin);await page.reload();
-  check('eight_games_and_four_new_badges',await page.locator('.game-card').count()===8&&await page.locator('.new-badge').count()===4);
+  check('catalog_cards_and_latest_badges',await page.locator('.game-card').count()===catalog.length&&await page.locator('.new-badge').count()===catalog.filter(g=>g.isNew).length);
   const ordered=await page.locator('.game-card').evaluateAll(cards=>cards.map(card=>card.dataset.game));
-  check('new_games_displayed_first',ordered.slice(0,4).join(',')==='catch,bounce,pairs,merge');
-  for(const name of ['星轨邮差','云岛搭桥','灯塔方阵','萤火回声',...Object.values(names)]){const button=page.getByLabel('收藏'+name,{exact:true});if(await button.count())await button.tap();}
+  check('new_games_displayed_first',ordered.slice(0,catalog.filter(g=>g.isNew).length).join(',')===catalog.filter(g=>g.isNew).map(g=>g.id).join(','));
+  for(const name of catalog.map(g=>g.title)){const button=page.getByLabel('收藏'+name,{exact:true});if(await button.count())await button.tap();}
   await page.getByRole('link',{name:'我的收藏',exact:true}).tap();await page.reload();
-  check('eight_favorites_survive_reload',await page.locator('.game-card').count()===8);
+  check('all_catalog_favorites_survive_reload',await page.locator('.game-card').count()===catalog.length);
   await page.getByRole('link',{name:'游乐场',exact:true}).tap();await page.getByRole('button',{name:'✧ 动脑',exact:true}).tap();
-  check('brain_filter_has_four_games',await page.locator('.game-card').count()===4);
+  check('brain_filter_matches_catalog',await page.locator('.game-card').count()===catalog.filter(g=>g.tag==='动脑').length);
   await page.getByRole('button',{name:'全部',exact:true}).tap();
   await page.setViewportSize({width:1200,height:1000});
   await page.locator('#games').scrollIntoViewIfNeeded();
@@ -47,7 +48,7 @@ async (page) => {
   const ends={L:[170,240],R:[430,240],U:[300,110],D:[300,370]};
   for(const direction of path){const [x,y]=ends[direction];await drag(300,240,x,y);}
   check('merge_swipes_reach_128_and_settle',await page.locator('.result-card').isVisible()&&await score()===760,{score:await score()});
-  check('last_game_wraps_to_first',await page.getByRole('link',{name:'下一款游戏 →',exact:true}).getAttribute('href')==='#/play/star');
+  check('merge_next_game_matches_catalog',await page.getByRole('link',{name:'下一款游戏 →',exact:true}).getAttribute('href')==='#/play/'+catalog[(catalog.findIndex(g=>g.id==='merge')+1)%catalog.length].id);
   await page.getByRole('button',{name:'再玩一次 ↻',exact:true}).press('Enter');
   check('result_button_accepts_keyboard_activation',await score()===0&&!await page.locator('#game-overlay').isVisible());
   await page.reload();check('merge_best_record_persists',(await page.locator('#best-record').textContent()).includes('760'));

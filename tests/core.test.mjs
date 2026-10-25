@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START} from '../dist/core.js';
+import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START} from '../dist/core.js';
 import {createStore} from '../dist/storage.js';
 
 test('Beijing midnight changes date and daily rotation across UTC boundary',()=>{
@@ -66,13 +66,23 @@ test('expanded daily rotation preserves every old date and shared challenge',()=
   }
   assert.equal(dailyGame('2026-10-27'),'catch');
   const rotation=Array.from({length:8},(_,i)=>dailyGame(new Date(Date.parse(EXPANDED_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10)));
-  assert.deepEqual(new Set(rotation),new Set(GAME_IDS));
-  assert.equal(dailyGame('2026-11-04'),'catch');
+  assert.deepEqual(rotation,['catch','bounce','pairs','merge','star','bridge','lights','echo']);
+  assert.equal(dailyGame('2026-11-03'),'echo');
 });
-test('all eight favorites and records survive reload, recent remains bounded',()=>{
+test('all catalog favorites and records survive reload, recent remains bounded',()=>{
   const storage=fakeStorage(),store=createStore(storage);
   for(const id of GAME_IDS){store.toggleFavorite(id);store.recent(id);store.record(id,{score:100,elapsed:60,won:true,steps:8,rounds:2});}
   const again=createStore(storage);
-  assert.deepEqual(again.data.favorites,GAME_IDS);assert.equal(again.data.recent.length,4);assert.equal(Object.keys(again.data.best).length,8);
-  for(const id of ['catch','bounce','pairs','merge'])assert.equal(parseRoute(playLink(id)).id,id);
+  assert.deepEqual(again.data.favorites,GAME_IDS);assert.equal(again.data.recent.length,4);assert.equal(Object.keys(again.data.best).length,GAME_IDS.length);
+  for(const id of GAME_IDS)assert.equal(parseRoute(playLink(id)).id,id);
+});
+test('twelve-game daily epoch preserves first eight-game cycle and covers the full catalogue',()=>{
+  const old=['catch','bounce','pairs','merge','star','bridge','lights','echo'];
+  for(let i=0;i<8;i++){
+    const date=new Date(Date.parse(EXPANDED_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10);
+    assert.equal(dailyGame(date),old[i]);assert.equal(parseRoute(playLink(old[i],date),'2026-12-01').type,'play');
+  }
+  const rotation=Array.from({length:12},(_,i)=>dailyGame(new Date(Date.parse(TWELVE_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10)));
+  assert.deepEqual(rotation,['rings','snake','boxes','pipes',...old]);assert.deepEqual(new Set(rotation),new Set(GAME_IDS));
+  assert.equal(dailyGame('2026-11-16'),'rings');
 });
