@@ -34,6 +34,8 @@ npm run check
 
 游戏页首次点击开始后才计时。切换标签页或窗口失焦时暂停，返回后手动继续。长按被系统取消或游戏暂停时不会误落桥。
 
+十二款游戏均可点击“⛶ 全屏”。优先使用浏览器原生全屏；原生 API 不支持或被嵌入页面限制时，自动使用铺满当前网页的沉浸布局。全屏包含成绩、暂停、重开和返回入口；点击“退出全屏”或按 Escape 返回。进入、退出和旋转屏幕均暂停当前游戏、取消尚未完成的长按或拖动，保留进度。返回首页或切换游戏时自动清理全屏状态。
+
 旋转屏幕或画布尺寸改变时也会自动暂停，清除当前长按，进度和已得分保留。短横屏采用左侧画布、右侧成绩与操作栏，暂停、重开和返回游乐场始终可见。多指操作只响应最初的主指，副指抬起不会打断长按；画布内禁止长按菜单，页面其他区域仍可正常滚动和选择文字。
 
 ## 手机触控检查
@@ -48,6 +50,7 @@ npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --
 npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --filename scripts/mobile-layout.js
 npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --filename scripts/expansion-qa.js
 npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --filename scripts/wave3-qa.js
+npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --filename scripts/fullscreen-qa.js
 npx --yes --package @playwright/cli playwright-cli -s=mobileqa close
 ```
 
@@ -56,6 +59,8 @@ npx --yes --package @playwright/cli playwright-cli -s=mobileqa close
 八款扩充版通过 79 项规则、存档和输入测试，新增游戏手机验收包含完整配对通关、67 次滑动合出 128、拖篮接果、击砖、旋转后继续及八款收藏刷新保留。`mobile-layout.js` 覆盖八款游戏的 64 个尺寸组合。触屏按钮在抬手时直接激活，并屏蔽随后重复的兼容点击，避免拖动后按钮不响应和通关时点击穿透。
 
 十二款版通过 106 项自动测试、43 个本轮浏览器场景和 96 个横竖屏布局组合。新四款验收包含触屏连续八环满血通关、推箱触屏与键盘通关及撤销计步、水管旋转通关、小蛇收星转弯与旋转后继续。三张推箱地图逐张通过 BFS 验证，300 个水管种子均初始未解且存在可用解法。
+
+全屏版自动测试共 116 项，新增 10 项覆盖原生及 WebKit API、外部退出、拒绝/不支持时降级、Escape、销毁竞态和重复点击。`fullscreen-qa.js` 在 Chromium 触屏模拟下检查原生进入/退出、替代模式、长按取消、路由清理及十二款游戏的 96 个全屏布局与旋转组合；实体手机仍未实测。
 
 ## 每日挑战与存储
 

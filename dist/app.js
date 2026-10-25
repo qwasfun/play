@@ -4,6 +4,7 @@ import {createStore} from './storage.js';
 import {art} from './art.js';
 import {bindGameInput,watchGameLayout} from './input.js';
 import {bindTouchActivation} from './activation.js';
+import {bindGameFullscreen} from './fullscreen.js';
 
 const app=document.querySelector('#app');
 bindTouchActivation(document);
@@ -54,6 +55,7 @@ async function gamePage(route,token){
   const record=date?store.data.daily[date]?.[game.id]:store.data.best[game.id];
   app.innerHTML=`<div class="page-container game-page" id="main-content"><div class="game-topline"><a class="back-link" href="#/">← 返回游乐场</a><span class="daily-tag">${date?`${historic?'历史':'每日'}挑战 · ${dateLabel(date)}`:'随心游玩'}</span></div><div class="game-heading"><p class="eyebrow">${game.english}</p><h1>${game.title}<span class="accent-dot">.</span></h1><p>${game.description}</p></div><div class="play-layout"><div class="play-main"><div class="game-toolbar"><div class="stat"><span class="stat-label">${game.scoreLabel||'得分'}</span><strong class="stat-value" id="live-score">0</strong></div><div class="stat"><span class="stat-label">剩余时间</span><strong class="stat-value" id="live-time">${game.limit} <small>秒</small></strong></div><div class="stat"><span class="stat-label" id="third-label">${game.extraLabel||'目标'}</span><strong class="stat-value" id="live-extra">${game.lives?'♥ ♥ ♥':game.targetText||'—'}</strong></div></div><div class="canvas-wrap"><canvas id="game-canvas" width="600" height="480" tabindex="0" aria-label="${game.title}游戏区域，${game.controls}"></canvas><div class="game-overlay" id="game-overlay"></div></div><div class="game-controls"><button class="button secondary" id="pause" disabled>Ⅱ 暂停</button><button class="button secondary" id="restart" disabled>↻ 重开</button>${game.undo?'<button class="button secondary" id="undo" disabled>↶ 撤销</button>':''}<span class="controls-label">${game.controls}</span></div><p class="game-help" id="game-hint" role="status">${game.controls}</p></div><aside class="game-sidebar"><div class="side-card"><p class="eyebrow">HOW TO PLAY</p><h3>一点提示，马上出发</h3><ol class="rule-list">${game.rules.map(rule=>`<li>${rule}</li>`).join('')}</ol></div><div class="side-card best-card"><p class="eyebrow">${date?'DAILY BEST':'PERSONAL BEST'}</p><h3>${date?'当日最佳':'我的最佳'}</h3><p id="best-record">${resultText(game.id,record)}</p><small>记录保存在当前浏览器。</small></div>${date?`<div class="side-card challenge-note"><span class="badge">${historic?'历史挑战':'每日挑战'}</span><p>同一天，相同的起点。<br>可以反复挑战，刷新自己的纪录。</p><small>规则版本 ${RULE_VERSION} · 北京时间</small></div>`:''}<div class="side-card next-game-card"><p class="eyebrow">NEXT LITTLE ADVENTURE</p><h3>${games[(games.indexOf(game)+1)%games.length].title}</h3><a class="text-button" href="${playLink(games[(games.indexOf(game)+1)%games.length].id)}">换个心情 ↗</a></div></aside></div></div>`;
   document.querySelector('.game-controls').insertAdjacentHTML('beforeend','<a class="landscape-exit button secondary" href="#/">← 游乐场</a>');
+  document.querySelector('.controls-label').insertAdjacentHTML('beforebegin','<button class="button secondary" id="fullscreen-toggle" aria-label="全屏游戏" aria-pressed="false">⛶ 全屏</button>');
   const overlay=document.querySelector('#game-overlay');overlay.innerHTML='<div class="overlay-card"><p>正在打开小世界…</p></div>';
   let module;
   try{module=await import(`./games/${game.id}.js`);}catch{if(token===routeToken)overlay.innerHTML='<div class="overlay-card"><h2>游戏资源暂时未能加载</h2><p>请刷新页面后重试。</p><a class="button primary" href="#/">返回首页</a></div>';return;}
@@ -85,6 +87,7 @@ async function gamePage(route,token){
   overlay.addEventListener('pointercancel',()=>{overlayPointerDown=false;},{signal:listeners.signal});
   overlay.addEventListener('click',event=>{if(event.detail>0&&!overlayPointerDown){event.preventDefault();event.stopPropagation();return;}overlayPointerDown=false;const action=event.target.closest('[data-action]')?.dataset.action;if(action==='start'||action==='again'){pauseButton.textContent='Ⅱ 暂停';begin();}if(action==='resume')resume();if(action==='share')share();},{signal:listeners.signal});
   inputControls=bindGameInput(canvas,{isRunning:()=>status==='running',onInput:(type,payload)=>engine?.input(type,payload),onUpdate:ui,onPause:pause,signal:listeners.signal});
+  bindGameFullscreen(document.querySelector('.play-main'),document.querySelector('#fullscreen-toggle'),{onChange:()=>{cancelInputs();pause('layout');},onFallback:()=>toast('已铺满游戏页面，可用“退出全屏”返回'),signal:listeners.signal});
   watchGameLayout(canvas,pause,listeners.signal);
   window.addEventListener('blur',pause,{signal:listeners.signal});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();},{signal:listeners.signal});
