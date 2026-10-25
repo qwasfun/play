@@ -2,6 +2,7 @@ import {games,byId} from './catalog.js';
 import {beijingDate,dailyGame,dailySeed,playLink,parseRoute,resultText,RULE_VERSION} from './core.js';
 import {createStore} from './storage.js';
 import {art} from './art.js';
+import {bindGameInput,watchGameLayout} from './input.js';
 
 const app=document.querySelector('#app');
 const notice=document.querySelector('#storage-notice');
@@ -50,13 +51,14 @@ async function gamePage(route,token){
   const game=byId[route.id], date=route.date, historic=date&&date!==beijingDate();
   const record=date?store.data.daily[date]?.[game.id]:store.data.best[game.id];
   app.innerHTML=`<div class="page-container game-page" id="main-content"><div class="game-topline"><a class="back-link" href="#/">← 返回游乐场</a><span class="daily-tag">${date?`${historic?'历史':'每日'}挑战 · ${dateLabel(date)}`:'随心游玩'}</span></div><div class="game-heading"><p class="eyebrow">${game.english}</p><h1>${game.title}<span class="accent-dot">.</span></h1><p>${game.description}</p></div><div class="play-layout"><div class="play-main"><div class="game-toolbar"><div class="stat"><span class="stat-label">${game.id==='lights'?'步数':game.id==='echo'?'完成轮数':'得分'}</span><strong class="stat-value" id="live-score">0</strong></div><div class="stat"><span class="stat-label">剩余时间</span><strong class="stat-value" id="live-time">${game.limit} <small>秒</small></strong></div><div class="stat"><span class="stat-label" id="third-label">${['star','bridge'].includes(game.id)?'剩余机会':game.id==='echo'?'目标轮数':'目标'}</span><strong class="stat-value" id="live-extra">${['star','bridge'].includes(game.id)?'♥ ♥ ♥':game.id==='echo'?'12':'全部熄灭'}</strong></div></div><div class="canvas-wrap"><canvas id="game-canvas" width="600" height="480" tabindex="0" aria-label="${game.title}游戏区域，${game.controls}"></canvas><div class="game-overlay" id="game-overlay"></div></div><div class="game-controls"><button class="button secondary" id="pause" disabled>Ⅱ 暂停</button><button class="button secondary" id="restart" disabled>↻ 重开</button>${game.id==='lights'?'<button class="button secondary" id="undo" disabled>↶ 撤销</button>':''}<span class="controls-label">${game.controls}</span></div><p class="game-help" id="game-hint" role="status">${game.controls}</p></div><aside class="game-sidebar"><div class="side-card"><p class="eyebrow">HOW TO PLAY</p><h3>一点提示，马上出发</h3><ol class="rule-list">${game.rules.map(rule=>`<li>${rule}</li>`).join('')}</ol></div><div class="side-card best-card"><p class="eyebrow">${date?'DAILY BEST':'PERSONAL BEST'}</p><h3>${date?'当日最佳':'我的最佳'}</h3><p id="best-record">${resultText(game.id,record)}</p><small>记录保存在当前浏览器。</small></div>${date?`<div class="side-card challenge-note"><span class="badge">${historic?'历史挑战':'每日挑战'}</span><p>同一天，相同的起点。<br>可以反复挑战，刷新自己的纪录。</p><small>规则版本 ${RULE_VERSION} · 北京时间</small></div>`:''}<div class="side-card next-game-card"><p class="eyebrow">NEXT LITTLE ADVENTURE</p><h3>${games[(games.indexOf(game)+1)%4].title}</h3><a class="text-button" href="${playLink(games[(games.indexOf(game)+1)%4].id)}">换个心情 ↗</a></div></aside></div></div>`;
+  document.querySelector('.game-controls').insertAdjacentHTML('beforeend','<a class="landscape-exit button secondary" href="#/">← 游乐场</a>');
   const overlay=document.querySelector('#game-overlay');overlay.innerHTML='<div class="overlay-card"><p>正在打开小世界…</p></div>';
   let module;
   try{module=await import(`./games/${game.id}.js`);}catch{if(token===routeToken)overlay.innerHTML='<div class="overlay-card"><h2>游戏资源暂时未能加载</h2><p>请刷新页面后重试。</p><a class="button primary" href="#/">返回首页</a></div>';return;}
   if(token!==routeToken)return;
   const canvas=document.querySelector('#game-canvas'),ctx=canvas.getContext('2d');
   if(!ctx){overlay.innerHTML='<div class="overlay-card"><h2>浏览器暂不支持游戏画布</h2><p>请使用较新版本的浏览器打开。</p><a class="button primary" href="#/">返回首页</a></div>';return;}
-  let engine,status='ready',last=0,accumulator=0,raf=0,lastResult=null,heldPointer=null;
+  let engine,status='ready',last=0,accumulator=0,raf=0,lastResult=null,inputControls;
   const listeners=new AbortController();
   const seed=date?dailySeed(date,game.id):crypto.getRandomValues(new Uint32Array(1))[0];
   const pauseButton=document.querySelector('#pause'),restartButton=document.querySelector('#restart'),undoButton=document.querySelector('#undo');
@@ -69,23 +71,17 @@ async function gamePage(route,token){
     overlay.hidden=false;overlay.innerHTML=`<div class="overlay-card result-card"><p class="result-kicker">${date?`${dateLabel(date)} · ${date===beijingDate()?'每日':'历史'}挑战`:'NICE LITTLE BREAK'}</p><h2>${headline}</h2><div class="result-score">${resultText(game.id,result)}</div><p class="result-details">${improved?'✦ 创造了新的本机最佳纪录':'每一次尝试，都算数。'} · 用时 ${Math.ceil(result.elapsed)} 秒</p><div class="overlay-actions"><button class="button primary" data-action="again">再玩一次 ↻</button><button class="button secondary" data-action="share">分享成绩 ↗</button></div><div class="result-links"><a href="${playLink(games[(games.indexOf(game)+1)%4].id)}">下一款游戏 →</a><a href="#/">返回首页</a></div><div class="share-fallback" hidden></div></div>`;
   }
   const make=()=>{engine?.destroy?.();engine=module.createGame({seed,onFinish:finish,sound});ui();engine.draw(ctx);};
-  function cancelInputs(){engine?.input('primary-cancel',{});if(heldPointer!==null){try{canvas.releasePointerCapture(heldPointer);}catch{}heldPointer=null;}}
+  function cancelInputs(){inputControls?.cancel();}
   function begin(){cancelInputs();make();status='running';accumulator=0;last=0;overlay.hidden=true;pauseButton.disabled=false;restartButton.disabled=false;if(undoButton)undoButton.disabled=false;store.recent(game.id);canvas.focus({preventScroll:true});sound();}
-  function pause(){if(status!=='running')return;status='paused';cancelInputs();accumulator=0;last=0;overlay.hidden=false;overlay.innerHTML='<div class="overlay-card"><p class="eyebrow">TAKE YOUR TIME</p><h2>小世界暂停中</h2><p>准备好了，再继续。</p><button class="button primary" data-action="resume">继续游戏 ▶</button></div>';pauseButton.textContent='▶ 继续';}
+  function pause(reason){if(status!=='running')return;status='paused';cancelInputs();accumulator=0;last=0;overlay.hidden=false;overlay.innerHTML=`<div class="overlay-card"><p class="eyebrow">TAKE YOUR TIME</p><h2>小世界暂停中</h2><p>${reason==='layout'?'屏幕尺寸已变化，准备好了再继续。':'准备好了，再继续。'}</p><button class="button primary" data-action="resume">继续游戏 ▶</button></div>`;pauseButton.textContent='▶ 继续';}
   function resume(){if(status!=='paused')return;status='running';accumulator=0;last=0;overlay.hidden=true;pauseButton.textContent='Ⅱ 暂停';canvas.focus({preventScroll:true});}
   function restartConfirm(){if(status==='ready'||status==='finished'){begin();return;}if(status==='running')pause();overlay.innerHTML='<div class="overlay-card"><h2>重新开始这一局？</h2><p>本局进度将重置，已保存的最佳成绩会保留。</p><div class="overlay-actions"><button class="button primary" data-action="again">重新开始</button><button class="button secondary" data-action="resume">继续当前游戏</button></div></div>';}
   pauseButton.addEventListener('click',()=>{if(status==='running')pause();else if(status==='paused')resume();},{signal:listeners.signal});
   restartButton.addEventListener('click',restartConfirm,{signal:listeners.signal});
   undoButton?.addEventListener('click',()=>{if(status==='running'){engine.input('undo');ui();canvas.focus({preventScroll:true});}},{signal:listeners.signal});
   overlay.addEventListener('click',event=>{const action=event.target.closest('[data-action]')?.dataset.action;if(action==='start'||action==='again'){pauseButton.textContent='Ⅱ 暂停';begin();}if(action==='resume')resume();if(action==='share')share();},{signal:listeners.signal});
-  function coordinates(event){const r=canvas.getBoundingClientRect();return{x:(event.clientX-r.left)*600/r.width,y:(event.clientY-r.top)*480/r.height};}
-  canvas.addEventListener('pointerdown',event=>{if(status!=='running'||heldPointer!==null||event.button!==0)return;event.preventDefault();heldPointer=event.pointerId;canvas.setPointerCapture(event.pointerId);canvas.focus({preventScroll:true});engine.input('primary-down',coordinates(event));ui();},{signal:listeners.signal});
-  canvas.addEventListener('pointerup',event=>{if(event.pointerId!==heldPointer)return;heldPointer=null;if(status==='running')engine.input('primary-up',coordinates(event));try{canvas.releasePointerCapture(event.pointerId);}catch{}ui();},{signal:listeners.signal});
-  for(const type of ['pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{if(heldPointer!==null)cancelInputs();},{signal:listeners.signal});
-  const keys=[' ','Enter','ArrowUp','ArrowRight','ArrowDown','ArrowLeft','w','a','s','d','W','A','S','D'];
-  canvas.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();pause();return;}if(keys.includes(event.key)){event.preventDefault();if(status==='running'&&!event.repeat){engine.input('key-down',{key:event.key,repeat:event.repeat});ui();}}},{signal:listeners.signal});
-  canvas.addEventListener('keyup',event=>{if(keys.includes(event.key)){event.preventDefault();if(status==='running'){engine.input('key-up',{key:event.key});ui();}}},{signal:listeners.signal});
-  canvas.addEventListener('blur',cancelInputs,{signal:listeners.signal});
+  inputControls=bindGameInput(canvas,{isRunning:()=>status==='running',onInput:(type,payload)=>engine?.input(type,payload),onUpdate:ui,onPause:pause,signal:listeners.signal});
+  watchGameLayout(canvas,pause,listeners.signal);
   window.addEventListener('blur',pause,{signal:listeners.signal});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();},{signal:listeners.signal});
   function frame(now){raf=requestAnimationFrame(frame);if(status==='running'){if(last===0)last=now;const delta=(now-last)/1000;last=now;if(delta>.5){pause();return;}accumulator+=Math.min(delta,.1);while(accumulator>=1/60&&status==='running'){engine.update(1/60);accumulator-=1/60;}ui();}else last=0;engine.draw(ctx);}
@@ -102,6 +98,7 @@ async function gamePage(route,token){
 async function render(){
   const token=++routeToken;active?.destroy();active=null;
   const route=parseRoute(location.hash,today);
+  document.body.classList.toggle('has-game',route.type==='play');
   if(location.hash==='#/daily'&&route.type==='play')history.replaceState(null,'',playLink(route.id,route.date));
   document.querySelectorAll('[data-nav]').forEach(el=>{const selected=(el.dataset.nav==='daily'&&route.type==='play'&&route.date)||(el.dataset.nav==='favorites'&&route.type==='favorites')||(el.dataset.nav==='home'&&route.type==='home');if(selected)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
   document.title=route.type==='play'?`${byId[route.id].title}${route.date?' · 每日挑战':''} — 三分钟游乐场`:'三分钟游乐场 · 给快乐留点时间';

@@ -38,10 +38,9 @@ export function generateLights(seed) {
 }
 
 function tileAt(x, y) {
-  const col = Math.floor((x - BOARD_X) / (TILE + GAP));
-  const row = Math.floor((y - BOARD_Y) / (TILE + GAP));
+  const col = Math.floor((x - BOARD_X + GAP / 2) / (TILE + GAP));
+  const row = Math.floor((y - BOARD_Y + GAP / 2) / (TILE + GAP));
   if (col < 0 || col >= 4 || row < 0 || row >= 4) return -1;
-  if (x - BOARD_X - col * (TILE + GAP) > TILE || y - BOARD_Y - row * (TILE + GAP) > TILE) return -1;
   return row * 4 + col;
 }
 

@@ -26,6 +26,23 @@ npm run check
 
 游戏页首次点击开始后才计时。切换标签页或窗口失焦时暂停，返回后手动继续。长按被系统取消或游戏暂停时不会误落桥。
 
+旋转屏幕或画布尺寸改变时也会自动暂停，清除当前长按，进度和已得分保留。短横屏采用左侧画布、右侧成绩与操作栏，暂停、重开和返回游乐场始终可见。多指操作只响应最初的主指，副指抬起不会打断长按；画布内禁止长按菜单，页面其他区域仍可正常滚动和选择文字。
+
+## 手机触控检查
+
+2026-10-26 在独立的 Chromium 手机触屏模拟环境完成：34 项规则与输入测试、23 个触控场景、32 个横竖屏布局场景。覆盖真实浏览器触屏事件、多指、长按后拖出、系统取消、2 秒长按、旋转时取消输入及恢复、四款游戏旋转后的触控坐标。尺寸包含 375×812、812×375、390×844、844×390、320×568、568×320、768×1024、1024×768。实体 iOS/Android 尚未实测。
+
+启动本地服务后，可使用 Playwright CLI 重跑手机检查（需已安装 Chrome）：
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli -s=mobileqa open http://127.0.0.1:4175 --mobile --browser chrome
+npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --filename scripts/mobile-qa.js
+npx --yes --package @playwright/cli playwright-cli --raw -s=mobileqa run-code --filename scripts/mobile-layout.js
+npx --yes --package @playwright/cli playwright-cli -s=mobileqa close
+```
+
+浏览器截图保存于已忽略的 `output/playwright/`，不会随网站发布。
+
 ## 每日挑战与存储
 
 每日按 Asia/Shanghai（UTC+8）零点轮换一款。种子由日期、游戏 ID 和规则版本共同生成，所有玩家同日同题。分享链接保留日期和版本，历史挑战不计入今天。普通模式每次进入生成新种子，重开保留当前关卡。
