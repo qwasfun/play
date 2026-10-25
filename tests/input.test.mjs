@@ -57,4 +57,13 @@ test('lights gutter hit area includes half the gap for small phone targets',()=>
 test('shift changing keyup letter case cannot leave keyboard owner stuck',()=>{
   const {canvas,events}=setup();canvas.emit('keydown',{key:'w',repeat:false});canvas.emit('keyup',{key:'W'});down(canvas,1);
   assert.deepEqual(events.map(([type])=>type),['key-down','key-up','primary-down']);
+  assert.equal(events[0][1].key,'w');assert.equal(events[1][1].key,'w');
+});
+test('drag moves follow only the owning pointer and stop on cancellation',()=>{
+  const {canvas,controls,events}=setup();down(canvas,1);
+  canvas.emit('pointermove',{pointerId:2,clientX:220,clientY:200});
+  canvas.emit('pointermove',{pointerId:1,clientX:220,clientY:200});
+  assert.deepEqual(events.at(-1),['primary-move',{x:400,y:320}]);
+  const count=events.length;controls.cancel();canvas.emit('pointermove',{pointerId:1,clientX:220,clientY:200});
+  assert.equal(events.length,count+1);
 });

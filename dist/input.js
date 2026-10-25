@@ -32,6 +32,12 @@ export function bindGameInput(canvas, {isRunning, onInput, onUpdate, onPause, si
     releaseCapture(previous);
     onUpdate();
   });
+  listen('pointermove', event => {
+    if (event.pointerId !== pointer || !isRunning()) return;
+    event.preventDefault();
+    onInput('primary-move', coordinates(event));
+    onUpdate();
+  });
   for (const type of ['pointercancel', 'lostpointercapture']) listen(type, event => {
     if (event.pointerId === pointer) cancel();
   });
@@ -41,14 +47,14 @@ export function bindGameInput(canvas, {isRunning, onInput, onUpdate, onPause, si
     event.preventDefault();
     if (!isRunning() || pointer !== null || event.repeat || heldKeys.has(event.key.toLowerCase())) return;
     heldKeys.add(event.key.toLowerCase());
-    onInput('key-down', {key:event.key,repeat:false});
+    onInput('key-down', {key:event.key.length===1?event.key.toLowerCase():event.key,repeat:false});
     onUpdate();
   });
   listen('keyup', event => {
     if (!keys.has(event.key)) return;
     event.preventDefault();
     if (!heldKeys.delete(event.key.toLowerCase())) return;
-    if (isRunning()) onInput('key-up', {key:event.key});
+    if (isRunning()) onInput('key-up', {key:event.key.length===1?event.key.toLowerCase():event.key});
     onUpdate();
   });
   listen('blur', cancel);

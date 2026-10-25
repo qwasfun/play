@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink} from '../dist/core.js';
+import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START} from '../dist/core.js';
 import {createStore} from '../dist/storage.js';
 
 test('Beijing midnight changes date and daily rotation across UTC boundary',()=>{
@@ -57,4 +57,22 @@ test('corrupt JSON resets safely without falsely reporting unavailable storage',
   const storage=fakeStorage();storage.setItem('tiny-break-arcade:v1','{');let warnings=0;
   const store=createStore(storage,()=>warnings++);store.toggleFavorite('bridge');
   assert.equal(warnings,0);assert.deepEqual(createStore(storage).data.favorites,['bridge']);
+});
+test('expanded daily rotation preserves every old date and shared challenge',()=>{
+  const legacy=['star','bridge','lights','echo'];
+  for(let time=Date.parse('2026-09-01T00:00:00Z');time<Date.parse(EXPANDED_DAILY_START+'T00:00:00Z');time+=86400000){
+    const date=new Date(time).toISOString().slice(0,10),id=legacy[Math.floor(time/86400000)%4];
+    assert.equal(dailyGame(date),id);assert.equal(parseRoute(playLink(id,date),'2026-11-10').type,'play');
+  }
+  assert.equal(dailyGame('2026-10-27'),'catch');
+  const rotation=Array.from({length:8},(_,i)=>dailyGame(new Date(Date.parse(EXPANDED_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10)));
+  assert.deepEqual(new Set(rotation),new Set(GAME_IDS));
+  assert.equal(dailyGame('2026-11-04'),'catch');
+});
+test('all eight favorites and records survive reload, recent remains bounded',()=>{
+  const storage=fakeStorage(),store=createStore(storage);
+  for(const id of GAME_IDS){store.toggleFavorite(id);store.recent(id);store.record(id,{score:100,elapsed:60,won:true,steps:8,rounds:2});}
+  const again=createStore(storage);
+  assert.deepEqual(again.data.favorites,GAME_IDS);assert.equal(again.data.recent.length,4);assert.equal(Object.keys(again.data.best).length,8);
+  for(const id of ['catch','bounce','pairs','merge'])assert.equal(parseRoute(playLink(id)).id,id);
 });

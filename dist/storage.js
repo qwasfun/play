@@ -13,7 +13,7 @@ export function createStore(storage, onUnavailable = () => {}) {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed?.version === 1) {
-        for (const field of ['favorites','recent']) data[field] = [...new Set((Array.isArray(parsed[field]) ? parsed[field] : []).filter(id => GAME_IDS.includes(id)))].slice(0,4);
+        for (const field of ['favorites','recent']) data[field] = [...new Set((Array.isArray(parsed[field]) ? parsed[field] : []).filter(id => GAME_IDS.includes(id)))].slice(0,field==='favorites'?GAME_IDS.length:4);
         data.sound = parsed.sound === true;
         for (const id of GAME_IDS) if (validRecord(id,parsed.best?.[id])) data.best[id] = parsed.best[id];
         for (const [date, entries] of Object.entries(parsed.daily || {})) if (validDate(date) && entries && typeof entries === 'object') {
