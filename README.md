@@ -93,3 +93,13 @@ npx --yes --package @playwright/cli playwright-cli -s=mobileqa close
 `dist/catalog.js` 定义游戏目录；游戏模块按需加载，接口是 `createGame({seed,onFinish,sound})`，返回 `update(dt)`、`draw(ctx)`、`input(type,payload)`、`getState()` 和 `destroy()`。画布采用 600×480 逻辑坐标，统一运行器以 1/60 秒步长更新，页面负责生命周期与成绩存储。
 
 部署入口为 `dist/index.html`；`.openai/hosting.json` 保存本项目 Sites 标识。仅此目录为发布范围，截图和临时诊断保存在已忽略的 `artifacts/`。
+
+## GitHub Pages 部署
+
+GitHub 仓库为 https://github.com/qwasfun/play ，网站域名为 https://play.185036.xyz/ 。
+
+`.github/workflows/pages.yml` 在推送 `main` 或手动运行时，使用 Node.js 24 执行 `npm test` 和 `npm run check`，检查通过后将 `dist/` 发布到 GitHub Pages。网站不需要额外构建或安装运行依赖；首页、模块和游戏均使用相对路径及 hash 路由，兼容仓库子路径和独立域名。
+
+首次部署需在仓库 **Settings → Pages** 中将 Source 设为 **GitHub Actions**，将 Custom domain 保存为 `play.185036.xyz`。DNS 应设置 `CNAME` 记录 `play` 指向 `qwasfun.github.io`，目标不带 `/play`。等待 GitHub 域名检查通过并签发证书后，启用 **Enforce HTTPS**。
+
+`dist/CNAME` 记录预期域名；使用 GitHub Actions 发布时，仍须在仓库 Pages 设置中绑定域名，单独提交该文件不会完成绑定。截图、测试脚本及本地配置不会作为网页发布。
