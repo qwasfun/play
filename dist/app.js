@@ -5,9 +5,11 @@ import {art} from './art.js';
 import {bindGameInput,watchGameLayout} from './input.js';
 import {bindTouchActivation} from './activation.js';
 import {bindGameFullscreen} from './fullscreen.js';
+import {setupPwa} from './pwa.js';
 
 const app=document.querySelector('#app');
 bindTouchActivation(document);
+const pwa=setupPwa();
 const notice=document.querySelector('#storage-notice');
 let local;
 try {local=window.localStorage;} catch {local=null;}
@@ -38,11 +40,12 @@ function home(favoritesOnly=false){
   const recent=store.data.recent;
   const selected=games.filter(g=>homeFilter==='全部'||g.tag===homeFilter).sort((a,b)=>Number(Boolean(b.isNew))-Number(Boolean(a.isNew)));
   app.innerHTML=`<div class="page-container" id="main-content">${favoritesOnly?`<section class="favorites-section favorites-page"><div class="section-heading"><div><p class="eyebrow">YOUR LITTLE COLLECTION</p><h1>收藏的小快乐<span class="accent-dot">.</span></h1><p>喜欢的游戏，总要留个位置。</p></div><a class="text-button" href="#/">返回游乐场 ↗</a></div><div class="game-grid">${games.filter(g=>store.data.favorites.includes(g.id)).map(gameCard).join('')}</div>${store.data.favorites.length?'':favoriteEmpty()}</section>`:`
-    <section class="hero"><div class="hero-copy"><p class="eyebrow"><span class="little-spark">✳</span> 今天，也值得轻松一下</p><h1>给自己三分钟，<br><span>玩一点开心。</span></h1><p class="hero-description">暂时放下忙碌，来这里换换心情。<br>${games.length} 个小世界，随时欢迎你。</p><div class="hero-actions"><button class="button primary" data-random>随机来一局 <span aria-hidden="true">↗</span></button><a class="button secondary" href="#games">挑个喜欢的 <span aria-hidden="true">↓</span></a></div><p class="hero-note"><span>●</span> 无需下载 &nbsp;·&nbsp; 免登录 &nbsp;·&nbsp; 手机电脑都能玩</p></div><div class="hero-art">${art('hero')}</div></section>
+    <section class="hero"><div class="hero-copy"><p class="eyebrow"><span class="little-spark">✳</span> 今天，也值得轻松一下</p><h1>给自己三分钟，<br><span>玩一点开心。</span></h1><p class="hero-description">暂时放下忙碌，来这里换换心情。<br>${games.length} 个小世界，随时欢迎你。</p><div class="hero-actions"><button class="button primary" data-random>随机来一局 <span aria-hidden="true">↗</span></button><a class="button secondary" href="#games">挑个喜欢的 <span aria-hidden="true">↓</span></a><button class="button secondary" data-install-app>添加到桌面</button></div><p class="hero-note"><span>●</span> 免登录 &nbsp;·&nbsp; 手机电脑都能玩</p><div class="offline-note" aria-live="polite"><span data-offline-status>正在准备离线游戏…</span><button class="text-button" data-offline-retry hidden>重新准备</button><small data-pwa-update hidden>新版本已准备好，关闭全部游乐场窗口后再次打开即可更新。</small></div></div><div class="hero-art">${art('hero')}</div></section>
     <section class="daily-section" id="daily"><div class="section-heading"><div><p class="eyebrow">A NEW LITTLE CHALLENGE</p><h2>每天，一点新鲜感<span class="accent-dot">.</span></h2></div><span class="section-side-note">北京时间 00:00 更新</span></div><div class="daily-card"><div class="daily-info"><div class="daily-meta"><span class="badge">✳ 每日挑战</span><span class="daily-date">${dateLabel(today)}</span></div><h3>今天，来玩${game.title}。</h3><p>相同的起点，不同的小惊喜。<br>看看今天的你，能创造怎样的纪录。</p><div class="daily-record">${record?`今日最佳：${resultText(id,record)}`:'今日挑战还没开始，第一份快乐留给你。'}</div><a class="button dark" href="${playLink(id,today)}">${record?'再挑战一次':'开始今日挑战'} <span aria-hidden="true">↗</span></a></div><div class="daily-art">${art(id,'daily')}<span class="daily-art-caption">${game.english} / DAILY ${String(Math.floor(Date.parse(today)/86400000)%1000).padStart(3,'0')}</span></div></div></section>
     ${recent.length?`<section class="recent-section"><div class="section-heading"><div><p class="eyebrow">PICK UP THE FUN</p><h2>再来一局？</h2></div><span class="section-side-note">最近玩过</span></div><div class="recent-list">${recent.map(id=>`<a class="recent-item" href="${playLink(id)}"><span class="recent-art art-${id}">${art(id)}</span><span class="recent-info"><strong>${byId[id].title}</strong><small>${resultText(id,store.data.best[id])}</small></span><span class="recent-play" aria-hidden="true">↗</span></a>`).join('')}</div></section>`:''}
     <section id="games" class="games-section"><div class="section-heading"><div><p class="eyebrow">SMALL GAMES, BIG SMILES</p><h2>挑一个，快乐出发<span class="accent-dot">.</span></h2><p>动动手，或者动动脑。跟着心情选就好。</p></div><div class="filter-bar" aria-label="游戏分类">${['全部','动手','动脑'].map(tag=>`<button class="filter-chip ${tag===homeFilter?'active':''}" data-filter="${tag}" aria-pressed="${tag===homeFilter}">${tag==='动手'?'✹ ':tag==='动脑'?'✧ ':''}${tag}</button>`).join('')}</div></div><div class="game-grid">${selected.map(gameCard).join('')}</div></section>
     <section class="favorites-section"><div class="section-heading"><div><p class="eyebrow">SAVED FOR ANOTHER HAPPY DAY</p><h2>我的小收藏<span class="accent-dot">.</span></h2></div>${store.data.favorites.length?'<a class="text-button" href="#/favorites">查看收藏 ↗</a>':''}</div>${store.data.favorites.length?`<div class="recent-list">${store.data.favorites.map(id=>`<a class="recent-item" href="${playLink(id)}"><span class="recent-art art-${id}">${art(id)}</span><span class="recent-info"><strong>${byId[id].title}</strong><small>${byId[id].duration}的小快乐</small></span><span class="recent-play" aria-hidden="true">↗</span></a>`).join('')}</div>`:favoriteEmpty()}</section>`}</div>`;
+  pwa.sync();
 }
 app.addEventListener('click',event=>{
   const fav=event.target.closest('[data-favorite]');
@@ -114,6 +117,7 @@ async function render(){
   else if(route.type==='error')app.innerHTML=`<div class="page-container error-page" id="main-content"><h1>这个入口迷路了</h1><p>${escape(route.message)}</p><a class="button primary" href="#/">回到游乐场</a></div>`;
   else home(route.type==='favorites');
   if(token===routeToken){window.scrollTo({top:0,behavior:'instant'});app.focus({preventScroll:true});}
+  pwa.sync();
 }
 document.querySelector('.skip-link').addEventListener('click',event=>{event.preventDefault();app.focus({preventScroll:true});app.scrollIntoView({behavior:'instant'});});
 window.addEventListener('hashchange',async()=>{await render();if(location.hash==='#games')document.querySelector('#games')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});});

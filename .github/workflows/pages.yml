@@ -28,6 +28,8 @@ jobs:
           node-version: '24'
       - name: Test game rules and input handling
         run: npm test
+      - name: Prepare complete offline game collection
+        run: npm run prepare:pwa
       - name: Check JavaScript syntax
         run: npm run check
       - name: Configure GitHub Pages
