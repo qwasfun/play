@@ -17,6 +17,11 @@ const fixture={
   './manifest.webmanifest':{body:'{"name":"Playground"}',type:'application/manifest+json'},
   './icons/app-192.png':{body:'example-png-binary',type:'image/png'},
 };
+function withRedirect(response,url){
+  const clone=response.clone.bind(response);
+  Object.defineProperties(response,{redirected:{value:true},url:{value:url},clone:{value:()=>withRedirect(clone(),url)}});
+  return response;
+}
 class MemoryCache{
   constructor(name,owner){this.name=name;this.owner=owner;this.entries=new Map();}
   async match(request){return this.entries.get(typeof request==='string'?request:request.url)?.clone();}
@@ -39,13 +44,14 @@ function setup({scope='https://games.test/play/',version='test-release',cacheSto
   for(const[path,file]of Object.entries(fixture))network.set(new URL(path,scope).href,{...file});
   let offline=false;
   const self={registration:{scope},clients:{claim:async()=>{calls.claim++;}},skipWaiting:async()=>{calls.skipWaiting++;},addEventListener:(type,handler)=>{handlers[type]=handler;}};
-  const context=vm.createContext({self,caches:cacheStorage,URL,Request,Response,TextEncoder,crypto:webcrypto,
+  const context=vm.createContext({self,caches:cacheStorage,URL,Request,Response,Headers,TextEncoder,crypto:webcrypto,
     importScripts:path=>{assert.equal(path,'./precache.js');self.PLAYGROUND_PRECACHE=structuredClone(metadata);},
     fetch:async request=>{
       calls.fetch++;if(offline)throw Error('Network is offline');
       const url=typeof request==='string'?request:request.url,file=network.get(url);
       if(!file)return new Response('Not found',{status:404,headers:{'Content-Type':'text/html'}});
-      return new Response(file.body,{status:file.status||200,headers:{'Content-Type':file.type}});
+      const response=new Response(file.body,{status:file.status||200,headers:{'Content-Type':file.type,...file.headers}});
+      return file.redirectedUrl?withRedirect(response,file.redirectedUrl):response;
     },
   });
   vm.runInContext(source,context,{filename:'sw.js'});
@@ -169,4 +175,31 @@ test('worker integrity checks normalize text line endings but preserve binary ic
   const binary=setup();binary.self.PLAYGROUND_PRECACHE.revisions['./icons/app-192.png']=hash('binary\n');
   binary.network.set(new URL('./icons/app-192.png',binary.scope).href,{body:'binary\r\n',type:'image/png'});
   await assert.rejects(binary.dispatch('install'),/资源版本已变化/);
+});
+test('same-origin canonical index redirects install and become safe non-redirected offline navigations',async()=>{
+  for(const target of ['./','./index.html']){
+    const worker=setup();
+    worker.network.set(new URL('./index.html',worker.scope).href,{
+      ...fixture['./index.html'],redirectedUrl:new URL(target,worker.scope).href,
+      headers:{'Content-Encoding':'gzip','Content-Length':'999','Transfer-Encoding':'chunked'},
+    });
+    await worker.dispatch('install');assert.equal((await worker.message('OFFLINE_STATUS')).ready,true);worker.setOffline(true);
+    for(const request of ['./','./?launch=installed#/play/star','./index.html']){
+      const response=await worker.fetchResource(request);
+      assert.equal(response.redirected,false);assert.match(await response.text(),/Offline playground/);
+      for(const name of ['Content-Encoding','Content-Length','Transfer-Encoding'])assert.equal(response.headers.get(name),null);
+    }
+  }
+});
+test('HTML redirects to login, another scope, a query or another origin cannot install offline games',async()=>{
+  for(const target of ['./login','../','./?login=1','./#login','https://other.test/play/']){
+    const worker=setup();worker.network.set(new URL('./index.html',worker.scope).href,{...fixture['./index.html'],redirectedUrl:new URL(target,worker.scope).href});
+    await assert.rejects(worker.dispatch('install'),/资源未能完整下载/);assert.equal((await worker.message('OFFLINE_STATUS')).ready,false);
+  }
+});
+test('executable asset redirects remain forbidden even when the final URL is same-origin',async()=>{
+  for(const target of ['./app.js','./','https://other.test/app.js']){
+    const worker=setup();worker.network.set(new URL('./app.js',worker.scope).href,{...fixture['./app.js'],redirectedUrl:new URL(target,worker.scope).href});
+    await assert.rejects(worker.dispatch('install'),/资源未能完整下载/);assert.equal(await worker.caches.has(worker.cacheName),false);
+  }
 });

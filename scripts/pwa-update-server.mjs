@@ -42,6 +42,8 @@ const server=http.createServer(async(req,res)=>{
       current=release;json(res,200,{current,...releases[current]});return;
     }
     if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);res.end('Method not allowed');return;}
+    // Match production hosting's canonical home redirect during installation.
+    if(pathname==='/index.html'){res.writeHead(302,{'Location':'/','Cache-Control':'no-cache'});res.end();return;}
     const root=roots[current],path=resolve(root,`.${pathname==='/'?'/index.html':pathname}`);
     if(!path.startsWith(root+sep)){res.writeHead(403);res.end('Forbidden');return;}
     const content=await readFile(path);

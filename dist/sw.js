@@ -27,8 +27,20 @@ function expectedType(path){
   return /text\/html/i;
 }
 async function download(path,url){
-  const response=await fetch(new Request(url,{cache:'reload',credentials:'same-origin'}));
-  if(!response.ok||response.redirected||!expectedType(path).test(response.headers.get('Content-Type')||''))throw Error('资源未能完整下载');
+  let response=await fetch(new Request(url,{cache:'reload',credentials:'same-origin'}));
+  if(!response.ok||!expectedType(path).test(response.headers.get('Content-Type')||''))throw Error('资源未能完整下载');
+  if(response.redirected){
+    const destination=new URL(response.url);
+    const canonicalIndex=path==='./index.html'&&destination.origin===SCOPE.origin&&!destination.search&&!destination.hash
+      &&[SCOPE.pathname,new URL('./index.html',SCOPE).pathname].includes(destination.pathname);
+    if(!canonicalIndex)throw Error('资源未能完整下载');
+    // Some static hosts canonicalize index.html to the directory URL. A
+    // redirected Response cannot satisfy a later navigation with redirectMode
+    // "manual", so store the validated HTML as a fresh, non-redirected body.
+    const headers=new Headers(response.headers);
+    for(const name of ['Content-Encoding','Content-Length','Transfer-Encoding'])headers.delete(name);
+    response=new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+  }
   // HTML can include the host's publication wrapper; executable assets must
   // match this release, including when repairing a cache after a later deploy.
   const expected=BUILD.revisions?.[path];
