@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin=new URL(page.url()).origin,checks=[],errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(8000);await page.emulateMedia({reducedMotion:'reduce'});
   await page.addInitScript(()=>{const original=crypto.getRandomValues.bind(crypto);crypto.getRandomValues=array=>{if(array instanceof Uint32Array&&array.length===1){array[0]=/\/(boxes|pipes)/.test(location.hash)?123:1;return array;}return original(array);};});
@@ -13,7 +31,7 @@ async(page)=>{
   async function swipe(direction){const end=ends[direction];await touch('touchStart',[await point(300,240)]);await touch('touchMove',[await point(...end)]);await touch('touchEnd');}
   async function rotate(){await page.setViewportSize(landscape);await page.waitForTimeout(120);}
   await page.setViewportSize(portrait);await page.goto(origin);await page.reload();
-  const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
+  const catalog=await page.evaluate(async()=>{const{games}=await window.__qaImport('./catalog.js');return games;});
   const latest=catalog.filter(g=>g.isNew).map(g=>g.id);
   check('catalog_cards_and_latest_badges',await page.locator('.game-card').count()===catalog.length&&await page.locator('.new-badge').count()===latest.length);
   check('latest_games_sort_first',(await page.locator('.game-card').evaluateAll((cards,n)=>cards.slice(0,n).map(card=>card.dataset.game),latest.length)).join(',')===latest.join(','));
@@ -39,7 +57,7 @@ async(page)=>{
   await touch('touchStart',[await point(156,91)]);await rotate();await touch('touchEnd');
   check('pipes_rotation_cancels_pending_tap',await score()===before&&await page.getByRole('button',{name:'继续游戏 ▶',exact:true}).isVisible());
   await page.getByRole('button',{name:'继续游戏 ▶',exact:true}).tap();
-  const solution=await page.evaluate(async()=>{const{generatePipes}=await import('./games/pipes.js');return generatePipes(123).solution;});
+  const solution=await page.evaluate(async()=>{const{generatePipes}=await window.__qaImport('./games/pipes.js');return generatePipes(123).solution;});
   let turns=0;
   outer:for(let index=0;index<16;index++)for(let count=0;count<solution[index];count++){
     const p=await point(156+index%4*96,91+Math.floor(index/4)*96);await page.touchscreen.tap(p.x,p.y);turns++;
@@ -52,7 +70,7 @@ async(page)=>{
   await page.getByRole('link',{name:'下一款游戏 →',exact:true}).tap();await page.locator('[data-action="start"]').waitFor({state:'visible'});
   check('fresh_result_link_touch_navigates_once',page.url().endsWith(`#/play/${next}`));
 
-  await open('rings');const rings=await page.evaluate(async()=>{const{generateRings}=await import('./games/rings.js');return generateRings(1);});
+  await open('rings');const rings=await page.evaluate(async()=>{const{generateRings}=await window.__qaImport('./games/rings.js');return generateRings(1);});
   await touch('touchStart',[await point(400,200)]);await touch('touchMove',[await point(330,290)]);await touch('touchCancel');await page.waitForTimeout(180);
   check('rings_cancel_does_not_launch',await score()===0&&(await page.locator('#live-extra').textContent())==='♥ ♥ ♥');
   for(let index=0;index<rings.length;index++){

@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const context=page.context(),origin=new URL(page.url()).origin,api='http://127.0.0.1:8787',checks=[],errors=[];
   page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));
   const check=(name,passed)=>{checks.push({name,passed:!!passed});if(!passed)throw Error(JSON.stringify(checks.at(-1)));};
@@ -10,7 +28,7 @@ async(page)=>{
     const run=(await(await response).json()).run;await page.waitForFunction(()=>!document.querySelector('#pause').disabled);return run;
   }
   async function clearMines(seed){
-    const mines=await page.evaluate(async seed=>(await import('./games/mines.js')).generateMines(seed).mines,seed);
+    const mines=await page.evaluate(async seed=>(await window.__qaImport('./games/mines.js')).generateMines(seed).mines,seed);
     await page.locator('canvas').scrollIntoViewIfNeeded();
     for(let cell=0;cell<16;cell++){
       if(await page.locator('.result-card').isVisible())break;
@@ -54,7 +72,7 @@ async(page)=>{
   check('retry_submission_recovers_without_replaying',await page.locator('.result-card').isVisible());
 
   await page.locator('.leaderboard-filters select').selectOption('daily');await page.waitForFunction(()=>document.querySelector('.leaderboard-status')?.textContent.includes('位玩家'));
-  const yesterday=await page.evaluate(async()=>{const{beijingDate}=await import('./core.js');return beijingDate(Date.now()-86400000);});
+  const yesterday=await page.evaluate(async()=>{const{beijingDate}=await window.__qaImport('./core.js');return beijingDate(Date.now()-86400000);});
   await page.getByLabel('榜单挑战日期',{exact:true}).fill(yesterday);await page.getByRole('button',{name:'查看榜单',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.leaderboard-status')?.textContent.includes('位玩家'));
   check('historical_daily_board_can_be_browsed',!await page.getByLabel('榜单挑战日期',{exact:true}).isHidden());
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'output/playwright/leaderboard-mobile.png',fullPage:true});
@@ -72,7 +90,7 @@ async(page)=>{
   await page.getByRole('button',{name:'查看排行榜 ↗',exact:true}).click();await page.getByLabel('我的昵称',{exact:true}).waitFor();
   check('clearing_identity_creates_new_player',(await profile()).player.id!==oldId);
   check('old_public_record_remains',(await page.locator('.leaderboard-table').textContent()).includes('<b>榜友</b>'));
-  const catalog=await page.evaluate(async()=>(await import('./catalog.js')).games);
+  const catalog=await page.evaluate(async()=>(await window.__qaImport('./catalog.js')).games);
   for(const size of [{width:320,height:568},{width:390,height:844},{width:844,height:390}]){
     await page.setViewportSize(size);
     for(const game of catalog){await open(game.id);check(`${game.id}_${size.width}_sidebar_and_layout`,await page.locator('[aria-label="休闲排行榜"]').count()===1&&await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}

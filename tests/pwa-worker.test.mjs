@@ -6,6 +6,7 @@ import {resolve,join,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createHash,webcrypto} from 'node:crypto';
 import {createPrecache,renderPrecache} from '../scripts/prepare-pwa.mjs';
+import {modulePaths} from '../scripts/module-map.mjs';
 
 const source=await readFile(new URL('../dist/sw.js',import.meta.url),'utf8');
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -70,9 +71,11 @@ function setup({scope='https://games.test/play/',version='test-release',cacheSto
 }
 
 test('precache generation covers all twenty lazy game modules and excludes deployment metadata',async()=>{
-  const root=resolve('dist'),metadata=await createPrecache(root),ids=(await import('../dist/catalog.js')).games.map(game=>game.id);
-  for(const id of ids)assert.ok(metadata.assets.includes(`./games/${id}.js`));
-  for(const file of ['./index.html','./app.js','./catalog.js','./style.css','./favicon.svg'])assert.ok(metadata.assets.includes(file));
+  const root=resolve('dist'),metadata=await createPrecache(root),ids=(await import('@playground/game-registry')).games.map(game=>game.id);
+  const paths=modulePaths(JSON.parse(await readFile(resolve(root,'module-map.json'),'utf8')));
+  for(const id of ids)assert.ok(metadata.assets.includes('./'+paths[`games/${id}.js`]));
+  for(const file of ['./index.html','./module-map.json','./favicon.svg'])assert.ok(metadata.assets.includes(file));
+  assert.ok(metadata.assets.some(file=>file.endsWith('.css')));
   for(const file of ['./sw.js','./precache.js','./CNAME'])assert.equal(metadata.assets.includes(file),false);
   assert.equal(Object.keys(metadata.revisions).length,metadata.assets.length);
   assert.match(metadata.version,/^[0-9a-f]{20}$/);assert.ok(renderPrecache(metadata).startsWith('// Generated'));

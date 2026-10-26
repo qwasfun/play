@@ -1,8 +1,6 @@
-import {byId} from '../dist/catalog.js';
-import {RULE_VERSION,beijingDate,dailyGame,dailySeed,validDate} from '../dist/core.js';
-import {nicknameError,validateResult,cleanResult} from '../dist/ranking-rules.js';
-import {generateStarSchedule} from '../dist/games/star.js';
-import {generateHarvest} from '../dist/games/catch.js';
+import {byId,gameRules} from '@playground/game-registry';
+import {RULE_VERSION,beijingDate,dailyGame,dailySeed,validDate} from '@playground/game-registry/core';
+import {nicknameError,validateResult,cleanResult} from '@playground/game-registry/rules';
 
 const MINUTE=60000, SESSION_AGE=365*86400000, RUN_AGE=30*MINUTE;
 const boardWhere='game_id=? AND mode=? AND challenge_date=? AND rule_version=?';
@@ -72,8 +70,8 @@ async function leaderboard(env,selection,player){
 }
 
 async function record(env,run,value,now){
-  const result=cleanResult(value),ms=Math.round(result.elapsed*1000),sort=run.game_id==='lights'?result.steps:-result.score;
-  const eligible=run.game_id!=='lights'||result.won;
+  const result=cleanResult(value,run.game_id),ms=Math.round(result.elapsed*1000),policy=gameRules[run.game_id].ranking,sort=policy.sign*result[policy.field];
+  const eligible=!policy.requiresWin||result.won;
   // Every statement uses the persisted first submission, never a later retry's payload.
   // D1 batch is a transaction; concurrent submissions cannot overwrite a better record.
   const updates=await env.DB.batch([
@@ -86,12 +84,12 @@ async function record(env,run,value,now){
       SELECT game_id,mode,challenge_date,rule_version,player_id,id,
         json_extract(result_json,'$.score'),CAST(ROUND(json_extract(result_json,'$.elapsed')*1000) AS INTEGER),
         json_extract(result_json,'$.steps'),json_extract(result_json,'$.rounds'),json_extract(result_json,'$.won'),
-        CASE WHEN game_id='lights' THEN json_extract(result_json,'$.steps') ELSE -json_extract(result_json,'$.score') END,submitted_at
+        ?*json_extract(result_json,?),submitted_at
       FROM runs WHERE id=? AND json_extract(receipt_json,'$.eligible')=1
       ON CONFLICT(game_id,mode,challenge_date,rule_version,player_id) DO UPDATE SET
         run_id=excluded.run_id,score=excluded.score,elapsed_ms=excluded.elapsed_ms,steps=excluded.steps,rounds=excluded.rounds,
         won=excluded.won,sort_score=excluded.sort_score,achieved_at=excluded.achieved_at
-      WHERE excluded.sort_score<best_entries.sort_score OR (excluded.sort_score=best_entries.sort_score AND excluded.elapsed_ms<best_entries.elapsed_ms)`).bind(run.id),
+      WHERE excluded.sort_score<best_entries.sort_score OR (excluded.sort_score=best_entries.sort_score AND excluded.elapsed_ms<best_entries.elapsed_ms)`).bind(policy.sign,'$.'+policy.field,run.id),
     env.DB.prepare(`UPDATE runs SET receipt_json=json_set(receipt_json,'$.rank',
       CASE WHEN json_extract(receipt_json,'$.eligible')=1 THEN (
         SELECT 1+(SELECT COUNT(*) FROM best_entries c WHERE c.game_id=b.game_id AND c.mode=b.mode AND c.challenge_date=b.challenge_date AND c.rule_version=b.rule_version AND ${better})
@@ -197,11 +195,11 @@ export function createHandler({now=()=>Date.now(),sendEvent=reportScore}={}){
             if(time>=run.expires_at)fail(410,'runId','对局：提交期限已过，成绩已保存在本机，请开始新对局','run_expired');
             const value=await body(request),errors=validateResult(run.game_id,value);
             if(errors.length){const error=new ApiError(400,'score','');error.errors=errors;throw error;}
-            const maxScore=run.game_id==='star'?generateStarSchedule(run.seed).filter(event=>event.type==='mail').length*10:run.game_id==='catch'?generateHarvest(run.seed).filter(item=>item.type==='fruit').length*10:Infinity;
+            const maxScore=gameRules[run.game_id].seedCap?.(run.seed)??Infinity;
             if(value.score>maxScore)fail(400,'score','得分：超过本局可获得的最高分，请重新游玩后提交');
             if(value.elapsed*1000>time-run.started_at+1000)fail(400,'elapsed','用时：超过对局实际经过时间，请重新游玩后提交');
             const{receipt,first}=await record(env,run,value,time);
-            if(first)ctx.waitUntil(Promise.resolve().then(()=>sendEvent(env,run,cleanResult(value),origin)).catch(()=>console.warn('Score analytics unavailable')));
+            if(first)ctx.waitUntil(Promise.resolve().then(()=>sendEvent(env,run,cleanResult(value,run.game_id),origin)).catch(()=>console.warn('Score analytics unavailable')));
             response=json(receipt);
           }
         }else if(path==='/v1/leaderboards'&&method==='GET'){

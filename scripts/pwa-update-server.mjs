@@ -1,18 +1,29 @@
 // Isolated release-transition fixture. Production dist is read only.
 import http from 'node:http';
 import {cp,mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
-import {resolve,extname,sep} from 'node:path';
+import {resolve,extname,sep,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createPrecache,renderPrecache} from './prepare-pwa.mjs';
+import {execFileSync} from 'node:child_process';
 
 const project=fileURLToPath(new URL('../',import.meta.url));
 const output=resolve(project,'output/playwright');
 await mkdir(output,{recursive:true});
 const fixture=await mkdtemp(resolve(output,'pwa-update-'));
 const roots={A:resolve(fixture,'A'),B:resolve(fixture,'B')};
-await cp(resolve(project,'dist'),roots.A,{recursive:true});
-await cp(roots.A,roots.B,{recursive:true});
-const style=resolve(roots.B,'style.css');
+const legacyIndex=process.argv.indexOf('--from-ref'),legacyRef=legacyIndex<0?null:process.argv[legacyIndex+1];
+if(legacyIndex>=0&&!legacyRef)throw Error('历史版本：请提供有效的本地 Git 提交');
+if(legacyRef){
+  const commit=execFileSync('git',['rev-parse','--verify','--end-of-options',legacyRef+'^{commit}'],{cwd:project,encoding:'utf8'}).trim();
+  const files=execFileSync('git',['ls-tree','-r','--name-only',commit,'--','dist'],{cwd:project,encoding:'utf8'}).trim().split('\n').filter(Boolean);
+  if(!files.includes('dist/index.html'))throw Error('历史版本：该提交未包含完整的 dist 网页源码');
+  for(const file of files){const destination=resolve(roots.A,file.slice(5));if(!destination.startsWith(roots.A+sep))throw Error('历史版本：文件路径超出测试目录');await mkdir(dirname(destination),{recursive:true});await writeFile(destination,execFileSync('git',['show',`${commit}:${file}`],{cwd:project}));}
+}else await cp(resolve(project,'dist'),roots.A,{recursive:true});
+await cp(resolve(project,'dist'),roots.B,{recursive:true});
+const manifest=JSON.parse(await readFile(resolve(roots.B,'module-map.json'),'utf8'));
+const stylesheet=Object.values(manifest).flatMap(entry=>entry.css||[])[0];
+if(!stylesheet)throw Error('更新测试资源：构建清单中缺少样式');
+const style=resolve(roots.B,stylesheet);
 await writeFile(style,(await readFile(style,'utf8'))+'\n/* Offline update fixture: release B. */\n');
 const releases={};
 for(const release of ['A','B']){
@@ -22,7 +33,7 @@ for(const release of ['A','B']){
 }
 if(releases.A.version===releases.B.version)throw Error('更新测试版本：A 与 B 必须不同');
 let current='A';
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json; charset=utf-8'};
+const types={'.json':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json; charset=utf-8'};
 const json=(res,status,value)=>{
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
   res.end(JSON.stringify(value));

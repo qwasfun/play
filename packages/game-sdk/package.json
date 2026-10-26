@@ -1,0 +1,14 @@
+{
+  "name": "@playground/game-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./art": "./src/art.js",
+    "./rules": "./src/rules.js"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}

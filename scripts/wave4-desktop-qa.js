@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin=new URL(page.url()).origin,checks=[],errors=[];
   page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(8000);
   await page.addInitScript(()=>{
@@ -18,14 +36,14 @@ async(page)=>{
     await page.waitForTimeout(250);
     await page.locator('[data-action="start"]').press('Enter');
     if(id==='slide'){
-      const puzzle=await page.evaluate(async()=>{const{generateSlide}=await import('./games/slide.js');return generateSlide(123);});
+      const puzzle=await page.evaluate(async()=>{const{generateSlide}=await window.__qaImport('./games/slide.js');return generateSlide(123);});
       let blank=puzzle.blank;
       for(const cell of puzzle.solution){const key={1:'ArrowRight','-1':'ArrowLeft',3:'ArrowDown','-3':'ArrowUp'}[cell-blank];await page.locator('canvas').press(key);blank=cell;}
       await page.locator('.result-card').waitFor();check('slide_desktop_keyboard_full_solution',await score()===400);
     }else if(id==='bubbles'){
       await page.locator('canvas').press('Space');check('bubbles_desktop_keyboard_pops_group',await score()===40);
     }else if(id==='jump'){
-      const first=await page.evaluate(async()=>{const{generateJumpSchedule}=await import('./games/jump.js');return generateJumpSchedule(123)[0].time;});
+      const first=await page.evaluate(async()=>{const{generateJumpSchedule}=await window.__qaImport('./games/jump.js');return generateJumpSchedule(123)[0].time;});
       await page.waitForFunction(t=>performance.now()>=window.__gameStartedAt+t*1000,first-.53);
       await page.locator('canvas').press('ArrowUp');await page.waitForFunction(()=>document.querySelector('#live-score').textContent==='100');
       check('jump_desktop_arrow_key_clears_first_obstacle',await page.locator('#live-extra').textContent()==='♥ ♥ ♥');

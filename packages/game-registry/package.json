@@ -1,0 +1,35 @@
+{
+  "name": "@playground/game-registry",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./browser": "./src/browser.js",
+    "./core": "./src/core.js",
+    "./rules": "./src/rules.js"
+  },
+  "dependencies": {
+    "@playground/game-sdk": "1.0.0",
+    "@playground/game-star": "1.0.0",
+    "@playground/game-bridge": "1.0.0",
+    "@playground/game-lights": "1.0.0",
+    "@playground/game-echo": "1.0.0",
+    "@playground/game-catch": "1.0.0",
+    "@playground/game-bounce": "1.0.0",
+    "@playground/game-pairs": "1.0.0",
+    "@playground/game-merge": "1.0.0",
+    "@playground/game-rings": "1.0.0",
+    "@playground/game-snake": "1.0.0",
+    "@playground/game-boxes": "1.0.0",
+    "@playground/game-pipes": "1.0.0",
+    "@playground/game-jump": "1.0.0",
+    "@playground/game-bubbles": "1.0.0",
+    "@playground/game-slide": "1.0.0",
+    "@playground/game-rhythm": "1.0.0",
+    "@playground/game-constellation": "1.0.0",
+    "@playground/game-tower": "1.0.0",
+    "@playground/game-rain": "1.0.0",
+    "@playground/game-mines": "1.0.0"
+  }
+}

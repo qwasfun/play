@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createD1} from './helpers/d1.mjs';
 import worker,{createHandler,reportScore,cleanupIfDue} from '../worker/index.js';
-import {dailyGame,dailySeed} from '../dist/core.js';
-import {games} from '../dist/catalog.js';
-import {validateResult} from '../dist/ranking-rules.js';
+import {dailyGame,dailySeed} from '@playground/game-registry/core';
+import {games} from '@playground/game-registry';
+import {validateResult} from '@playground/game-registry/rules';
 
 function setup(iso='2026-10-26T12:00:00+08:00'){
   const db=createD1(),env={DB:db,ALLOWED_ORIGINS:'https://play.example.test',IP_HASH_SECRET:'test-only-secret'},events=[],pending=[];
@@ -153,7 +153,7 @@ for(const game of games)test(`${game.id}: valid representative result reaches th
 
 test('actual untouched games finish with results accepted by the shared validation',async()=>{
   for(const game of games){
-    const module=await import(`../dist/games/${game.id}.js`);let result;
+    const module=await import(`@playground/game-${game.id}`);let result;
     const instance=module.createGame({seed:123,onFinish:r=>{result=r;}});
     for(let i=0;i<=Math.ceil(game.limit*60)+1&&!result;i++)instance.update(1/60);
     assert.ok(result,game.id+' should finish');assert.deepEqual(validateResult(game.id,result),[],game.id);instance.destroy?.();

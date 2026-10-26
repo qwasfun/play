@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const base=new URL('./',page.url()),origin=base.origin,context=page.context(),checks=[],errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(10000);
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -32,15 +50,15 @@ async(page)=>{
     },base.href);
     await page.goto(url('#/'));await page.reload();await ready();
     await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
-    const cold=await page.evaluate(()=>({imports:performance.getEntriesByType('resource').filter(entry=>entry.initiatorType==='script'&&/\/games\/[^/]+\.js(?:\?|$)/.test(entry.name)).map(entry=>entry.name),status:[...document.querySelectorAll('[data-offline-status]')].find(node=>node.dataset.state==='ready')?.textContent}));
+    const cold=await page.evaluate(()=>({imports:performance.getEntriesByType('resource').filter(entry=>entry.initiatorType==='script'&&Object.entries(window.__qaModules).some(([key,file])=>key.startsWith('games/')&&new URL(file,location.href).href===entry.name)).map(entry=>entry.name),status:[...document.querySelectorAll('[data-offline-status]')].find(node=>node.dataset.state==='ready')?.textContent}));
     check('homepage_prepared_without_opening_a_game',cold.imports.length===0&&cold.status.includes('20'),cold);
-    const catalog=await page.evaluate(async base=>{const{games}=await import(new URL('catalog.js',base));return games;},base.href);
+    const catalog=await page.evaluate(async base=>{const{games}=await window.__qaImport(new URL('catalog.js',base));return games;},base.href);
     const cached=await page.evaluate(async()=>{
       const registration=await navigator.serviceWorker.ready;
       const status=await new Promise((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>reject(Error('status timeout')),5000);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();resolve(event.data);};registration.active.postMessage({type:'OFFLINE_STATUS'},[channel.port2]);});
       const names=await caches.keys(),name=names.find(value=>value.endsWith(status.version));
       const entries=name?(await(await caches.open(name)).keys()).map(request=>new URL(request.url).pathname):[];
-      return{...status,name,entries,games:entries.filter(path=>/\/games\/[^/]+\.js$/.test(path)).length};
+      return{...status,name,entries,games:entries.filter(path=>Object.entries(window.__qaModules).some(([key,file])=>key.startsWith('games/')&&new URL(file,location.href).pathname===path)).length};
     });
     check('active_worker_confirms_all_twenty_modules_cached',cached.ready===true&&cached.games===20&&cached.assetCount>=32,{version:cached.version,assetCount:cached.assetCount,gameModules:cached.games});
     try{await cdp.send('Page.enable');installability=await cdp.send('Page.getInstallabilityErrors');}catch(error){installability={unavailable:String(error.message||error)};}
@@ -109,7 +127,7 @@ async(page)=>{
     await page.setViewportSize({width:844,height:390});await page.getByRole('button',{name:'继续游戏 ▶',exact:true}).waitFor();
     check('offline_rotation_preserves_game_progress',await score()===progressed);
     await activate(page.getByRole('button',{name:'继续游戏 ▶',exact:true}));
-    const mines=await page.evaluate(async base=>{const{generateMines}=await import(new URL('games/mines.js',base));return generateMines(123).mines;},base.href);
+    const mines=await page.evaluate(async base=>{const{generateMines}=await window.__qaImport(new URL('games/mines.js',base));return generateMines(123).mines;},base.href);
     for(let cell=0;cell<16;cell++)if(!mines.includes(cell)){
       if(await page.locator('.result-card').isVisible())break;
       await tapCanvas(156+cell%4*96,96+Math.floor(cell/4)*96);
@@ -119,7 +137,7 @@ async(page)=>{
     await activate(page.getByRole('button',{name:'退出全屏',exact:true}));await page.reload();
     check('offline_high_score_survives_reload',(await page.locator('#best-record').textContent()).includes(String(best)));
 
-    const challenge=await page.evaluate(async base=>{const{beijingDate,dailyGame,playLink}=await import(new URL('core.js',base));const date=beijingDate(Date.now()-86400000),id=dailyGame(date);return{date,id,link:playLink(id,date)};},base.href);
+    const challenge=await page.evaluate(async base=>{const{beijingDate,dailyGame,playLink}=await window.__qaImport(new URL('core.js',base));const date=beijingDate(Date.now()-86400000),id=dailyGame(date);return{date,id,link:playLink(id,date)};},base.href);
     await page.goto(url(challenge.link));await page.reload();await page.locator('[data-action="start"]').waitFor();
     const firstBoard=await page.locator('canvas').evaluate(canvas=>canvas.toDataURL());
     await page.reload();await page.locator('[data-action="start"]').waitFor();
@@ -128,14 +146,14 @@ async(page)=>{
     await network(false);await page.goto(url('#/'));await page.reload();await ready();
     check('returning_online_keeps_ready_state_and_collection',await page.evaluate(()=>navigator.onLine===true)&&await page.locator('.game-card').count()===20);
     const damaged=await page.evaluate(async({name,base})=>{
-      const cache=await caches.open(name),target=new URL('games/star.js',base).href;
+      const cache=await caches.open(name),target=new URL(window.__qaModules['games/star.js'],base).href;
       const removed=await cache.delete(target),marker=await cache.match(new URL('__offline_complete__',base));
       window.dispatchEvent(new Event('online'));return{removed,markerStillPresent:!!marker};
     },{name:cached.name,base:base.href});
     await page.waitForFunction(()=>[...document.querySelectorAll('[data-offline-status]')].some(node=>node.dataset.state==='error'));
     check('missing_module_invalidates_ready_even_with_complete_marker',damaged.removed&&damaged.markerStillPresent&&await page.locator('[data-offline-retry]').first().isVisible(),damaged);
     await activate(page.locator('[data-offline-retry]').first());await ready();
-    const repaired=await page.evaluate(async({name,base})=>!!await(await caches.open(name)).match(new URL('games/star.js',base).href),{name:cached.name,base:base.href});
+    const repaired=await page.evaluate(async({name,base})=>!!await(await caches.open(name)).match(new URL(window.__qaModules['games/star.js'],base).href),{name:cached.name,base:base.href});
     check('retry_prepares_the_complete_collection_again',repaired);
     await cdp.send('Network.clearBrowserCache');await network(true);
     await page.goto(url('#/play/star'));const repairedNavigation=await page.reload();await page.locator('[data-action="start"]').waitFor();

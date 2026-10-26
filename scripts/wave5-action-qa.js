@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin=new URL(page.url()).origin,checks=[],errors=[];
   page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(8000);
   await page.addInitScript(()=>{
@@ -15,7 +33,7 @@ async(page)=>{
   async function at(time){await page.waitForFunction(t=>performance.now()>=window.__gameStartedAt+t*1000,time,{timeout:6500});}
   async function open(id){await page.setViewportSize({width:844,height:390});await page.goto(origin+`/#/play/${id}`);await page.reload();await page.locator('[data-action="start"]').waitFor();}
   await open('tower');await page.getByRole('button',{name:'全屏游戏',exact:true}).tap();await page.locator('.play-main.is-fullscreen').waitFor();
-  const stages=await page.evaluate(async()=>{const{generateTower,nextPerfectTowerTime}=await import('./games/tower.js');let after=0;return generateTower(123).map(stage=>{const time=nextPerfectTowerTime(stage,300,after);after=time+.6;return time;});});
+  const stages=await page.evaluate(async()=>{const{generateTower,nextPerfectTowerTime}=await window.__qaImport('./games/tower.js');let after=0;return generateTower(123).map(stage=>{const time=nextPerfectTowerTime(stage,300,after);after=time+.6;return time;});});
   await page.locator('[data-action="start"]').tap();
   let previous=0;
   for(let i=0;i<stages.length;i++){
@@ -34,7 +52,7 @@ async(page)=>{
   check('tower_restart_resets_score',await score()===0&&(await page.locator('#live-extra').textContent())==='♥ ♥ ♥');
 
   await open('rain');await page.getByRole('button',{name:'全屏游戏',exact:true}).tap();await page.locator('.play-main.is-fullscreen').waitFor();
-  const drops=await page.evaluate(async()=>{const{generateRainSchedule}=await import('./games/rain.js');return generateRainSchedule(123);});
+  const drops=await page.evaluate(async()=>{const{generateRainSchedule}=await window.__qaImport('./games/rain.js');return generateRainSchedule(123);});
   await page.locator('[data-action="start"]').tap();
   for(let i=0;i<drops.length;i++){
     await at(drops[i].crossTime-.18);

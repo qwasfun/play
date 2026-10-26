@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin=new URL(page.url()).origin,checks=[],errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(8000);
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -17,7 +35,7 @@ async(page)=>{
     await page.locator('[data-action="start"]').tap();await page.locator('canvas').scrollIntoViewIfNeeded();
   }
   await page.setViewportSize(portrait);await page.goto(origin+'/#/');await page.reload();
-  const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
+  const catalog=await page.evaluate(async()=>{const{games}=await window.__qaImport('./catalog.js');return games;});
   const latest=catalog.filter(g=>g.isNew).map(g=>g.id);
   check('catalog_cards_and_latest_badges',await page.locator('.game-card').count()===catalog.length&&await page.locator('.new-badge').count()===latest.length);
   check('latest_games_sort_first',(await page.locator('.game-card').evaluateAll((cards,n)=>cards.slice(0,n).map(card=>card.dataset.game),latest.length)).join(',')===latest.join(','));
@@ -26,7 +44,7 @@ async(page)=>{
   check('all_catalog_favorites_survive_reload',await page.locator('.game-card').count()===catalog.length);
 
   const bubblePlan=await page.evaluate(async()=>{
-    const{generateBubbles,findGroup,collapseBubbles}=await import('./games/bubbles.js');
+    const{generateBubbles,findGroup,collapseBubbles}=await window.__qaImport('./games/bubbles.js');
     return generateBubbles(123).map(source=>{
       let board=[...source];const moves=[];
       while(board.some(value=>value!==null)){
@@ -54,7 +72,7 @@ async(page)=>{
   check('bubbles_touch_clears_three_seeded_boards',await score()===bubbleExpected&&(await page.locator('#live-extra').textContent())==='60 / 60',{score:await score(),expected:bubbleExpected});
   await page.reload();check('bubbles_best_survives_reload',(await page.locator('#best-record').textContent()).includes(String(bubbleExpected)));
 
-  const slidePuzzle=await page.evaluate(async()=>{const{generateSlide}=await import('./games/slide.js');return generateSlide(123);});
+  const slidePuzzle=await page.evaluate(async()=>{const{generateSlide}=await window.__qaImport('./games/slide.js');return generateSlide(123);});
   const slideTap=cell=>tapAt(180+cell%3*120,118+Math.floor(cell/3)*120);
   await open('slide');const slideInitial=await score();
   await cancelAt(180+slidePuzzle.solution[0]%3*120,118+Math.floor(slidePuzzle.solution[0]/3)*120);

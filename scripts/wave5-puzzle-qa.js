@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin=new URL(page.url()).origin,checks=[],errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(8000);
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -23,13 +41,13 @@ async(page)=>{
   await page.setViewportSize(portrait);await page.goto(origin+'/#/');await page.reload();
   check('twenty_cards_and_four_badges',await page.locator('.game-card').count()===20&&await page.locator('.new-badge').count()===4);
   check('latest_four_games_sort_first',(await page.locator('.game-card').evaluateAll(cards=>cards.slice(0,4).map(card=>card.dataset.game))).join(',')==='constellation,tower,rain,mines');
-  const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
+  const catalog=await page.evaluate(async()=>{const{games}=await window.__qaImport('./catalog.js');return games;});
   for(const game of catalog){const favorite=page.getByLabel('收藏'+game.title,{exact:true});if(await favorite.count())await favorite.tap();}
   await page.getByRole('link',{name:'我的收藏',exact:true}).tap();await page.reload();
   check('all_twenty_favorites_survive_reload',await page.locator('.game-card').count()===20);
 
   await open('constellation');
-  const starPuzzles=await page.evaluate(async()=>{const{generateConstellations}=await import('./games/constellation.js');return generateConstellations(123);});
+  const starPuzzles=await page.evaluate(async()=>{const{generateConstellations}=await window.__qaImport('./games/constellation.js');return generateConstellations(123);});
   const starTap=(puzzle,node)=>tapAt(puzzle.nodes[node].x,puzzle.nodes[node].y);
   const first=starPuzzles[0],a=first.solution[0],b=first.solution[1],c=first.solution[2];
   await starTap(first,a);await starTap(first,b);
@@ -74,7 +92,7 @@ async(page)=>{
   await page.locator('.result-card').waitFor();check('constellation_keyboard_clears_three_graphs',await score()===700);
 
   await open('mines',{fullscreen:true});
-  const minePuzzle=await page.evaluate(async()=>{const{generateMines}=await import('./games/mines.js');return generateMines(123);});
+  const minePuzzle=await page.evaluate(async()=>{const{generateMines}=await window.__qaImport('./games/mines.js');return generateMines(123);});
   const minePoint=cell=>({x:156+cell%4*96,y:96+Math.floor(cell/4)*96});
   const mineTap=cell=>{const p=minePoint(cell);return tapAt(p.x,p.y);};
   const mineHold=(cell,ending)=>{const p=minePoint(cell);return holdAt(p.x,p.y,ending);};

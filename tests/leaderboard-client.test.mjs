@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createLeaderboardClient} from '../dist/leaderboard-client.js';
-import {createAnalytics} from '../dist/analytics.js';
+import {createLeaderboardClient} from '../apps/arcade/src/leaderboard-client.js';
+import {createAnalytics} from '../apps/arcade/src/analytics.js';
 
 test('API client includes cookies, uses the supplied seed and preserves field errors',async()=>{
   const calls=[];const client=createLeaderboardClient({baseUrl:'https://api.example.test',fetcher:async(url,options)=>{

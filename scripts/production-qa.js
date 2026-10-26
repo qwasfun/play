@@ -1,4 +1,22 @@
 async(page)=>{
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin='https://play.185036.xyz',api='https://api-play.185036.xyz',context=page.context(),checks=[],errors=[];
   if(new URL(page.url()).origin!==origin)throw Error('请在指定生产游戏网站的独立会话运行');
   page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));
@@ -19,7 +37,7 @@ async(page)=>{
   await page.locator('[data-action="start"]').click();const startResponse=await started;
   check('production_run_created',startResponse.status()===201);const run=(await startResponse.json()).run;
   await page.waitForFunction(()=>!document.querySelector('#pause').disabled);
-  const mines=await page.evaluate(async seed=>(await import('./games/mines.js')).generateMines(seed).mines,run.seed);
+  const mines=await page.evaluate(async seed=>(await window.__qaImport('./games/mines.js')).generateMines(seed).mines,run.seed);
   const submitted=page.waitForResponse(r=>r.url()===`${api}/v1/runs/${run.id}/result`&&r.request().method()==='POST');
   await page.locator('canvas').scrollIntoViewIfNeeded();
   for(let cell=0;cell<16;cell++){

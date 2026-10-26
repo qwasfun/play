@@ -1,16 +1,17 @@
 # 三分钟游乐场
 
-中文、免登录、手机和电脑均可游玩的二十款小游戏网站。使用原生 ES Modules、Canvas 2D 和原创 SVG，无第三方运行依赖。
+中文、免登录、手机和电脑均可游玩的二十款小游戏网站。采用 npm Workspaces 管理独立游戏包，使用 JavaScript、Canvas 2D 和原创 SVG；Vite 仅用于开发和构建。
 
 ## 本地运行
 
 需要 Node.js 24.9 或更新版本（接口测试使用内置 SQLite）。在本目录执行：
 
 ```powershell
+npm ci
 npm run dev
 ```
 
-打开 http://127.0.0.1:4175 。当前服务绑定本机所有网络接口；手机与电脑连接同一局域网时，可使用电脑的局域网 IP 和 4175 端口访问（受本机防火墙设置影响）。
+源码开发打开 http://127.0.0.1:4174 。服务绑定本机所有网络接口；手机与电脑连接同一局域网时，可使用电脑的局域网 IP 和对应端口访问（受本机防火墙设置影响）。
 
 ```powershell
 npm run prepare:pwa
@@ -18,7 +19,7 @@ npm test
 npm run check
 ```
 
-`npm run dev` 会先生成完整离线清单。修改运行资源后、检查和发布前也应运行 `npm run prepare:pwa`；`npm run check` 会拒绝陈旧清单。GitHub Pages 工作流在上传前重新生成清单，文本哈希统一换行格式以兼容 Windows 与 Linux。
+`npm run dev` 在 4174 端口提供源码热更新预览，不注册离线缓存。验收离线功能时先执行 `npm run build`，再执行 `npm run preview`，访问 4175 端口。两种服务使用不同来源，避免旧 Service Worker 覆盖开发页面。`npm test` 会先构建全部游戏库和网站，再运行游戏、公共能力和集成测试。构建自动生成完整离线清单，`npm run check` 会拒绝陈旧清单；文本哈希统一换行格式以兼容 Windows 与 Linux。
 
 ## 安装与离线游玩
 
@@ -65,7 +66,7 @@ npm run check
 
 第一轮针对原四款游戏，在独立的 Chromium 手机触屏模拟环境完成 34 项规则与输入测试、23 个触控场景、32 个横竖屏布局场景。当前测试已扩充至二十款游戏；覆盖真实浏览器触屏事件、多指、长按后拖出、系统取消、旋转时取消输入及恢复。尺寸包含 375×812、812×375、390×844、844×390、320×568、568×320、768×1024、1024×768。实体 iOS/Android 尚未实测。
 
-启动本地服务后，可使用 Playwright CLI 重跑手机检查（需已安装 Chrome）：
+执行 `npm run build` 和 `npm run preview` 后，可使用 Playwright CLI 重跑手机检查（需已安装 Chrome）：
 
 ```powershell
 npx --yes --package @playwright/cli playwright-cli -s=mobileqa open http://127.0.0.1:4175 --mobile --browser chrome
@@ -105,15 +106,39 @@ npx --yes --package @playwright/cli playwright-cli -s=mobileqa close
 
 ## 结构与扩展
 
-`dist/catalog.js` 定义游戏目录；游戏模块按需加载，接口是 `createGame({seed,onFinish,sound})`，返回 `update(dt)`、`draw(ctx)`、`input(type,payload)`、`getState()` 和 `destroy()`。画布采用 600×480 逻辑坐标，统一运行器以 1/60 秒步长更新，页面负责生命周期与成绩存储。
+| 工作区 | 职责 |
+| --- | --- |
+| `apps/arcade` | 首页、路由、收藏、历史记录、每日挑战、排行榜界面、统计和 PWA |
+| `games/<id>` | 每款游戏自己的引擎、元信息、原创插画、成绩规则、测试与说明 |
+| `packages/game-sdk` | JSDoc 接口、随机数、绘图、SVG 和通用成绩校验机制，不读取游戏目录 |
+| `packages/game-runtime` | 固定步长、输入、开始/暂停/重开/撤销、全屏和销毁；通过宿主回调接入存储与网络 |
+| `packages/game-registry` | 明确的游戏顺序、纯逻辑规则集、历史挑战日历，以及浏览器插画与动态加载入口 |
 
-部署入口为 `dist/index.html`；`.openai/hosting.json` 保存本项目 Sites 标识。仅此目录为发布范围，截图和临时诊断保存在已忽略的 `artifacts/`。
+每款游戏名为 `@playground/game-<id>`，只依赖 SDK，不得引用其他游戏、注册表或游乐场。主入口提供 `createGame({seed,onFinish,sound})`，返回 `update(dt)`、`draw(ctx)`、`input(type,payload)`、`getState()`、`destroy()`；`/manifest`、`/art`、`/rules` 分别导出 `manifest`、`art()`、`rules`。`rules` 提供 validate、stored、compare、format、clean、ranking，以及可选 seedCap；服务端使用不含 DOM/CSS 的纯逻辑入口。新增计数字段及中文标签由游戏自己的规则配置声明。
+
+画布仍为 600×480，运行器按 1/60 秒更新。单游戏开发、测试和构建示例：
+
+```powershell
+npm run dev -w @playground/game-star
+npm test -w @playground/game-star
+npm run build -w @playground/game-star
+```
+
+单游戏预览默认在 5173 端口，复用正式运行器，只加载目标游戏；调试成绩使用 `tiny-break-arcade:dev:<id>`，不连接排行榜、统计或 Service Worker。包构建生成自身 `dist/` 中的 ESM 库及样式，包含 SDK 所需代码，不构建其他游戏。所有包和库均保持 private，不发布到 npm。
+
+注册新游戏时添加游戏包、将其依赖与入口加入注册表，并保持游戏顺序明确；每日挑战扩容另增日期分界，不改写历史映射。执行 `npm run check:boundaries` 检查跨游戏引用、越过公开入口、循环依赖和源码引用构建产物。
+
+根目录 `dist/` 仅为自动生成、不提交的网页产物，禁止手工修改。构建清单 `module-map.json` 记录源入口到哈希文件的映射，浏览器验收脚本据此定位模块。游戏引擎按需执行，离线安装仍会完整缓存全部二十款游戏。发布范围仅为根目录 `dist/`；本项目通过 GitHub Pages 发布，不使用 ChatGPT Sites 发布。
+
+2026-10-27 架构重构验收：261 项自动测试通过，原有 237 项场景全部保留，新增规则扩展与二十款 ESM 产物契约检查。各游戏工作区独立测试和构建通过；浏览器通过 59 项离线检查、80 项本地排行榜检查、11 项全屏检查（含 160 个布局/旋转组合）及 8 项单游戏预览检查。A/B 更新检查通过 14 项，并使用重构前提交 `24ce5a2` 再次通过 14 项旧版本到新架构的升级检查。手机为 Chromium 触屏模拟，未做实体 iOS/Android 验收。
+
+如需重测这次真实版本迁移，构建当前网站后运行 `node scripts/pwa-update-server.mjs --from-ref 24ce5a2`，在独立浏览器会话打开其打印地址，再执行 `scripts/pwa-update-qa.js`。不带参数时，两份测试版本均来自当前构建。单游戏预览可使用独立手机模拟会话执行 `scripts/single-game-qa.js`；脚本使用浏览器时钟加速完成整局，并检查只加载星轨邮差、存储隔离和无外部服务请求。
 
 ## GitHub Pages 部署
 
 GitHub 仓库为 https://github.com/qwasfun/play ，网站域名为 https://play.185036.xyz/ 。
 
-`.github/workflows/pages.yml` 在推送 `main` 或手动运行时，使用 Node.js 24 执行 `npm test` 和 `npm run check`，检查通过后将 `dist/` 发布到 GitHub Pages。网站不需要额外构建或安装运行依赖；首页、模块和游戏均使用相对路径及 hash 路由，兼容仓库子路径和独立域名。
+`.github/workflows/pages.yml` 在推送 `main` 或手动运行时，使用 Node.js 24 和 `npm ci` 安装工作区依赖，通过 `npm test` 构建并测试，执行 `npm run check` 和 `npm run api:build` 后将根目录 `dist/` 发布到 GitHub Pages。Worker 仅打包验证，不随 Pages 部署。首页、模块和游戏采用相对路径及 hash 路由，兼容仓库子路径和独立域名。
 
 首次部署需在仓库 **Settings → Pages** 中将 Source 设为 **GitHub Actions**，将 Custom domain 保存为 `play.185036.xyz`。DNS 应设置 `CNAME` 记录 `play` 指向 `qwasfun.github.io`，目标不带 `/play`。等待 GitHub 域名检查通过并签发证书后，启用 **Enforce HTTPS**。
 
@@ -135,13 +160,15 @@ npm run api:setup
 npm run api:dev
 ```
 
-另开终端执行 `npm run dev`，在 http://127.0.0.1:4175 打开任意游戏，再点击“查看排行榜”。本机网页自动连接 http://127.0.0.1:8787；两个地址需使用同一种主机名（都用 127.0.0.1 或都用 localhost）。本地数据库在 `worker/.wrangler/`，日志与打包产物在 `output/worker/`，均不提交或发布。`api:setup` 只迁移本地库，`api:build` 只打包检查，两者不会部署生产。
+另开终端执行 `npm run dev`，在 http://127.0.0.1:4174 打开任意游戏，再点击“查看排行榜”。本机网页自动连接 http://127.0.0.1:8787；两个地址需使用同一种主机名（都用 127.0.0.1 或都用 localhost）。本地数据库在 `worker/.wrangler/`，日志与打包产物在 `output/worker/`，均不提交或发布。`api:setup` 只迁移本地库，`api:build` 只打包检查，两者不会部署生产。
 
 ```powershell
 npm test
 npm run prepare:pwa
 npm run check
 npm run api:build
+npm run build
+npm run preview
 npx --yes --package @playwright/cli playwright-cli -s=rankqa open http://127.0.0.1:4175/#/play/mines --browser chrome
 npx --yes --package @playwright/cli playwright-cli --raw -s=rankqa run-code --filename scripts/leaderboard-qa.js
 ```
@@ -169,7 +196,7 @@ npx --yes --package @playwright/cli playwright-cli --raw -s=rankqa run-code --fi
 
 ### Umami 与生产接入
 
-`dist/site-config.js` 保存公开配置，生产 `leaderboardApi` 为 `https://api-play.185036.xyz`。Umami `websiteId` 保持为空，因此当前不会连接真实统计网站。默认追踪脚本为 Umami Cloud，也可配置自建脚本地址。前端仅发送 `game_start`、`game_finish`、`leaderboard_view`，属性限制为游戏、模式、规则版本、得分、用时和通关状态，不发送昵称、匿名身份或会话凭证。脚本尚未加载时暂存少量事件，加载失败不影响游玩。
+`apps/arcade/src/site-config.js` 保存公开配置，生产 `leaderboardApi` 为 `https://api-play.185036.xyz`。Umami `websiteId` 保持为空，因此当前不会连接真实统计网站。默认追踪脚本为 Umami Cloud，也可配置自建脚本地址。前端仅发送 `game_start`、`game_finish`、`leaderboard_view`，属性限制为游戏、模式、规则版本、得分、用时和通关状态，不发送昵称、匿名身份或会话凭证。脚本尚未加载时暂存少量事件，加载失败不影响游玩。
 
 Worker 在成功入库后异步发送 `score_accepted`；配置 `UMAMI_WEBSITE_ID` 和 `UMAMI_SEND_URL`，默认采集端点为 `https://gateway.umami.is/api/send`。统计按尽力发送处理，失败记录通用日志，不回滚成绩、不阻塞提交；以 D1 榜单作为成绩依据，不使用 Umami 的事件数作为正式纪录。统计管理凭证无需提供给网页。
 

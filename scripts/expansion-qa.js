@@ -1,10 +1,28 @@
 async (page) => {
+  // Resolve QA imports through Vite's manifest; hashed output names are not API paths.
+  const buildMap=await (await page.request.get(new URL('module-map.json',page.url()).href)).json();
+  const qaModules={};
+  for(const[key,entry]of Object.entries(buildMap)){
+    if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
+    if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+  }
+  const installQaImports=map=>{
+    window.__qaModules=map;
+    window.__qaImport=specifier=>{
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      if(!map[key])throw Error('验收模块：未找到 '+key);
+      return import(new URL(map[key],new URL('./',location.href)).href);
+    };
+  };
+  await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
+
   const origin=new URL(page.url()).origin,checks=[],errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(8000);
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.addInitScript(()=>{const original=crypto.getRandomValues.bind(crypto);crypto.getRandomValues=array=>{if(array instanceof Uint32Array&&array.length===1){array[0]=location.hash.includes('/pairs')?123:1;return array;}return original(array);};});
   const cdp=await page.context().newCDPSession(page);
-  const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
+  const catalog=await page.evaluate(async()=>{const{games}=await window.__qaImport('./catalog.js');return games;});
   const portrait={width:390,height:844},landscape={width:844,height:390};
   const check=(name,passed,detail={})=>{checks.push({name,passed:!!passed,...detail});if(!passed)throw Error(JSON.stringify(checks.at(-1)));};
   const names={catch:'果园接接乐',bounce:'弹珠打砖块',pairs:'翻翻小花园',merge:'数字合合乐'};
@@ -61,7 +79,7 @@ async (page) => {
   await page.screenshot({path:'output/playwright/new-merge-landscape.png'});
 
   await open('catch');
-  const fruit=await page.evaluate(async()=>{const{generateHarvest}=await import('./games/catch.js');return generateHarvest(1)[0];});
+  const fruit=await page.evaluate(async()=>{const{generateHarvest}=await window.__qaImport('./games/catch.js');return generateHarvest(1)[0];});
   const p=await point(300,400),target=await point(fruit.x,400);await touch('touchStart',[p]);await touch('touchMove',[target]);await touch('touchEnd');
   await page.waitForFunction(()=>Number(document.querySelector('#live-score').textContent)>=10,{timeout:6500});
   check('orchard_drag_collects_fruit',await score()>=10);

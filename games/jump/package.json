@@ -1,0 +1,20 @@
+{
+  "name": "@playground/game-jump",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./manifest": "./src/manifest.js",
+    "./art": "./src/art.js",
+    "./rules": "./src/rules.js"
+  },
+  "dependencies": {
+    "@playground/game-sdk": "1.0.0"
+  },
+  "scripts": {
+    "dev": "node ../../scripts/game.mjs dev",
+    "test": "node --test tests/*.test.mjs",
+    "build": "node ../../scripts/game.mjs build"
+  }
+}

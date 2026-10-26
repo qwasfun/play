@@ -26,12 +26,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Test game rules and input handling
+      - name: Install workspace dependencies
+        run: npm ci
+      - name: Build all games and test rules, input and integration
         run: npm test
-      - name: Prepare complete offline game collection
-        run: npm run prepare:pwa
       - name: Check JavaScript syntax
         run: npm run check
+      - name: Verify backend bundle without deploying
+        run: npm run api:build
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload website

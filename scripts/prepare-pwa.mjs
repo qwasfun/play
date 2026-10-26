@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 
 const digest=buffer=>createHash('sha256').update(buffer).digest('hex');
 const canonical=(name,bytes)=>name.endsWith('.png')?bytes:Buffer.from(bytes.toString('utf8').replace(/\r\n/g,'\n'));
-const runtime=/\.(?:html|js|css|svg|png|webmanifest)$/i;
+const runtime=/\.(?:html|js|css|svg|png|webmanifest|json)$/i;
 export async function createPrecache(root){
   const entries=[];
   async function visit(directory){

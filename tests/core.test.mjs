@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START,SIXTEEN_DAILY_START,TWENTY_DAILY_START} from '../dist/core.js';
-import {createStore} from '../dist/storage.js';
+import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START,SIXTEEN_DAILY_START,TWENTY_DAILY_START} from '@playground/game-registry/core';
+import {createStore} from '../apps/arcade/src/storage.js';
 
 test('Beijing midnight changes date and daily rotation across UTC boundary',()=>{
   assert.equal(beijingDate(Date.parse('2026-10-25T15:59:59Z')),'2026-10-25');

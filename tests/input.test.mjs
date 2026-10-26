@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {bindGameInput} from '../dist/input.js';
-import {createGame as bridge} from '../dist/games/bridge.js';
-import {createGame as lights,toggledBoard} from '../dist/games/lights.js';
+import {bindGameInput} from '@playground/game-runtime/input';
+import {createGame as bridge} from '@playground/game-bridge';
+import {createGame as lights,toggledBoard} from '@playground/game-lights';
 class Canvas extends EventTarget {
   rect={left:20,top:40,width:300,height:240};
   getBoundingClientRect(){return this.rect;}
