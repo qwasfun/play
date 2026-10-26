@@ -13,12 +13,13 @@ async(page)=>{
   async function swipe(direction){const end=ends[direction];await touch('touchStart',[await point(300,240)]);await touch('touchMove',[await point(...end)]);await touch('touchEnd');}
   async function rotate(){await page.setViewportSize(landscape);await page.waitForTimeout(120);}
   await page.setViewportSize(portrait);await page.goto(origin);await page.reload();
-  check('twelve_cards_and_latest_four',await page.locator('.game-card').count()===12&&await page.locator('.new-badge').count()===4);
-  check('latest_four_sort_first',(await page.locator('.game-card').evaluateAll(cards=>cards.slice(0,4).map(card=>card.dataset.game))).join(',')==='rings,snake,boxes,pipes');
   const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
+  const latest=catalog.filter(g=>g.isNew).map(g=>g.id);
+  check('catalog_cards_and_latest_badges',await page.locator('.game-card').count()===catalog.length&&await page.locator('.new-badge').count()===latest.length);
+  check('latest_games_sort_first',(await page.locator('.game-card').evaluateAll((cards,n)=>cards.slice(0,n).map(card=>card.dataset.game),latest.length)).join(',')===latest.join(','));
   for(const game of catalog){const button=page.getByLabel('收藏'+game.title,{exact:true});if(await button.count())await button.tap();}
   await page.getByRole('link',{name:'我的收藏',exact:true}).tap();await page.reload();
-  check('all_twelve_favorites_survive_reload',await page.locator('.game-card').count()===12);
+  check('all_catalog_favorites_survive_reload',await page.locator('.game-card').count()===catalog.length);
 
   await open('boxes');
   await touch('touchStart',[await point(300,240)]);await touch('touchMove',[await point(...ends.U)]);await rotate();await touch('touchEnd');
@@ -46,9 +47,10 @@ async(page)=>{
     if(index>=10)await page.screenshot({path:'output/playwright/wave3-pipes.png'});
   }
   await page.waitForTimeout(120);check('pipes_touch_rotations_connect_outlet',await page.locator('.result-card').isVisible()&&await score()===300+Math.max(0,120-turns*2),{turns,score:await score()});
-  check('twelfth_game_wraps_to_first',await page.getByRole('link',{name:'下一款游戏 →',exact:true}).getAttribute('href')==='#/play/star');
+  const next=catalog[(catalog.findIndex(g=>g.id==='pipes')+1)%catalog.length].id;
+  check('pipes_next_game_follows_catalog',await page.getByRole('link',{name:'下一款游戏 →',exact:true}).getAttribute('href')===`#/play/${next}`);
   await page.getByRole('link',{name:'下一款游戏 →',exact:true}).tap();await page.locator('[data-action="start"]').waitFor({state:'visible'});
-  check('fresh_result_link_touch_navigates_once',page.url().endsWith('#/play/star'));
+  check('fresh_result_link_touch_navigates_once',page.url().endsWith(`#/play/${next}`));
 
   await open('rings');const rings=await page.evaluate(async()=>{const{generateRings}=await import('./games/rings.js');return generateRings(1);});
   await touch('touchStart',[await point(400,200)]);await touch('touchMove',[await point(330,290)]);await touch('touchCancel');await page.waitForTimeout(180);

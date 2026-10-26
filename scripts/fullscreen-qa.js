@@ -47,7 +47,7 @@ async(page)=>{
       await page.setViewportSize({width,height});
     }
   }
-  check('all_games_fullscreen_layout_and_rotation',layouts===96,{layouts});
+  check('all_games_fullscreen_layout_and_rotation',layouts===games.length*sizes.length,{layouts});
   await page.setViewportSize({width:844,height:390});await open('bridge');await page.locator('[data-action="start"]').tap();
   const cdp=await page.context().newCDPSession(page),canvas=await page.locator('canvas').boundingBox();
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:canvas.x+canvas.width/2,y:canvas.y+canvas.height/2,id:1}]});

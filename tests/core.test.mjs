@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START} from '../dist/core.js';
+import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START,SIXTEEN_DAILY_START} from '../dist/core.js';
 import {createStore} from '../dist/storage.js';
 
 test('Beijing midnight changes date and daily rotation across UTC boundary',()=>{
@@ -76,13 +76,26 @@ test('all catalog favorites and records survive reload, recent remains bounded',
   assert.deepEqual(again.data.favorites,GAME_IDS);assert.equal(again.data.recent.length,4);assert.equal(Object.keys(again.data.best).length,GAME_IDS.length);
   for(const id of GAME_IDS)assert.equal(parseRoute(playLink(id)).id,id);
 });
-test('twelve-game daily epoch preserves first eight-game cycle and covers the full catalogue',()=>{
+test('twelve-game daily epoch preserves first eight-game cycle and its twelve-game cycle',()=>{
   const old=['catch','bounce','pairs','merge','star','bridge','lights','echo'];
   for(let i=0;i<8;i++){
     const date=new Date(Date.parse(EXPANDED_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10);
     assert.equal(dailyGame(date),old[i]);assert.equal(parseRoute(playLink(old[i],date),'2026-12-01').type,'play');
   }
   const rotation=Array.from({length:12},(_,i)=>dailyGame(new Date(Date.parse(TWELVE_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10)));
-  assert.deepEqual(rotation,['rings','snake','boxes','pipes',...old]);assert.deepEqual(new Set(rotation),new Set(GAME_IDS));
-  assert.equal(dailyGame('2026-11-16'),'rings');
+  assert.deepEqual(rotation,['rings','snake','boxes','pipes',...old]);
+  for(let i=0;i<12;i++){
+    const date=new Date(Date.parse(TWELVE_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10);
+    assert.equal(parseRoute(playLink(rotation[i],date),'2026-12-10').type,'play');
+  }
+});
+test('sixteen-game daily epoch preserves earlier dates and rotates all sixteen games deterministically',()=>{
+  const ids=['jump','bubbles','slide','rhythm','rings','snake','boxes','pipes','catch','bounce','pairs','merge','star','bridge','lights','echo'];
+  assert.equal(dailyGame('2026-11-15'),'echo');
+  for(let i=0;i<32;i++){
+    const date=new Date(Date.parse(SIXTEEN_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10),id=ids[i%16];
+    assert.equal(dailyGame(date),id);assert.equal(parseRoute(playLink(id,date),'2026-12-31').type,'play');
+    assert.equal(dailySeed(date,id),dailySeed(date,id));
+  }
+  assert.deepEqual(new Set(ids),new Set(GAME_IDS));
 });
