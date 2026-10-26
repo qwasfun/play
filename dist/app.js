@@ -6,10 +6,15 @@ import {bindGameInput,watchGameLayout} from './input.js';
 import {bindTouchActivation} from './activation.js';
 import {bindGameFullscreen} from './fullscreen.js';
 import {setupPwa} from './pwa.js';
+import {createLeaderboardClient} from './leaderboard-client.js';
+import {mountLeaderboard,mountSubmission} from './leaderboard-ui.js';
+import {createAnalytics} from './analytics.js';
 
 const app=document.querySelector('#app');
 bindTouchActivation(document);
 const pwa=setupPwa();
+const leaderboard=createLeaderboardClient();
+const track=createAnalytics();
 const notice=document.querySelector('#storage-notice');
 let local;
 try {local=window.localStorage;} catch {local=null;}
@@ -68,7 +73,10 @@ async function gamePage(route,token){
   if(!ctx){overlay.innerHTML='<div class="overlay-card"><h2>浏览器暂不支持游戏画布</h2><p>请使用较新版本的浏览器打开。</p><a class="button primary" href="#/">返回首页</a></div>';return;}
   let engine,status='ready',last=0,accumulator=0,raf=0,lastResult=null,inputControls,overlayPointerDown=false;
   const listeners=new AbortController();
-  const seed=date?dailySeed(date,game.id):crypto.getRandomValues(new Uint32Array(1))[0];
+  let seed=date?dailySeed(date,game.id):crypto.getRandomValues(new Uint32Array(1))[0];
+  let rankedRun=null,lastOnlineRun=null,localReason='',submissionController,startInterrupted=false;
+  listeners.signal.addEventListener('abort',()=>submissionController?.abort(),{once:true});
+  mountLeaderboard(document.querySelector('.game-sidebar'),{client:leaderboard,gameId:game.id,date,track,signal:listeners.signal});
   const pauseButton=document.querySelector('#pause'),restartButton=document.querySelector('#restart'),undoButton=document.querySelector('#undo');
   const scoreEl=document.querySelector('#live-score'),timeEl=document.querySelector('#live-time'),extraEl=document.querySelector('#live-extra'),hintEl=document.querySelector('#game-hint');
   const ui=()=>{const state=engine.getState();scoreEl.textContent=state[game.scoreField||'score']||0;timeEl.innerHTML=`${Math.max(0,Math.ceil(game.limit-(state.elapsed||0)))} <small>秒</small>`;extraEl.textContent=game.lives?lifeText(game,state.lives):(state.extra??game.targetText??'—');if(state.hint&&hintEl.textContent!==state.hint)hintEl.textContent=state.hint;};
@@ -77,11 +85,29 @@ async function gamePage(route,token){
     const improved=store.record(game.id,result,date);document.querySelector('#best-record').textContent=resultText(game.id,date?store.data.daily[date]?.[game.id]:store.data.best[game.id]);
     const headline=result.won?'漂亮，这局完成了！':game.id==='lights'?'灵感，下一局见。':'这局的小快乐，已收好。';
     overlay.hidden=false;overlay.innerHTML=`<div class="overlay-card result-card"><p class="result-kicker">${date?`${dateLabel(date)} · ${date===beijingDate()?'每日':'历史'}挑战`:'NICE LITTLE BREAK'}</p><h2>${headline}</h2><div class="result-score">${resultText(game.id,result)}</div><p class="result-details">${improved?'✦ 创造了新的本机最佳纪录':'每一次尝试，都算数。'} · 用时 ${Math.ceil(result.elapsed)} 秒</p><div class="overlay-actions"><button class="button primary" data-action="again">再玩一次 ↻</button><button class="button secondary" data-action="share">分享成绩 ↗</button></div><div class="result-links"><a href="${playLink(games[(games.indexOf(game)+1)%games.length].id)}">下一款游戏 →</a><a href="#/">返回首页</a></div><div class="share-fallback" hidden></div></div>`;
+    track('game_finish',{game_id:game.id,mode:date?'daily':'normal',rules_version:RULE_VERSION,score:result.score,elapsed:result.elapsed,won:result.won});
+    submissionController=new AbortController();
+    mountSubmission(overlay.querySelector('.result-card'),{client:leaderboard,run:rankedRun,result,reason:localReason,signal:submissionController.signal});
   }
   const make=()=>{engine?.destroy?.();engine=module.createGame({seed,onFinish:finish,sound});ui();engine.draw(ctx);};
   function cancelInputs(){inputControls?.cancel();}
-  function begin(){overlayPointerDown=false;cancelInputs();make();status='running';accumulator=0;last=0;overlay.hidden=true;pauseButton.disabled=false;restartButton.disabled=false;if(undoButton)undoButton.disabled=false;store.recent(game.id);canvas.focus({preventScroll:true});sound();}
-  function pause(reason){if(status!=='running')return;status='paused';overlayPointerDown=false;cancelInputs();accumulator=0;last=0;overlay.hidden=false;overlay.innerHTML=`<div class="overlay-card"><p class="eyebrow">TAKE YOUR TIME</p><h2>小世界暂停中</h2><p>${reason==='layout'?'屏幕尺寸已变化，准备好了再继续。':'准备好了，再继续。'}</p><button class="button primary" data-action="resume">继续游戏 ▶</button></div>`;pauseButton.textContent='▶ 继续';}
+  async function begin(){
+    if(status==='starting')return;
+    overlayPointerDown=false;cancelInputs();submissionController?.abort();status='starting';rankedRun=null;startInterrupted=false;
+    pauseButton.disabled=true;restartButton.disabled=true;if(undoButton)undoButton.disabled=true;
+    localReason='休闲榜尚未开放，成绩继续保存在本机。';
+    if(date&&date!==beijingDate())localReason='历史挑战仅供游玩和查看榜单，本局成绩保存在本机。';
+    else if(leaderboard.enabled){
+      overlay.hidden=false;overlay.innerHTML='<div class="overlay-card"><p role="status">正在连接休闲榜…</p><small>连接不可用时会自动进入本机游玩。</small></div>';
+      try{rankedRun=await leaderboard.start({gameId:game.id,date,restartOf:date?undefined:lastOnlineRun?.id});seed=rankedRun.seed;lastOnlineRun=rankedRun;localReason='';}
+      catch(error){localReason=error.message;}
+    }
+    if(listeners.signal.aborted)return;
+    make();status='running';accumulator=0;last=0;overlay.hidden=true;pauseButton.disabled=false;restartButton.disabled=false;if(undoButton)undoButton.disabled=false;store.recent(game.id);canvas.focus({preventScroll:true});sound();
+    track('game_start',{game_id:game.id,mode:date?'daily':'normal',rules_version:RULE_VERSION});
+    if(document.hidden||startInterrupted)pause();
+  }
+  function pause(reason){if(status==='starting'){startInterrupted=true;return;}if(status!=='running')return;status='paused';overlayPointerDown=false;cancelInputs();accumulator=0;last=0;overlay.hidden=false;overlay.innerHTML=`<div class="overlay-card"><p class="eyebrow">TAKE YOUR TIME</p><h2>小世界暂停中</h2><p>${reason==='layout'?'屏幕尺寸已变化，准备好了再继续。':'准备好了，再继续。'}</p><button class="button primary" data-action="resume">继续游戏 ▶</button></div>`;pauseButton.textContent='▶ 继续';}
   function resume(){if(status!=='paused')return;status='running';accumulator=0;last=0;overlay.hidden=true;pauseButton.textContent='Ⅱ 暂停';canvas.focus({preventScroll:true});}
   function restartConfirm(){if(status==='ready'||status==='finished'){begin();return;}if(status==='running')pause();overlay.innerHTML='<div class="overlay-card"><h2>重新开始这一局？</h2><p>本局进度将重置，已保存的最佳成绩会保留。</p><div class="overlay-actions"><button class="button primary" data-action="again">重新开始</button><button class="button secondary" data-action="resume">继续当前游戏</button></div></div>';}
   pauseButton.addEventListener('click',()=>{if(status==='running')pause();else if(status==='paused')resume();},{signal:listeners.signal});

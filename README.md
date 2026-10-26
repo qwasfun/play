@@ -4,7 +4,7 @@
 
 ## 本地运行
 
-需要 Node.js 20 或更新版本。在本目录执行：
+需要 Node.js 24.9 或更新版本（接口测试使用内置 SQLite）。在本目录执行：
 
 ```powershell
 npm run dev
@@ -118,3 +118,68 @@ GitHub 仓库为 https://github.com/qwasfun/play ，网站域名为 https://play
 首次部署需在仓库 **Settings → Pages** 中将 Source 设为 **GitHub Actions**，将 Custom domain 保存为 `play.185036.xyz`。DNS 应设置 `CNAME` 记录 `play` 指向 `qwasfun.github.io`，目标不带 `/play`。等待 GitHub 域名检查通过并签发证书后，启用 **Enforce HTTPS**。
 
 `dist/CNAME` 记录预期域名；使用 GitHub Actions 发布时，仍须在仓库 Pages 设置中绑定域名，单独提交该文件不会完成绑定。截图、测试脚本及本地配置不会作为网页发布。
+
+## 匿名休闲榜与 Umami
+
+现有本机成绩与离线游戏继续独立运行。联网开局时，网页自动建立匿名身份、领取绑定游戏和规则版本的对局凭证；结算后向独立的 Cloudflare Worker 提交成绩，D1 保存每位玩家的最佳纪录。普通模式与每日挑战分榜，每榜展示前 100 名及当前玩家名次。二十款游戏共用规则校验，灯塔方阵只接收通关纪录；其他游戏先比得分，再比用时，完全相同采用并列名次（例如 1、1、3）。榜单用时精确到毫秒，展示到小数点后两位。
+
+匿名身份通过服务端签发的 HttpOnly Cookie 保存，数据库只保存会话令牌的 SHA-256 摘要。生产使用 `__Host-` 前缀、Secure 和 SameSite=Strict；仅显式 local 环境且 API 地址为本机回环地址时，允许本地 HTTP 调试 Cookie。同一浏览器刷新可恢复身份，清除 Cookie、换设备或会话过期后将成为新玩家，旧榜单纪录仍保留。会话有效期一年，不提供账号、邮箱登录或跨设备合并。
+
+昵称为 2–12 个 Unicode 字符，去除首尾空白，禁止控制和不可见字符，允许重名；榜单通过纯文本呈现昵称。字段校验失败返回 `errors: [{field, code, message}]`，页面展示具体字段和修正要求，不回显提交的敏感值。
+
+### 本地运行与验证
+
+```powershell
+npm ci
+npm run api:setup
+npm run api:dev
+```
+
+另开终端执行 `npm run dev`，在 http://127.0.0.1:4175 打开任意游戏，再点击“查看排行榜”。本机网页自动连接 http://127.0.0.1:8787；两个地址需使用同一种主机名（都用 127.0.0.1 或都用 localhost）。本地数据库在 `worker/.wrangler/`，日志与打包产物在 `output/worker/`，均不提交或发布。`api:setup` 只迁移本地库，`api:build` 只打包检查，两者不会部署生产。
+
+```powershell
+npm test
+npm run prepare:pwa
+npm run check
+npm run api:build
+npx --yes --package @playwright/cli playwright-cli -s=rankqa open http://127.0.0.1:4175/#/play/mines --browser chrome
+npx --yes --package @playwright/cli playwright-cli --raw -s=rankqa run-code --filename scripts/leaderboard-qa.js
+```
+
+浏览器脚本在独立会话内检查真实扫雷通关上榜、身份刷新保留、昵称校验与安全展示、重开保持种子、失败重试、历史日榜、断网、清除身份后旧纪录保留，以及二十款游戏在三个手机尺寸下的布局。它会清除该独立会话的 Cookie 并向本地测试库写入纪录，勿对生产运行。截图位于 `output/playwright/`。原 `scripts/pwa-qa.js` 继续验收二十款离线游戏。
+
+上线前本地验收通过 234 项自动测试、80 项排行榜浏览器检查和 59 项离线浏览器检查，Worker 打包检查通过。生产部署另补充 3 项后台清理测试。浏览器验证连接真实的本地 Worker 与 D1；Umami 使用模拟采集端验证字段和失败处理，尚未接入真实统计网站。手机尺寸在 Chromium 中模拟，未做实体 iOS/Android 验收。
+
+### 接口与基础防刷
+
+| 接口 | 行为 |
+| --- | --- |
+| `POST /v1/guests` | 建立或恢复匿名会话，返回公开玩家资料 |
+| `GET/PATCH /v1/me` | 读取身份、修改昵称 |
+| `POST /v1/runs` | 提交 `gameId, mode, date, ruleVersion`，领取 `id, seed, expiresAt`；普通模式可附 `restartOf` 复用自己的原关卡 |
+| `POST /v1/runs/:id/result` | 提交游戏结算字段，返回 `accepted, eligible, improved, rank` |
+| `GET /v1/leaderboards` | 按 `gameId, mode, date, ruleVersion` 查询，返回 `entries, me, total` |
+| `GET /healthz` | 存活检查 |
+
+接口只允许配置的网站来源；写操作必须带合法 Origin，读写不缓存。身份凭证仅通过 Cookie 发送，玩家公开 ID 不是身份凭据。每个 IP 每分钟最多 120 次写入；每位玩家每分钟最多 10 次开局、20 次成绩提交、10 次昵称修改，超限返回 429 和 Retry-After。IP 通过独立服务端密钥加盐散列后用于限流，不保存原始 IP。
+
+对局有效期 30 分钟，每日对局最迟在次日北京时间 00:10 结束接收。日期和种子由服务端确定；历史日榜可查看，历史挑战新开局仅保存在本机。服务端验证分数、进度和时长范围，接收成绩、更新最佳纪录和保存回执在同一 D1 事务内完成。相同对局的重试返回首次回执，不重复计分或重复发送统计；回执中的名次表示首次提交时的最佳名次，打开榜单可获得最新排名。
+
+离线开局、接口不可用、过期对局及已有本机历史纪录都不会直接导入公共榜。联网对局提交失败时可在有效期内点击“重试提交”，关闭或离开游戏页面后仍保留本机成绩。成功访问后，在后台按需清理到期会话、限流记录和到期超过 30 天的对局回执；通过 D1 租约保证跨运行实例每小时最多执行一次，空闲期等待下次访问，最佳纪录单独保留。每个实例最多每五分钟检查一次租约，清理失败释放租约供后续重试，不影响当前请求。此方式不占用 Cloudflare Cron 名额；需要定时执行时仍可调用导出的 scheduled 处理器。第一版面向无奖品的休闲比较，基础校验不等于操作回放验分，仍可受到改分、匿名多开和脚本影响。
+
+### Umami 与生产接入
+
+`dist/site-config.js` 保存公开配置，生产 `leaderboardApi` 为 `https://api-play.185036.xyz`。Umami `websiteId` 保持为空，因此当前不会连接真实统计网站。默认追踪脚本为 Umami Cloud，也可配置自建脚本地址。前端仅发送 `game_start`、`game_finish`、`leaderboard_view`，属性限制为游戏、模式、规则版本、得分、用时和通关状态，不发送昵称、匿名身份或会话凭证。脚本尚未加载时暂存少量事件，加载失败不影响游玩。
+
+Worker 在成功入库后异步发送 `score_accepted`；配置 `UMAMI_WEBSITE_ID` 和 `UMAMI_SEND_URL`，默认采集端点为 `https://gateway.umami.is/api/send`。统计按尽力发送处理，失败记录通用日志，不回滚成绩、不阻塞提交；以 D1 榜单作为成绩依据，不使用 Umami 的事件数作为正式纪录。统计管理凭证无需提供给网页。
+
+生产上线需先确认 Cloudflare 账号、D1 数据库、API 域名、Umami 网站 ID 及发布范围，再执行：
+
+1. `worker/wrangler.jsonc` 顶层已配置生产账号、实际 D1 ID 和 Custom Domain。保留 `ENVIRONMENT=production`、`REQUEST_CLEANUP=true` 和精确的 `ALLOWED_ORIGINS`，通过 Worker secret 配置随机 `IP_HASH_SECRET`（不写进源码）。只有 local 环境使用占位数据库 ID。
+2. 配置同站 HTTPS API 子域 `api-play.185036.xyz`。静态网页仍由 GitHub Pages 提供；SameSite=Strict Cookie 要求网页和 API 同站，不能直接以跨站 workers.dev 地址替代。
+3. 对实际 D1 执行远程迁移，再部署 Worker、绑定 API 域名；确认 Cookie、来源限制及健康检查后，填写网页的 API 和 Umami 配置。
+4. 重新生成离线清单并完成检查，审核 `dist/` 网页和 `worker/` 后端两部分的生产变更后发布。可将网页 API 配置清空以关闭上榜入口，游戏和本机纪录继续可用。
+
+生产网页由 GitHub 仓库 `qwasfun/play` 的 `main` 分支自动发布 `dist/`；Worker 独立发布，源文件及数据库迁移均在 `worker/`。后续更新应先完成本地检查，再部署后端、发布网页；生产 API、密钥及数据库已配置时无需重新创建资源或轮换密钥。
+
+API 域名使用 Workers Custom Domain 自动签发的证书，不单独申请或购买证书。按当前部署要求，不为 API 子域额外配置 CAA 记录；保持网页的 GitHub Pages CNAME。

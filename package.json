@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {"node": ">=24.9.0"},
   "scripts": {
     "dev": "node scripts/prepare-pwa.mjs && node server.mjs",
     "prepare:pwa": "node scripts/prepare-pwa.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node scripts/check.mjs && node scripts/prepare-pwa.mjs --check"
+    "check": "node scripts/check.mjs && node scripts/prepare-pwa.mjs --check",
+    "api:setup": "node scripts/api.mjs setup",
+    "api:dev": "node scripts/api.mjs dev",
+    "api:build": "node scripts/api.mjs build"
+  },
+  "devDependencies": {
+    "wrangler": "^4.153.0"
   }
 }

@@ -6,3 +6,6 @@ artifacts/
 .openai/local/
 .playwright-cli/
 output/playwright/
+.wrangler/
+.dev.vars*
+output/worker/

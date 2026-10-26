@@ -95,3 +95,27 @@ body.has-fullscreen-game{overflow:hidden}
  .play-main.is-fullscreen .overlay-card p{font-size:11px}
  .play-main.is-fullscreen .overlay-icon{display:none}
 }
+.leaderboard-card h3 .badge{font-size:10px;vertical-align:middle;white-space:nowrap}
+.leaderboard-note,.leaderboard-status{font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.leaderboard-card>.button{width:100%;margin-top:8px}
+.leaderboard-panel{margin-top:16px;border-top:1px solid #dce3d5;padding-top:14px;min-width:0}
+.leaderboard-filters{display:grid;gap:9px}
+.leaderboard-panel label{display:grid;gap:5px;font-size:12px;font-weight:650}
+.leaderboard-panel input,.leaderboard-panel select{width:100%;min-width:0;min-height:44px;border:1px solid #b8c9ba;border-radius:10px;background:#fffef9;padding:9px;color:#233c39;font:inherit}
+.leaderboard-panel .button{min-height:44px;font-size:12px;white-space:normal}
+.leaderboard-identity{padding:10px 0;border-bottom:1px solid #dce3d5;margin-bottom:12px}
+.leaderboard-identity:empty{display:none}
+.leaderboard-identity form{display:grid;gap:8px}
+.leaderboard-identity small{font-size:10px;line-height:1.6;font-weight:400}
+.leaderboard-identity p{font-size:12px;margin:0;overflow-wrap:anywhere}
+.leaderboard-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px;text-align:left}
+.leaderboard-table caption{text-align:left;margin:10px 0;color:#65816b}
+.leaderboard-table th,.leaderboard-table td{padding:10px 4px;border-bottom:1px solid #dce3d5;overflow-wrap:anywhere;vertical-align:top}
+.leaderboard-table th:first-child{width:34px}.leaderboard-table th:last-child{width:43%}
+.leaderboard-table td small{display:block;font-size:10px;margin-top:4px;font-weight:400}
+.leaderboard-table .is-me{background:#e8f0df}
+.rank-result{border-top:1px solid #dce3d5;padding-top:10px;margin-top:12px;overflow-wrap:anywhere}
+.rank-result p{font-size:12px!important;line-height:1.6}
+.rank-result .button{min-height:44px}
+.game-overlay{overflow-y:auto;align-items:flex-start}
+.game-overlay .overlay-card{margin-block:auto}
