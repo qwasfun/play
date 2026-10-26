@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START,SIXTEEN_DAILY_START} from '../dist/core.js';
+import {rng,beijingDate,dailyGame,dailySeed,parseRoute,compareResult,validDate,playLink,GAME_IDS,EXPANDED_DAILY_START,TWELVE_DAILY_START,SIXTEEN_DAILY_START,TWENTY_DAILY_START} from '../dist/core.js';
 import {createStore} from '../dist/storage.js';
 
 test('Beijing midnight changes date and daily rotation across UTC boundary',()=>{
@@ -89,13 +89,21 @@ test('twelve-game daily epoch preserves first eight-game cycle and its twelve-ga
     assert.equal(parseRoute(playLink(rotation[i],date),'2026-12-10').type,'play');
   }
 });
-test('sixteen-game daily epoch preserves earlier dates and rotates all sixteen games deterministically',()=>{
+test('sixteen-game daily epoch preserves earlier dates and its sixteen-game cycle',()=>{
   const ids=['jump','bubbles','slide','rhythm','rings','snake','boxes','pipes','catch','bounce','pairs','merge','star','bridge','lights','echo'];
   assert.equal(dailyGame('2026-11-15'),'echo');
-  for(let i=0;i<32;i++){
+  for(let i=0;i<16;i++){
     const date=new Date(Date.parse(SIXTEEN_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10),id=ids[i%16];
     assert.equal(dailyGame(date),id);assert.equal(parseRoute(playLink(id,date),'2026-12-31').type,'play');
     assert.equal(dailySeed(date,id),dailySeed(date,id));
+  }
+});
+test('twenty-game daily epoch preserves previous dates and covers every game deterministically',()=>{
+  const ids=['constellation','tower','rain','mines','jump','bubbles','slide','rhythm','rings','snake','boxes','pipes','catch','bounce','pairs','merge','star','bridge','lights','echo'];
+  assert.equal(dailyGame('2026-12-01'),'echo');
+  for(let i=0;i<40;i++){
+    const date=new Date(Date.parse(TWENTY_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10),id=ids[i%20];
+    assert.equal(dailyGame(date),id);assert.equal(parseRoute(playLink(id,date),'2027-01-31').type,'play');
   }
   assert.deepEqual(new Set(ids),new Set(GAME_IDS));
 });

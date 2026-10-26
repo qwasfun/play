@@ -40,8 +40,9 @@ async(page)=>{
   check('rhythm_five_lives_fit_hud',(await page.locator('#live-extra').textContent())==='♥ 5');
   for(let i=0;i<5;i++)await tap(126,418);
   await page.locator('.result-card').waitFor();check('rhythm_five_early_taps_end_once',await score()===0&&(await page.locator('#live-extra').textContent())==='♥ 0');
-  check('sixteenth_game_next_wraps_home_catalog',await page.getByRole('link',{name:'下一款游戏 →',exact:true}).getAttribute('href')==='#/play/star');
-  await page.getByRole('link',{name:'下一款游戏 →',exact:true}).tap();await page.locator('[data-action="start"]').waitFor();check('result_next_link_navigates_once',page.url().endsWith('#/play/star'));
+  const next=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games[(games.findIndex(g=>g.id==='rhythm')+1)%games.length].id;});
+  check('rhythm_next_follows_catalog',await page.getByRole('link',{name:'下一款游戏 →',exact:true}).getAttribute('href')===`#/play/${next}`);
+  await page.getByRole('link',{name:'下一款游戏 →',exact:true}).tap();await page.locator('[data-action="start"]').waitFor();check('result_next_link_navigates_once',page.url().endsWith(`#/play/${next}`));
   await open('rhythm');await page.getByRole('button',{name:'全屏游戏',exact:true}).tap();await page.locator('.play-main.is-fullscreen').waitFor();
   const notes=await page.evaluate(async()=>{const{generateRhythmSchedule}=await import('./games/rhythm.js');return generateRhythmSchedule(123);});
   await page.locator('[data-action="start"]').tap();

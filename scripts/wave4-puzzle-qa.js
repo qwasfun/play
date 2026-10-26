@@ -17,12 +17,13 @@ async(page)=>{
     await page.locator('[data-action="start"]').tap();await page.locator('canvas').scrollIntoViewIfNeeded();
   }
   await page.setViewportSize(portrait);await page.goto(origin+'/#/');await page.reload();
-  check('sixteen_cards_and_four_badges',await page.locator('.game-card').count()===16&&await page.locator('.new-badge').count()===4);
-  check('latest_four_games_sort_first',(await page.locator('.game-card').evaluateAll(cards=>cards.slice(0,4).map(card=>card.dataset.game))).join(',')==='jump,bubbles,slide,rhythm');
   const catalog=await page.evaluate(async()=>{const{games}=await import('./catalog.js');return games;});
+  const latest=catalog.filter(g=>g.isNew).map(g=>g.id);
+  check('catalog_cards_and_latest_badges',await page.locator('.game-card').count()===catalog.length&&await page.locator('.new-badge').count()===latest.length);
+  check('latest_games_sort_first',(await page.locator('.game-card').evaluateAll((cards,n)=>cards.slice(0,n).map(card=>card.dataset.game),latest.length)).join(',')===latest.join(','));
   for(const game of catalog){const favorite=page.getByLabel('收藏'+game.title,{exact:true});if(await favorite.count())await favorite.tap();}
   await page.getByRole('link',{name:'我的收藏',exact:true}).tap();await page.reload();
-  check('all_sixteen_favorites_survive_reload',await page.locator('.game-card').count()===16);
+  check('all_catalog_favorites_survive_reload',await page.locator('.game-card').count()===catalog.length);
 
   const bubblePlan=await page.evaluate(async()=>{
     const{generateBubbles,findGroup,collapseBubbles}=await import('./games/bubbles.js');

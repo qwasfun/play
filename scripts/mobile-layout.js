@@ -14,7 +14,7 @@ async (page) => {
       const shortLandscape=width>height&&height<=500;
       const within=r=>r.y>=-1&&r.x>=-1&&r.bottom<=height+1&&r.right<=width+1;
       const target=id==='pairs'?100:id==='slide'?120:96;
-      const passed=metrics.scrollWidth<=width+1&&metrics.pause.height>=44&&(!['lights','pairs','pipes','bubbles','slide'].includes(id)||metrics.canvas.width*target/600>=44)&&(shortLandscape?within(metrics.canvas)&&within(metrics.pause)&&within(metrics.exit)&&within(metrics.start):true);
+      const passed=metrics.scrollWidth<=width+1&&metrics.pause.height>=44&&(!['lights','pairs','pipes','bubbles','slide','mines','constellation'].includes(id)||metrics.canvas.width*target/600>=44)&&(shortLandscape?within(metrics.canvas)&&within(metrics.pause)&&within(metrics.exit)&&within(metrics.start):true);
       checks.push({id,width,height,passed,canvasWidth:Math.round(metrics.canvas.width),canvasHeight:Math.round(metrics.canvas.height)});
       if(!passed)throw new Error(JSON.stringify({id,metrics,shortLandscape}));
       if(id==='lights'&&width===320)await page.screenshot({path:'output/playwright/mobile-small-portrait.png',fullPage:true});

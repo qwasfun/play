@@ -4,10 +4,12 @@ export const GAME_IDS = Object.freeze(games.map(game=>game.id));
 export const EXPANDED_DAILY_START = '2026-10-27';
 export const TWELVE_DAILY_START = '2026-11-04';
 export const SIXTEEN_DAILY_START = '2026-11-16';
+export const TWENTY_DAILY_START = '2026-12-02';
 const LEGACY_DAILY_IDS = Object.freeze(['star','bridge','lights','echo']);
 const EXPANDED_DAILY_IDS = Object.freeze(['catch','bounce','pairs','merge',...LEGACY_DAILY_IDS]);
 const TWELVE_DAILY_IDS = Object.freeze(['rings','snake','boxes','pipes',...EXPANDED_DAILY_IDS]);
 const SIXTEEN_DAILY_IDS = Object.freeze(['jump','bubbles','slide','rhythm',...TWELVE_DAILY_IDS]);
+const TWENTY_DAILY_IDS = Object.freeze(['constellation','tower','rain','mines',...SIXTEEN_DAILY_IDS]);
 export function hash(value) {
   let h = 2166136261;
   for (const char of String(value)) { h ^= char.charCodeAt(0); h = Math.imul(h, 16777619); }
@@ -41,6 +43,10 @@ export function dailyGame(date) {
   if (!validDate(date)) throw new Error('挑战日期：请使用有效的 YYYY-MM-DD 日期');
   const day = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86400000);
   if(date < EXPANDED_DAILY_START) return LEGACY_DAILY_IDS[((day % 4) + 4) % 4];
+  if(date >= TWENTY_DAILY_START){
+    const start=Math.floor(Date.parse(`${TWENTY_DAILY_START}T00:00:00Z`)/86400000);
+    return TWENTY_DAILY_IDS[(day-start)%TWENTY_DAILY_IDS.length];
+  }
   if(date >= SIXTEEN_DAILY_START){
     const start=Math.floor(Date.parse(`${SIXTEEN_DAILY_START}T00:00:00Z`)/86400000);
     return SIXTEEN_DAILY_IDS[(day-start)%SIXTEEN_DAILY_IDS.length];
