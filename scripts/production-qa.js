@@ -17,7 +17,7 @@ async(page)=>{
   };
   await page.addInitScript(installQaImports,qaModules);await page.evaluate(installQaImports,qaModules);
 
-  const origin='https://play.185036.xyz',api='https://api-play.185036.xyz',context=page.context(),checks=[],errors=[];
+  const origin='https://play.185036.xyz',api='https://play-api.185036.xyz',context=page.context(),checks=[],errors=[];
   if(new URL(page.url()).origin!==origin)throw Error('请在指定生产游戏网站的独立会话运行');
   page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));
   const check=(name,passed)=>{checks.push({name,passed:!!passed});if(!passed)throw Error(JSON.stringify(checks.at(-1)));};

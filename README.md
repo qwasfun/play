@@ -196,14 +196,14 @@ npx --yes --package @playwright/cli playwright-cli --raw -s=rankqa run-code --fi
 
 ### Umami 与生产接入
 
-`apps/arcade/src/site-config.js` 保存公开配置，生产 `leaderboardApi` 为 `https://api-play.185036.xyz`。Umami `websiteId` 保持为空，因此当前不会连接真实统计网站。默认追踪脚本为 Umami Cloud，也可配置自建脚本地址。前端仅发送 `game_start`、`game_finish`、`leaderboard_view`，属性限制为游戏、模式、规则版本、得分、用时和通关状态，不发送昵称、匿名身份或会话凭证。脚本尚未加载时暂存少量事件，加载失败不影响游玩。
+`apps/arcade/src/site-config.js` 保存公开配置，生产 `leaderboardApi` 为 `https://play-api.185036.xyz`。Umami `websiteId` 保持为空，因此当前不会连接真实统计网站。默认追踪脚本为 Umami Cloud，也可配置自建脚本地址。前端仅发送 `game_start`、`game_finish`、`leaderboard_view`，属性限制为游戏、模式、规则版本、得分、用时和通关状态，不发送昵称、匿名身份或会话凭证。脚本尚未加载时暂存少量事件，加载失败不影响游玩。
 
 Worker 在成功入库后异步发送 `score_accepted`；配置 `UMAMI_WEBSITE_ID` 和 `UMAMI_SEND_URL`，默认采集端点为 `https://gateway.umami.is/api/send`。统计按尽力发送处理，失败记录通用日志，不回滚成绩、不阻塞提交；以 D1 榜单作为成绩依据，不使用 Umami 的事件数作为正式纪录。统计管理凭证无需提供给网页。
 
 生产上线需先确认 Cloudflare 账号、D1 数据库、API 域名、Umami 网站 ID 及发布范围，再执行：
 
 1. `worker/wrangler.jsonc` 顶层已配置生产账号、实际 D1 ID 和 Custom Domain。保留 `ENVIRONMENT=production`、`REQUEST_CLEANUP=true` 和精确的 `ALLOWED_ORIGINS`，通过 Worker secret 配置随机 `IP_HASH_SECRET`（不写进源码）。只有 local 环境使用占位数据库 ID。
-2. 配置同站 HTTPS API 子域 `api-play.185036.xyz`。静态网页仍由 GitHub Pages 提供；SameSite=Strict Cookie 要求网页和 API 同站，不能直接以跨站 workers.dev 地址替代。
+2. 配置同站 HTTPS API 子域 `play-api.185036.xyz`。静态网页仍由 GitHub Pages 提供；SameSite=Strict Cookie 要求网页和 API 同站，不能直接以跨站 workers.dev 地址替代。
 3. 对实际 D1 执行远程迁移，再部署 Worker、绑定 API 域名；确认 Cookie、来源限制及健康检查后，填写网页的 API 和 Umami 配置。
 4. 重新生成离线清单并完成检查，审核 `dist/` 网页和 `worker/` 后端两部分的生产变更后发布。可将网页 API 配置清空以关闭上榜入口，游戏和本机纪录继续可用。
 
