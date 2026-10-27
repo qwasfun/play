@@ -19,14 +19,14 @@ jobs:
       - run: npm run api:build
       - name: Install cloud browser
         run: |
-          npm install --prefix "$RUNNER_TEMP/browser-qa" --no-save playwright
-          "$RUNNER_TEMP/browser-qa/node_modules/.bin/playwright" install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/browser-qa" --no-save --ignore-scripts playwright@1.62.1
+          google-chrome --version
       - name: Play new games with desktop and touch inputs
         env:
           NODE_PATH: ${{ runner.temp }}/browser-qa/node_modules
         run: |
           npm run preview > "$RUNNER_TEMP/preview.log" 2>&1 &
-          node scripts/run-batch-browser.mjs
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE="$(command -v google-chrome)" node scripts/run-batch-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
