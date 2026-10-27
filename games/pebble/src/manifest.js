@@ -1,0 +1,22 @@
+export const manifest = {
+  "id": "pebble",
+  "title": "茶点跳跳棋",
+  "english": "TEATIME PEGS",
+  "category": "跳子规划",
+  "tag": "动脑",
+  "duration": "1–3 分钟",
+  "isNew": true,
+  "extraLabel": "旅途进度",
+  "targetText": "准备出发",
+  "icon": "●",
+  "description": "让茶点跨过同伴，最后留下一颗。",
+  "controls": "点击棋子与落点 / 方向键 / 空格",
+  "limit": 180,
+  "cta": "开始这段小旅行",
+  "rules": [
+    "选择一颗茶点，横向或纵向跳过相邻茶点，落到两格外的空位；被跳过的茶点收起。",
+    "每盘只留一颗即过关，共三盘；每步 10 分，每盘再奖 100 分。",
+    "键盘方向键选格、空格或回车确认；可撤销本盘移动，撤销退回本步得分。180 秒结束。"
+  ],
+  "undo": true
+};

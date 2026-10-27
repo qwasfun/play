@@ -105,5 +105,5 @@ test('twenty-game daily epoch preserves previous dates and covers every game det
     const date=new Date(Date.parse(TWENTY_DAILY_START+'T00:00:00Z')+i*86400000).toISOString().slice(0,10),id=ids[i%20];
     assert.equal(dailyGame(date),id);assert.equal(parseRoute(playLink(id,date),'2027-01-31').type,'play');
   }
-  assert.deepEqual(new Set(ids),new Set(GAME_IDS));
+  assert.deepEqual(new Set(ids),new Set(GAME_IDS.slice(0,20)));
 });
