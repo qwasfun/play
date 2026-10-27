@@ -1,5 +1,6 @@
 // Pass a Playwright Page from a cloud test browser; no runtime browser dependency.
 export async function verifyBatch(page,{mobile=false,artifacts='output/playwright'}={}){
+ const baseUrl=process.env.PLAYGROUND_QA_BASE_URL||'http://127.0.0.1:4175';
  const checks=[],errors=[];page.on('pageerror',e=>errors.push(e.message));
  const check=(name,value)=>{console.log('CHECK',mobile,name,value);checks.push(name);if(!value)throw Error(name);};
  await page.addInitScript(()=>{crypto.getRandomValues=array=>{array.fill(42);return array;};});
@@ -10,7 +11,7 @@ export async function verifyBatch(page,{mobile=false,artifacts='output/playwrigh
  const resume=async()=>{if(await page.locator('[data-action="resume"]').isVisible())await btn('[data-action="resume"]');};
  for(const id of ['lantern','sail','balance','pebble']){
   await page.setViewportSize({width:mobile?390:1280,height:mobile?844:900});
-  await page.goto('http://127.0.0.1:4175/#/play/'+id);await page.locator('[data-action="start"]').waitFor();await btn('[data-action="start"]');await page.locator('#game-overlay').waitFor({state:'hidden'});await page.clock.runFor(50);
+  await page.goto(baseUrl+'/#/play/'+id);await page.locator('[data-action="start"]').waitFor();await btn('[data-action="start"]');await page.locator('#game-overlay').waitFor({state:'hidden'});await page.clock.runFor(50);
   await btn('#pause');check(id+' pause',await page.locator('[data-action="resume"]').isVisible());const t=await page.locator('#live-time').innerText();await page.clock.runFor(2000);check(id+' frozen',t===await page.locator('#live-time').innerText());await resume();
   await btn('#restart');await btn('[data-action="again"]');await page.locator('#game-overlay').waitFor({state:'hidden'});await page.clock.runFor(50);check(id+' reset',await page.locator('#live-score').innerText()==='0');
   await btn('#fullscreen-toggle');check(id+' fullscreen',await page.locator('.play-main').evaluate(el=>el.classList.contains('is-fullscreen')));await btn('#fullscreen-toggle');await resume();
@@ -32,5 +33,5 @@ export async function verifyBatch(page,{mobile=false,artifacts='output/playwrigh
   await page.reload();await page.locator('[data-action="start"]').waitFor();check(id+' record reload',!(await page.locator('#best-record').innerText()).includes('等待'));
   for(const size of [{width:390,height:844},{width:844,height:390},{width:1280,height:900}]){await page.setViewportSize(size);await page.clock.runFor(100);check(id+` layout ${size.width}`,await page.locator('#game-canvas').evaluate(el=>{const r=el.getBoundingClientRect();return r.width>100&&r.right<=innerWidth+1&&r.left>=0;}));}
  }
- await page.goto('http://127.0.0.1:4175/');check('24 cards',await page.locator('[data-game]').count()===24);for(const id of ['lantern','sail','balance','pebble'])await btn(`[data-favorite="${id}"]`);await page.reload();check('favorites persisted',await page.evaluate(()=>JSON.parse(localStorage.getItem('tiny-break-arcade:v1')).favorites.length===4));check('no page errors',errors.length===0);return {checks:checks.length,errors};
+ await page.goto(baseUrl+'/');check('24 cards',await page.locator('[data-game]').count()===24);for(const id of ['lantern','sail','balance','pebble'])await btn(`[data-favorite="${id}"]`);await page.reload();check('favorites persisted',await page.evaluate(()=>JSON.parse(localStorage.getItem('tiny-break-arcade:v1')).favorites.length===4));check('no page errors',errors.length===0);return {checks:checks.length,errors};
 }

@@ -23,6 +23,7 @@ jobs:
           google-chrome --version
       - name: Play new games with desktop and touch inputs
         env:
+          PLAYGROUND_QA_BASE_URL: https://play.185036.xyz
           NODE_PATH: ${{ runner.temp }}/browser-qa/node_modules
         run: |
           npm run preview > "$RUNNER_TEMP/preview.log" 2>&1 &
