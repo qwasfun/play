@@ -1,7 +1,7 @@
 // Pass a Playwright Page from a cloud test browser; no runtime browser dependency.
 export async function verifyBatch(page,{mobile=false,artifacts='output/playwright'}={}){
  const checks=[],errors=[];page.on('pageerror',e=>errors.push(e.message));
- const check=(name,value)=>{checks.push(name);if(!value)throw Error(name);};
+ const check=(name,value)=>{console.log('CHECK',mobile,name,value);checks.push(name);if(!value)throw Error(name);};
  await page.addInitScript(()=>{crypto.getRandomValues=array=>{array.fill(42);return array;};});
  await page.clock.install();await page.clock.pauseAt(new Date());
  const {makeSchedule}=await import('../games/lantern/src/index.js');const {makeGates}=await import('../games/sail/src/index.js');const {makePuzzles}=await import('../games/balance/src/index.js');const {makeBoards}=await import('../games/pebble/src/index.js');
@@ -27,7 +27,7 @@ export async function verifyBatch(page,{mobile=false,artifacts='output/playwrigh
   }else{
    for(const p of makeBoards(42))for(const [a,,c] of p.solution){await click(160+a%5*70,120+Math.floor(a/5)*70);await click(160+c%5*70,120+Math.floor(c/5)*70);}
   }
-  await page.locator('.result-card').waitFor();check(id+' completed',await page.locator('.result-card').innerText().then(s=>s.includes('漂亮')));check(id+' saved',await page.evaluate(id=>!!JSON.parse(localStorage.getItem('tiny-break-arcade:v1')).best[id],id));
+  console.log('END',id,await page.locator('#live-time').innerText(),await page.locator('#game-overlay').innerText());await page.clock.runFor(200);await page.locator('.result-card').waitFor();check(id+' completed',await page.locator('.result-card').innerText().then(s=>s.includes('漂亮')));check(id+' saved',await page.evaluate(id=>!!JSON.parse(localStorage.getItem('tiny-break-arcade:v1')).best[id],id));
   await page.reload();await page.locator('[data-action="start"]').waitFor();check(id+' record reload',!(await page.locator('#best-record').innerText()).includes('等待'));
   for(const size of [{width:390,height:844},{width:844,height:390},{width:1280,height:900}]){await page.setViewportSize(size);await page.clock.runFor(100);check(id+` layout ${size.width}`,await page.locator('#game-canvas').evaluate(el=>{const r=el.getBoundingClientRect();return r.width>100&&r.right<=innerWidth+1&&r.left>=0;}));}
  }
