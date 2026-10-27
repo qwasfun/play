@@ -14,7 +14,7 @@ export async function verifyBatch(page,{mobile=false,artifacts='output/playwrigh
   await btn('#pause');check(id+' pause',await page.locator('[data-action="resume"]').isVisible());const t=await page.locator('#live-time').innerText();await page.clock.runFor(2000);check(id+' frozen',t===await page.locator('#live-time').innerText());await resume();
   await btn('#restart');await btn('[data-action="again"]');await page.locator('#game-overlay').waitFor({state:'hidden'});await page.clock.runFor(50);check(id+' reset',await page.locator('#live-score').innerText()==='0');
   await btn('#fullscreen-toggle');check(id+' fullscreen',await page.locator('.play-main').evaluate(el=>el.classList.contains('is-fullscreen')));await btn('#fullscreen-toggle');await resume();
-  await page.setViewportSize({width:844,height:390});await page.clock.runFor(100);check(id+' rotation pause',await page.locator('[data-action="resume"]').isVisible());await resume();await page.setViewportSize({width:mobile?390:1280,height:mobile?844:900});await page.clock.runFor(100);await resume();
+  await page.setViewportSize(mobile?{width:844,height:390}:{width:390,height:844});await page.clock.runFor(200);await page.locator('[data-action="resume"]').waitFor();check(id+' rotation pause',await page.locator('[data-action="resume"]').isVisible());await resume();await page.setViewportSize({width:mobile?390:1280,height:mobile?844:900});await page.clock.runFor(200);await page.locator('[data-action="resume"]').waitFor();await resume();await page.clock.runFor(50);
   await page.screenshot({path:`${artifacts}/${id}-${mobile?'mobile':'desktop'}.png`,fullPage:true});
   if(id==='lantern'){
    // Re-start at a known clock phase, then hit each complete round.
