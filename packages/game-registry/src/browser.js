@@ -1,3 +1,7 @@
+import {art as lanternArt} from '@playground/game-lantern/art';
+import {art as sailArt} from '@playground/game-sail/art';
+import {art as balanceArt} from '@playground/game-balance/art';
+import {art as pebbleArt} from '@playground/game-pebble/art';
 export {games,byId,gameRules} from './index.js';
 import {art as starArt} from '@playground/game-star/art';
 import {art as bridgeArt} from '@playground/game-bridge/art';
@@ -19,8 +23,13 @@ import {art as constellationArt} from '@playground/game-constellation/art';
 import {art as towerArt} from '@playground/game-tower/art';
 import {art as rainArt} from '@playground/game-rain/art';
 import {art as minesArt} from '@playground/game-mines/art';
-export const illustrations={star:starArt,bridge:bridgeArt,lights:lightsArt,echo:echoArt,catch:catchArt,bounce:bounceArt,pairs:pairsArt,merge:mergeArt,rings:ringsArt,snake:snakeArt,boxes:boxesArt,pipes:pipesArt,jump:jumpArt,bubbles:bubblesArt,slide:slideArt,rhythm:rhythmArt,constellation:constellationArt,tower:towerArt,rain:rainArt,mines:minesArt};
+export const illustrations={star:starArt,bridge:bridgeArt,lights:lightsArt,echo:echoArt,catch:catchArt,bounce:bounceArt,pairs:pairsArt,merge:mergeArt,rings:ringsArt,snake:snakeArt,boxes:boxesArt,pipes:pipesArt,jump:jumpArt,bubbles:bubblesArt,slide:slideArt,rhythm:rhythmArt,constellation:constellationArt,tower:towerArt,rain:rainArt,mines:minesArt,lantern:lanternArt,sail:sailArt,balance:balanceArt,pebble:pebbleArt};
 export const loaders={
+  lantern:()=>import('@playground/game-lantern'),
+  sail:()=>import('@playground/game-sail'),
+  balance:()=>import('@playground/game-balance'),
+  pebble:()=>import('@playground/game-pebble'),
+
   star:()=>import('@playground/game-star'),
   bridge:()=>import('@playground/game-bridge'),
   lights:()=>import('@playground/game-lights'),

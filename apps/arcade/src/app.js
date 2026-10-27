@@ -67,13 +67,14 @@ async function gamePage(route,token){
   try{module=await loaders[game.id]();}catch{if(token===routeToken)overlay.innerHTML='<div class="overlay-card"><h2>游戏资源暂时未能加载</h2><p>请刷新页面后重试。</p><a class="button primary" href="#/">返回首页</a></div>';return;}
   if(token!==routeToken)return;
   let seed=date?dailySeed(date,game.id):crypto.getRandomValues(new Uint32Array(1))[0];
+  const localOnly=['lantern','sail','balance','pebble'].includes(game.id);
   let rankedRun=null,lastOnlineRun=null,localReason='',submissionController;
   active=mountGame({root:app,game,createGame:module.createGame,seed,sound,onToast:toast,readyHtml:`<div class="overlay-card"><div class="overlay-icon" aria-hidden="true">${game.icon||'✳'}</div><p class="eyebrow">${date?`${dateLabel(date)} · ${historic?'历史':'每日'}挑战`:'YOUR LITTLE BREAK STARTS HERE'}</p><h2>${game.title}</h2><p>${game.rules[0]}</p><button class="button primary" data-action="start">${game.cta} ↗</button><small class="ready-note">${game.controls}</small></div>`,
-    onMount(signal){signal.addEventListener('abort',()=>submissionController?.abort(),{once:true});mountLeaderboard(app.querySelector('.game-sidebar'),{client:leaderboard,gameId:game.id,date,track,signal});},
+    onMount(signal){signal.addEventListener('abort',()=>submissionController?.abort(),{once:true});if(!localOnly)mountLeaderboard(app.querySelector('.game-sidebar'),{client:leaderboard,gameId:game.id,date,track,signal});},
     async onBeforeStart({overlay}){
       submissionController?.abort();rankedRun=null;localReason='休闲榜尚未开放，成绩继续保存在本机。';
       if(date&&date!==beijingDate())localReason='历史挑战仅供游玩和查看榜单，本局成绩保存在本机。';
-      else if(leaderboard.enabled){
+      else if(leaderboard.enabled&&!localOnly){
         overlay.hidden=false;overlay.innerHTML='<div class="overlay-card"><p role="status">正在连接休闲榜…</p><small>连接不可用时会自动进入本机游玩。</small></div>';
         try{rankedRun=await leaderboard.start({gameId:game.id,date,restartOf:date?undefined:lastOnlineRun?.id});seed=rankedRun.seed;lastOnlineRun=rankedRun;localReason='';}catch(error){localReason=error.message;}
       }

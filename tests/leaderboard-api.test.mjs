@@ -141,6 +141,7 @@ test('top 100 keeps the current player rank even when outside the visible rows a
 });
 
 const samples={
+ lantern:{score:25,lives:0,handled:3,hits:1},sail:{score:30,lives:0,handled:4,passed:1},balance:{score:100,rounds:1},pebble:{score:20,rounds:0,cleared:2},
   star:{score:10,lives:0},bridge:{score:100,progress:1,lives:0},lights:{score:8,steps:8,won:true},echo:{score:2,rounds:2},catch:{score:20,lives:0},bounce:{score:20,lives:0},pairs:{score:684,steps:12,won:true},merge:{score:760,won:true},rings:{score:100,progress:1,lives:0},snake:{score:10,stars:1},boxes:{score:420,steps:10,won:true},pipes:{score:400,steps:10,won:true},jump:{score:100,passed:1,lives:0},bubbles:{score:100,cleared:2,round:1},slide:{score:450,steps:10,won:true},rhythm:{score:150,hits:2,perfects:1,combo:2,lives:0},constellation:{score:700,steps:20,won:true},tower:{score:150,level:1,lives:0},rain:{score:40,caught:1,handled:4,lives:0},mines:{score:470,opened:13,won:true}
 };
 for(const game of games)test(`${game.id}: valid representative result reaches the board and invalid game metrics are rejected`,async()=>{

@@ -1,0 +1,22 @@
+export const manifest = {
+  "id": "lantern",
+  "title": "萤灯巡夜",
+  "english": "LANTERN WATCH",
+  "category": "眼力反应",
+  "tag": "动手",
+  "duration": "约 1 分钟",
+  "isNew": true,
+  "extraLabel": "旅途进度",
+  "targetText": "准备出发",
+  "icon": "✦",
+  "description": "等萤灯亮起，轻轻点亮夜色。",
+  "controls": "点击灯格 / 方向键选择 / 空格点灯",
+  "limit": 60,
+  "cta": "开始这段小旅行",
+  "rules": [
+    "九格中每轮只有一盏萤灯；等它亮成金色再点击，灰色小花不要碰。",
+    "每轮预告 0.6 秒，亮灯 0.9 秒，共 24 轮；亮灯命中得 25 分。",
+    "漏接或点错扣一次机会，三次失误结束；方向键选格，空格或回车点灯。"
+  ],
+  "lives": 3
+};

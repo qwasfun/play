@@ -1,0 +1,21 @@
+export const manifest = {
+  "id": "balance",
+  "title": "果篮天平",
+  "english": "ORCHARD BALANCE",
+  "category": "加法组合",
+  "tag": "动脑",
+  "duration": "1–3 分钟",
+  "isNew": true,
+  "extraLabel": "旅途进度",
+  "targetText": "准备出发",
+  "icon": "⚖",
+  "description": "挑选恰好的果篮，让天平轻轻归零。",
+  "controls": "点击果篮 / 方向键 / 空格 / 回车",
+  "limit": 180,
+  "cta": "开始这段小旅行",
+  "rules": [
+    "从六个果篮中选取若干个，让重量之和恰好等于目标。",
+    "点击果篮切换选择，再点下方称重；键盘方向键选篮、空格切换、回车称重。",
+    "共五题，每题答对得 100 分；称错不扣分，可重新选择，180 秒结束。"
+  ]
+};

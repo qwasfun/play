@@ -30,6 +30,10 @@
     "@playground/game-constellation": "1.0.0",
     "@playground/game-tower": "1.0.0",
     "@playground/game-rain": "1.0.0",
-    "@playground/game-mines": "1.0.0"
+    "@playground/game-mines": "1.0.0",
+    "@playground/game-lantern": "1.0.0",
+    "@playground/game-sail": "1.0.0",
+    "@playground/game-balance": "1.0.0",
+    "@playground/game-pebble": "1.0.0"
   }
 }
