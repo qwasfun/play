@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const LIMIT = 180;
@@ -55,7 +56,8 @@ export function moveBoxes({ board, width = 7, height = 7, player, crates }, dire
   return next;
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level, seed, onFinish = () => {}, sound = () => {} }) {
+  if(level)return createCampaignGame({level,onFinish,sound});
   const puzzle = getPuzzle(seed);
   const { board, width, height, goals } = puzzle;
   let player = puzzle.player;

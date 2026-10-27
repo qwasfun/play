@@ -1,8 +1,8 @@
 /**
  * @typedef {{score:number,elapsed:number,won:boolean,[key:string]:unknown}} GameResult
  * @typedef {{update:(dt:number)=>void,draw:(ctx:CanvasRenderingContext2D)=>void,input:(type:string,payload?:object)=>void,getState:()=>object,destroy:()=>void}} GameInstance
- * @typedef {{seed:number|string,onFinish?:(result:GameResult)=>void,sound?:(kind?:string)=>void}} GameOptions
- * @typedef {{id:string,title:string,limit:number,controls:string,rules:string[]}} GameManifest
+ * @typedef {{seed:number|string,level?:object,onFinish?:(result:GameResult)=>void,sound?:(kind?:string)=>void}} GameOptions
+ * @typedef {{id:string,title:string,limit:number|null,canvas?:{width:number,height:number},campaign?:{version:number,total:number},controls:string,rules:string[]}} GameManifest
  */
 export function hash(value) {
   let h = 2166136261;

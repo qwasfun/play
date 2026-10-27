@@ -51,8 +51,8 @@ async(page)=>{
     await page.goto(url('#/'));await page.reload();await ready();
     await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
     const cold=await page.evaluate(()=>({imports:performance.getEntriesByType('resource').filter(entry=>entry.initiatorType==='script'&&Object.entries(window.__qaModules).some(([key,file])=>key.startsWith('games/')&&new URL(file,location.href).href===entry.name)).map(entry=>entry.name),status:[...document.querySelectorAll('[data-offline-status]')].find(node=>node.dataset.state==='ready')?.textContent}));
-    check('homepage_prepared_without_opening_a_game',cold.imports.length===0&&cold.status.includes('20'),cold);
     const catalog=await page.evaluate(async base=>{const{games}=await window.__qaImport(new URL('catalog.js',base));return games;},base.href);
+    check('homepage_prepared_without_opening_a_game',cold.imports.length===0&&cold.status.includes(String(catalog.length)),cold);
     const cached=await page.evaluate(async()=>{
       const registration=await navigator.serviceWorker.ready;
       const status=await new Promise((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>reject(Error('status timeout')),5000);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();resolve(event.data);};registration.active.postMessage({type:'OFFLINE_STATUS'},[channel.port2]);});
@@ -60,7 +60,7 @@ async(page)=>{
       const entries=name?(await(await caches.open(name)).keys()).map(request=>new URL(request.url).pathname):[];
       return{...status,name,entries,games:entries.filter(path=>Object.entries(window.__qaModules).some(([key,file])=>key.startsWith('games/')&&new URL(file,location.href).pathname===path)).length};
     });
-    check('active_worker_confirms_all_twenty_modules_cached',cached.ready===true&&cached.games===20&&cached.assetCount>=32,{version:cached.version,assetCount:cached.assetCount,gameModules:cached.games});
+    check('active_worker_confirms_all_game_modules_cached',cached.ready===true&&cached.games===catalog.length&&cached.assetCount>=32,{version:cached.version,assetCount:cached.assetCount,gameModules:cached.games});
     try{await cdp.send('Page.enable');installability=await cdp.send('Page.getInstallabilityErrors');}catch(error){installability={unavailable:String(error.message||error)};}
     try{const manifest=await cdp.send('Page.getAppManifest');installability.manifest={url:manifest.url,errors:manifest.errors};}catch(error){installability.manifestUnavailable=String(error.message||error);}
 
@@ -75,7 +75,7 @@ async(page)=>{
     await page.waitForFunction(()=>window.__pwaMockPromptCalls===1);
     check('install_prompt_branch_is_user_activated_and_dismissible',prevented&&await page.evaluate(()=>window.__pwaMockPromptCalls===1)&&!await page.locator('[data-install-app]').first().isDisabled(),{simulated:true,actuallyInstalled:false});
     await activate(page.locator('[data-install-app]').first());await page.locator('#install-guide').waitFor({state:'visible'});
-    check('manual_install_guide_explains_offline_readiness',(await page.locator('#install-offline-note').textContent()).includes('20')&&(await page.locator('#install-steps li').count())>=2);
+    check('manual_install_guide_explains_offline_readiness',(await page.locator('#install-offline-note').textContent()).includes(String(catalog.length))&&(await page.locator('#install-steps li').count())>=2);
     await page.screenshot({path:'output/playwright/pwa-guide.png'});
     await activate(page.getByRole('button',{name:'知道了',exact:true}));
     await page.evaluate(()=>{window.__pwaUserAgentDescriptor=Object.getOwnPropertyDescriptor(navigator,'userAgent');Object.defineProperty(navigator,'userAgent',{configurable:true,value:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile Safari/604.1'});});
@@ -117,7 +117,7 @@ async(page)=>{
     await page.goto(url('#/'));await page.reload();await ready();
     for(const game of catalog){const favorite=page.getByLabel('收藏'+game.title,{exact:true});if(await favorite.count())await activate(favorite);}
     await page.goto(url('#/favorites'));await page.reload();
-    check('all_twenty_favorites_persist_through_offline_reload',await page.locator('.game-card').count()===20);
+    check('all_favorites_persist_through_offline_reload',await page.locator('.game-card').count()===catalog.length);
 
     await page.goto(url('#/play/mines'));await page.reload();await page.locator('[data-action="start"]').waitFor();
     await activate(page.getByRole('button',{name:'全屏游戏',exact:true}));await page.locator('.play-main.is-fullscreen').waitFor();
@@ -144,7 +144,7 @@ async(page)=>{
     check('historical_daily_link_reopens_same_board_offline',page.url().includes(challenge.date)&&(await page.locator('.daily-tag').textContent()).includes('历史挑战')&&firstBoard===await page.locator('canvas').evaluate(canvas=>canvas.toDataURL()),challenge);
 
     await network(false);await page.goto(url('#/'));await page.reload();await ready();
-    check('returning_online_keeps_ready_state_and_collection',await page.evaluate(()=>navigator.onLine===true)&&await page.locator('.game-card').count()===20);
+    check('returning_online_keeps_ready_state_and_collection',await page.evaluate(()=>navigator.onLine===true)&&await page.locator('.game-card').count()===catalog.length);
     const damaged=await page.evaluate(async({name,base})=>{
       const cache=await caches.open(name),target=new URL(window.__qaModules['games/star.js'],base).href;
       const removed=await cache.delete(target),marker=await cache.match(new URL('__offline_complete__',base));

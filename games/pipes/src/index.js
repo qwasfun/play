@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const LIMIT = 180;
@@ -61,7 +62,8 @@ function cellAt(x, y) {
   return col >= 0 && col < 4 && row >= 0 && row < 4 ? row * 4 + col : -1;
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level, seed, onFinish = () => {}, sound = () => {} }) {
+  if(level)return createCampaignGame({level,onFinish,sound});
   const puzzle = generatePipes(seed);
   const types = [...puzzle.types];
   let rotations = [...puzzle.rotations];

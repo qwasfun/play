@@ -1,5 +1,6 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
+  campaign: {version:1,total:20},
   "id": "slide",
   "title": "拼图小屋",
   "english": "COZY SLIDE",

@@ -18,7 +18,8 @@
     "check": "node scripts/check.mjs && node scripts/prepare-pwa.mjs --check",
     "api:setup": "node scripts/api.mjs setup",
     "api:dev": "node scripts/api.mjs dev",
-    "api:build": "node scripts/api.mjs build"
+    "api:build": "node scripts/api.mjs build",
+    "campaign:generate": "node scripts/generate-campaigns.mjs"
   },
   "devDependencies": {
     "acorn": "^8.19.0",

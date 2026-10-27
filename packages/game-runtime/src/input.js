@@ -4,7 +4,7 @@ export function bindGameInput(canvas, {isRunning, onInput, onUpdate, onPause, si
   const keys = new Set([' ', 'Enter', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D']);
   const coordinates = event => {
     const rect = canvas.getBoundingClientRect();
-    return {x:(event.clientX-rect.left)*600/rect.width,y:(event.clientY-rect.top)*480/rect.height};
+    return {x:(event.clientX-rect.left)*(canvas.width||600)/rect.width,y:(event.clientY-rect.top)*(canvas.height||480)/rect.height};
   };
   function releaseCapture(id) { try { canvas.releasePointerCapture(id); } catch {} }
   function cancel() {

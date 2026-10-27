@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const SIZE = 4;
@@ -44,7 +45,8 @@ function tileAt(x, y) {
   return row * 4 + col;
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level, seed, onFinish = () => {}, sound = () => {} }) {
+  if(level)return createCampaignGame({level,onFinish,sound});
   let board = generateLights(seed).board;
   let elapsed = 0;
   let steps = 0;

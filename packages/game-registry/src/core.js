@@ -46,12 +46,22 @@ export function dailyGame(date) {
 }
 export function dailySeed(date, id, version = RULE_VERSION) { return hash(`${date}:${id}:v${version}`); }
 export function playLink(id, date = '') { return `#/play/${id}${date ? `?date=${date}&v=${RULE_VERSION}` : ''}`; }
+export function campaignLink(id,level){return `#/levels/${id}${level?`/${level}?cv=1`:''}`;}
 export function compareResult(id,next,previous){return gameRules[id].compare(next,previous);}
 export function resultText(id,result){return gameRules[id].format(result);}
 export function parseRoute(fragment, today = beijingDate()) {
   const [path, query = ''] = fragment.replace(/^#/, '').split('?');
   if (path === '/daily') return { type: 'play', id: dailyGame(today), date: today };
   if (path === '/favorites') return { type: 'favorites' };
+  if(path?.startsWith('/levels/')){
+    const parts=path.split('/'),id=parts[2],game=games.find(game=>game.id===id),params=new URLSearchParams(query);
+    if(!game?.campaign)return{type:'error',message:'关卡模式：这款游戏暂未开放闯关，请返回首页选择。'};
+    if(params.has('cv')&&params.get('cv')!==String(game.campaign.version))return{type:'error',message:'关卡版本：暂不支持此内容版本，请从首页重新进入选关。'};
+    if(parts.length===3)return{type:'levels',id};
+    const number=Number(parts[3]);
+    if(parts.length!==4||!/^\d+$/.test(parts[3])||!Number.isSafeInteger(number)||number<1||number>game.campaign.total)return{type:'error',message:`关卡编号：请选择 1–${game.campaign.total} 的整数关卡。`};
+    return{type:'campaign',id,level:number,version:game.campaign.version};
+  }
   if (path?.startsWith('/play/')) {
     const id = path.split('/')[2];
     if (!GAME_IDS.includes(id)) return { type: 'error', message: '游戏：没有找到这款游戏，请返回首页选择。' };

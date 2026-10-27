@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
 
 const LIMIT=180,SIZE=4,CELL=96,X=108,Y=48,HOLD=.45;
@@ -30,7 +31,8 @@ function cellAt(x,y){
   if(!Number.isFinite(x)||!Number.isFinite(y))return -1;
   const col=Math.floor((x-X)/CELL),row=Math.floor((y-Y)/CELL);return col>=0&&col<4&&row>=0&&row<4?row*4+col:-1;
 }
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level,seed,onFinish=()=>{},sound=()=>{}}) {
+  if(level)return createCampaignGame({level,onFinish,sound});
   const{mines,counts}=generateMines(seed);
   let revealed=Array(16).fill(false),flags=Array(16).fill(false),elapsed=0,selected=0,pressed=null,finished=false,won=false,exploded=-1;
   let message='先点左上角安全花苞，再看数字找小地雷';

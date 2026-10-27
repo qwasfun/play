@@ -40,6 +40,9 @@ test('touch coordinates use current bounds after resize',()=>{
   canvas.emit('pointerup',{pointerId:1,clientX:170,clientY:160});canvas.rect={left:0,top:0,width:600,height:480};
   down(canvas,2,{clientX:300,clientY:240});assert.deepEqual(events.at(-1)[1],{x:300,y:240});
 });
+test('square campaign canvas coordinates use its intrinsic dimensions',()=>{
+  const {canvas,events}=setup();canvas.width=600;canvas.height=600;canvas.rect={left:20,top:40,width:300,height:300};down(canvas,1,{clientX:170,clientY:190});assert.deepEqual(events[0][1],{x:300,y:300});
+});
 test('layout cancellation clears keyboard hold and late keyup is ignored',()=>{
   const {canvas,controls,events}=setup();canvas.emit('keydown',{key:' ',repeat:false});controls.cancel();
   canvas.emit('keyup',{key:' '});assert.deepEqual(events.map(([type])=>type),['key-down','primary-cancel']);

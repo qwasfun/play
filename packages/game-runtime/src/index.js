@@ -2,14 +2,14 @@ import {bindGameInput,watchGameLayout} from './input.js';
 import {bindGameFullscreen} from './fullscreen.js';
 function lifeText(game,value=typeof game.lives==='number'?game.lives:3){const lives=Math.max(0,value);return typeof game.lives==='number'?`♥ ${lives}`:('♥ '.repeat(lives).trim()||'—');}
 
-export function gameSurface(game,{backHref='#/',backLabel='← 游乐场'}={}){return `<div class="play-main"><div class="game-toolbar"><div class="stat"><span class="stat-label">${game.scoreLabel||'得分'}</span><strong class="stat-value" id="live-score">0</strong></div><div class="stat"><span class="stat-label">剩余时间</span><strong class="stat-value" id="live-time">${game.limit} <small>秒</small></strong></div><div class="stat"><span class="stat-label" id="third-label">${game.extraLabel||'目标'}</span><strong class="stat-value" id="live-extra">${game.lives?lifeText(game):game.targetText||'—'}</strong></div></div><div class="canvas-wrap"><canvas id="game-canvas" width="600" height="480" tabindex="0" aria-label="${game.title}游戏区域，${game.controls}"></canvas><div class="game-overlay" id="game-overlay"></div></div><div class="game-controls"><button class="button secondary" id="pause" disabled>Ⅱ 暂停</button><button class="button secondary" id="restart" disabled>↻ 重开</button>${game.undo?'<button class="button secondary" id="undo" disabled>↶ 撤销</button>':''}<button class="button secondary" id="fullscreen-toggle" aria-label="全屏游戏" aria-pressed="false">⛶ 全屏</button><span class="controls-label">${game.controls}</span><a class="landscape-exit button secondary" href="${backHref}">${backLabel}</a></div><p class="game-help" id="game-hint" role="status">${game.controls}</p></div>`;}
+export function gameSurface(game,{backHref='#/',backLabel='← 游乐场'}={}){return `<div class="play-main" style="--game-aspect:${game.canvas?.width||600}/${game.canvas?.height||480};--game-ratio:${(game.canvas?.width||600)/(game.canvas?.height||480)}"><div class="game-toolbar"><div class="stat"><span class="stat-label">${game.scoreLabel||'得分'}</span><strong class="stat-value" id="live-score">0</strong></div><div class="stat"><span class="stat-label">${game.limit===null?'已用时间':'剩余时间'}</span><strong class="stat-value" id="live-time">${game.limit??0} <small>秒</small></strong></div><div class="stat"><span class="stat-label" id="third-label">${game.extraLabel||'目标'}</span><strong class="stat-value" id="live-extra">${game.lives?lifeText(game):game.targetText||'—'}</strong></div></div><div class="canvas-wrap"><canvas id="game-canvas" width="${game.canvas?.width||600}" height="${game.canvas?.height||480}" tabindex="0" aria-label="${game.title}游戏区域，${game.controls}"></canvas><div class="game-overlay" id="game-overlay"></div></div><div class="game-controls"><button class="button secondary" id="pause" disabled>Ⅱ 暂停</button><button class="button secondary" id="restart" disabled>↻ 重开</button>${game.undo?'<button class="button secondary" id="undo" disabled>↶ 撤销</button>':''}<button class="button secondary" id="fullscreen-toggle" aria-label="全屏游戏" aria-pressed="false">⛶ 全屏</button><span class="controls-label">${game.controls}</span><a class="landscape-exit button secondary" href="${backHref}">${backLabel}</a></div><p class="game-help" id="game-hint" role="status">${game.controls}</p></div>`;}
 /**
  * Mount one game. Host callbacks own persistence, network runs and sharing.
  * onBeforeStart({signal,overlay}) may asynchronously return a replacement seed.
  * onMount receives the lifetime signal; onFinish receives result and {overlay,signal}.
  * The returned destroy() cancels animation, inputs and host work, including pending starts.
  */
-export function mountGame({root,game,createGame,seed,sound=()=>{},onMount=()=>{},onBeforeStart=async()=>undefined,onStarted=()=>{},onFinish=()=>{},onShare=()=>{},onToast=()=>{},readyHtml=''}){
+export function mountGame({root,game,createGame,seed,level,sound=()=>{},onMount=()=>{},onBeforeStart=async()=>undefined,onStarted=()=>{},onFinish=()=>{},onShare=()=>{},onToast=()=>{},readyHtml=''}){
   const overlay=root.querySelector('#game-overlay');
   const canvas=root.querySelector('#game-canvas'),ctx=canvas.getContext('2d');
   if(!ctx){overlay.innerHTML='<div class="overlay-card"><h2>浏览器暂不支持游戏画布</h2><p>请使用较新版本的浏览器打开。</p><a class="button primary" href="#/">返回首页</a></div>';return {destroy(){}};}
@@ -18,12 +18,12 @@ export function mountGame({root,game,createGame,seed,sound=()=>{},onMount=()=>{}
   onMount(listeners.signal);
   const pauseButton=root.querySelector('#pause'),restartButton=root.querySelector('#restart'),undoButton=root.querySelector('#undo');
   const scoreEl=root.querySelector('#live-score'),timeEl=root.querySelector('#live-time'),extraEl=root.querySelector('#live-extra'),hintEl=root.querySelector('#game-hint');
-  const ui=()=>{const state=engine.getState();scoreEl.textContent=state[game.scoreField||'score']||0;timeEl.innerHTML=`${Math.max(0,Math.ceil(game.limit-(state.elapsed||0)))} <small>秒</small>`;extraEl.textContent=game.lives?lifeText(game,state.lives):(state.extra??game.targetText??'—');if(state.hint&&hintEl.textContent!==state.hint)hintEl.textContent=state.hint;};
+  const ui=()=>{const state=engine.getState();scoreEl.textContent=state[game.scoreField||'score']||0;timeEl.innerHTML=`${game.limit===null?Math.floor(state.elapsed||0):Math.max(0,Math.ceil(game.limit-(state.elapsed||0)))} <small>秒</small>`;extraEl.textContent=game.lives?lifeText(game,state.lives):(state.extra??game.targetText??'—');if(state.hint&&hintEl.textContent!==state.hint)hintEl.textContent=state.hint;};
   function finish(result){
     if(status!=='running')return;status='finished';overlayPointerDown=false;lastResult=result;cancelInputs();pauseButton.disabled=true;if(undoButton)undoButton.disabled=true;
     onFinish(result,{overlay,signal:listeners.signal});
   }
-  const make=()=>{engine?.destroy?.();engine=createGame({seed,onFinish:finish,sound});ui();engine.draw(ctx);};
+  const make=()=>{engine?.destroy?.();engine=createGame({seed,level,onFinish:finish,sound});ui();engine.draw(ctx);};
   function cancelInputs(){inputControls?.cancel();}
   async function begin(){
     if(status==='starting')return;
