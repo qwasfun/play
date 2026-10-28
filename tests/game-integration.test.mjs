@@ -14,3 +14,7 @@ test('API failures report operations without leaking credentials or request bodi
   const api=githubApi({repository:'owner/repo',token:'private-token',fetcher:async()=>new Response('private-token',{status:403})});
   await assert.rejects(api('branches/main/protection'),error=>!error.message.includes('private-token')&&error.message.includes('403'));
 });
+test('repository setup addresses the repository itself without a trailing slash',async()=>{
+  let address;const api=githubApi({repository:'owner/repo',token:'private-token',fetcher:async(url)=>{address=url;return Response.json({ok:true});}});
+  await api('',{method:'PATCH',body:{allow_rebase_merge:true}});assert.equal(address,'https://api.github.com/repos/owner/repo');
+});

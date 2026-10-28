@@ -5,6 +5,7 @@ import {join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {githubApi} from './github-api.mjs';
 import {inspectChanges} from './game-policy.mjs';
+import {writeReleaseRef} from './release-policy.mjs';
 
 export const ready = pr => !pr.draft && pr.state === 'open' && pr.base.ref === 'main' && pr.head.repo?.full_name === pr.base.repo?.full_name && pr.labels.some(label => label.name === 'automation:ready') && !pr.labels.some(label => label.name === 'automation:hold');
 export const verified = (runs, sha) => runs.some(run => run.head_sha === sha && ['pull_request','workflow_dispatch'].includes(run.event) && run.path === '.github/workflows/game-ci.yml' && run.conclusion === 'success');
@@ -40,7 +41,8 @@ async function main() {
       if (!ready(latest) || latest.head.sha !== pr.head.sha) continue;
       inTask('push',`--force-with-lease=refs/heads/${pr.head.ref}:${pr.head.sha}`,'origin',`HEAD:refs/heads/${pr.head.ref}`);
       // GITHUB_TOKEN pushes do not trigger push CI. Explicit dispatch is required.
-      await api('actions/workflows/game-ci.yml/dispatches',{method:'POST',body:{ref:pr.head.ref,inputs:{pr_number:String(pr.number)}}});
+      try{await api('actions/workflows/game-ci.yml/dispatches',{method:'POST',body:{ref:pr.head.ref,inputs:{pr_number:String(pr.number)}}});}
+      catch(error){await api(`issues/${pr.number}/labels`,{method:'POST',body:{labels:['automation:hold']}});throw error;}
       console.log(`PR #${pr.number} 已同步主分支并重新触发完整验收`); return;
     }
     const runs = await api(`actions/workflows/game-ci.yml/runs?head_sha=${pr.head.sha}&per_page=100`);
@@ -50,7 +52,8 @@ async function main() {
     const merged = await api(`pulls/${pr.number}/merge`,{method:'PUT',body:{sha:pr.head.sha,merge_method:'rebase'}});
     if (!merged.merged) throw Error(`合并请求：PR #${pr.number} 未合并，请检查必需状态检查`);
     // GITHUB_TOKEN merges do not trigger push deployment. Dispatch the exact merged SHA.
-    await api('actions/workflows/pages.yml/dispatches',{method:'POST',body:{ref:'main',inputs:{release_sha:merged.sha}}});
+    try{await api('actions/workflows/pages.yml/dispatches',{method:'POST',body:{ref:'main',inputs:{release_sha:merged.sha}}});}
+    catch(error){await writeReleaseRef(api,'release/hold',merged.sha);throw error;}
     console.log(`PR #${pr.number} 已 rebase 合并并启动发布 ${merged.sha}`); return;
   }
   console.log('没有可自动合并的游戏 PR');
