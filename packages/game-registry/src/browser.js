@@ -1,3 +1,7 @@
+import {art as jugsArt} from '@playground/game-jugs/art';
+import {art as weaveArt} from '@playground/game-weave/art';
+import {art as courierArt} from '@playground/game-courier/art';
+import {art as windmillArt} from '@playground/game-windmill/art';
 import {art as lanternArt} from '@playground/game-lantern/art';
 import {art as sailArt} from '@playground/game-sail/art';
 import {art as balanceArt} from '@playground/game-balance/art';
@@ -23,9 +27,14 @@ import {art as constellationArt} from '@playground/game-constellation/art';
 import {art as towerArt} from '@playground/game-tower/art';
 import {art as rainArt} from '@playground/game-rain/art';
 import {art as minesArt} from '@playground/game-mines/art';
-export const illustrations={star:starArt,bridge:bridgeArt,lights:lightsArt,echo:echoArt,catch:catchArt,bounce:bounceArt,pairs:pairsArt,merge:mergeArt,rings:ringsArt,snake:snakeArt,boxes:boxesArt,pipes:pipesArt,jump:jumpArt,bubbles:bubblesArt,slide:slideArt,rhythm:rhythmArt,constellation:constellationArt,tower:towerArt,rain:rainArt,mines:minesArt,lantern:lanternArt,sail:sailArt,balance:balanceArt,pebble:pebbleArt};
+export const illustrations={star:starArt,bridge:bridgeArt,lights:lightsArt,echo:echoArt,catch:catchArt,bounce:bounceArt,pairs:pairsArt,merge:mergeArt,rings:ringsArt,snake:snakeArt,boxes:boxesArt,pipes:pipesArt,jump:jumpArt,bubbles:bubblesArt,slide:slideArt,rhythm:rhythmArt,constellation:constellationArt,tower:towerArt,rain:rainArt,mines:minesArt,lantern:lanternArt,sail:sailArt,balance:balanceArt,pebble:pebbleArt,windmill:windmillArt,courier:courierArt,weave:weaveArt,jugs:jugsArt};
 export const campaignLoaders={boxes:()=>import('@playground/game-boxes/campaign'),pipes:()=>import('@playground/game-pipes/campaign'),mines:()=>import('@playground/game-mines/campaign'),lights:()=>import('@playground/game-lights/campaign'),slide:()=>import('@playground/game-slide/campaign')};
 export const loaders={
+  windmill:()=>import('@playground/game-windmill'),
+  courier:()=>import('@playground/game-courier'),
+  weave:()=>import('@playground/game-weave'),
+  jugs:()=>import('@playground/game-jugs'),
+
   lantern:()=>import('@playground/game-lantern'),
   sail:()=>import('@playground/game-sail'),
   balance:()=>import('@playground/game-balance'),
