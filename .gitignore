@@ -11,3 +11,4 @@ output/playwright/
 .wrangler/
 .dev.vars*
 output/worker/
+output/automation/

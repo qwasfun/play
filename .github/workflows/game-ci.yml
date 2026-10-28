@@ -1,0 +1,88 @@
+name: Game verification
+run-name: Game verification for ${{ github.event.pull_request.number || inputs.pr_number || github.ref_name }}
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number when rerunning a bot-rebased branch
+        required: false
+        type: string
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: game-ci-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: game-verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Resolve the exact PR head and current base
+        id: refs
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        with:
+          script: |
+            const number = Number(process.env.PR_NUMBER);
+            if (number) {
+              const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: number});
+              if (context.eventName === 'workflow_dispatch' && pr.head.ref !== context.ref.replace('refs/heads/', '')) throw new Error('PR branch mismatch');
+              const {data: main} = await github.rest.repos.getBranch({...context.repo, branch:'main'});
+              core.setOutput('base', main.commit.sha);
+              core.setOutput('head', pr.head.sha);
+              core.setOutput('branch', pr.head.ref);
+            } else {
+              core.setOutput('base', context.sha);
+              core.setOutput('head', context.sha);
+              core.setOutput('branch', context.ref.replace('refs/heads/', ''));
+            }
+      - name: Check out the exact tested commit
+        env:
+          HEAD_SHA: ${{ steps.refs.outputs.head }}
+        run: git checkout --detach "$HEAD_SHA"
+      - run: npm ci
+      - name: Record game scope using the base policy
+        env:
+          BASE_SHA: ${{ steps.refs.outputs.base }}
+          HEAD_SHA: ${{ steps.refs.outputs.head }}
+          TASK_BRANCH: ${{ steps.refs.outputs.branch }}
+        run: |
+          mkdir -p output/automation
+          if git cat-file -e "$BASE_SHA:scripts/game-policy.mjs" 2>/dev/null; then
+            git show "$BASE_SHA:scripts/game-policy.mjs" > output/automation/trusted-policy.mjs
+            node output/automation/trusted-policy.mjs "$BASE_SHA" "$HEAD_SHA" "$TASK_BRANCH" > output/automation/scope.json
+          else
+            node scripts/game-policy.mjs "$BASE_SHA" "$HEAD_SHA" "$TASK_BRANCH" > output/automation/scope.json
+          fi
+      - run: npm test
+      - run: npm run check
+      - run: npm run api:build
+      - name: Install the isolated browser runner
+        run: npm install --prefix "$RUNNER_TEMP/browser-qa" --no-save --ignore-scripts playwright@1.62.1
+      - name: Play games with desktop and touch inputs and verify isolated ranking
+        env:
+          NODE_PATH: ${{ runner.temp }}/browser-qa/node_modules
+          QA_BASE_SHA: ${{ steps.refs.outputs.base }}
+          QA_HEAD_SHA: ${{ steps.refs.outputs.head }}
+        run: PLAYWRIGHT_CHROMIUM_EXECUTABLE="$(command -v google-chrome)" npm run verify:games
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-${{ steps.refs.outputs.head || github.sha }}
+          path: |
+            output/playwright/
+            output/automation/
+          retention-days: 14
