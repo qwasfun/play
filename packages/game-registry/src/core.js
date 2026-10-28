@@ -20,10 +20,16 @@ const TWENTY_DAILY_IDS = Object.freeze(['constellation','tower','rain','mines',.
 
 
 const TWENTY_FOUR_DAILY_IDS=Object.freeze(['lantern','sail','balance','pebble',...TWENTY_DAILY_IDS]);
+export const TWENTY_EIGHT_DAILY_START='2027-02-08';
+const TWENTY_EIGHT_DAILY_IDS=Object.freeze(['windmill','courier','weave','jugs',...TWENTY_FOUR_DAILY_IDS]);
 export function dailyGame(date) {
   if (!validDate(date)) throw new Error('挑战日期：请使用有效的 YYYY-MM-DD 日期');
   const day = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86400000);
   if(date < EXPANDED_DAILY_START) return LEGACY_DAILY_IDS[((day % 4) + 4) % 4];
+  if(date >= TWENTY_EIGHT_DAILY_START){
+    const start=Math.floor(Date.parse(`${TWENTY_EIGHT_DAILY_START}T00:00:00Z`)/86400000);
+    return TWENTY_EIGHT_DAILY_IDS[(day-start)%TWENTY_EIGHT_DAILY_IDS.length];
+  }
   if(date >= TWENTY_FOUR_DAILY_START){
     const start=Math.floor(Date.parse(`${TWENTY_FOUR_DAILY_START}T00:00:00Z`)/86400000);
     return TWENTY_FOUR_DAILY_IDS[(day-start)%TWENTY_FOUR_DAILY_IDS.length];

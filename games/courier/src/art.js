@@ -1,0 +1,2 @@
+import {svg} from '@playground/game-sdk/art';
+export const art=()=>svg(`<rect width="600" height="360" fill="#efe3cb"/><path d="M100 280H210V100H400V280H510" fill="none" stroke="#c5d1a4" stroke-width="60" stroke-linejoin="round"/><rect x="260" y="65" width="85" height="65" rx="8" fill="#fff9ee" stroke="#b88d65" stroke-width="5"/><path d="M260 65l43 40 42-40" fill="none" stroke="#b88d65" stroke-width="4"/><circle cx="400" cy="210" r="23" fill="#e9bb62"/>`);

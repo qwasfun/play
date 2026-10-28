@@ -1,7 +1,7 @@
 name: Batch browser verification
 on:
   push:
-    branches: [batch/2026-10-27]
+    branches: [batch/2026-10-28]
 permissions:
   contents: read
 jobs:
@@ -26,9 +26,9 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/browser-qa/node_modules
         run: |
           npm run preview > "$RUNNER_TEMP/preview.log" 2>&1 &
-          PLAYWRIGHT_CHROMIUM_EXECUTABLE="$(command -v google-chrome)" node scripts/run-batch-browser.mjs
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE="$(command -v google-chrome)" node scripts/run-batch-2026-10-28.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: batch-2026-10-27-browser
+          name: batch-2026-10-28-browser
           path: output/playwright/
