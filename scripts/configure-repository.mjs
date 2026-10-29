@@ -1,15 +1,16 @@
 import {execFileSync} from 'node:child_process';
 import {githubApi} from './github-api.mjs';
 import {REQUIRED_CHECK} from './game-policy.mjs';
+import {MERGE_METHOD,configureMergeMethod} from './merge-policy.mjs';
 const repository=process.env.GITHUB_REPOSITORY||execFileSync('gh',['repo','view','--json','nameWithOwner','--jq','.nameWithOwner'],{encoding:'utf8'}).trim();
-const desired={repository,merge:'rebase',requiredCheck:REQUIRED_CHECK,strict:true,approvals:0,enforceAdmins:true,forcePush:false,directPush:false,deleteMergedBranches:true};
+const desired={repository,merge:MERGE_METHOD,requiredCheck:REQUIRED_CHECK,strict:true,approvals:0,enforceAdmins:true,forcePush:false,directPush:false,deleteMergedBranches:true};
 if(!process.argv.includes('--apply')){
   console.log(JSON.stringify(desired,null,2));console.log('以上为预览；添加 --apply 才会修改远端设置。');
 }else{
   const token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN||execFileSync('gh',['auth','token'],{encoding:'utf8'}).trim(),api=githubApi({repository,token});
   const current=await api('branches/main/protection',{missing:true});
   const checks=[...new Set([...(current?.required_status_checks?.contexts||[]),REQUIRED_CHECK])];
-  await api('',{method:'PATCH',body:{allow_merge_commit:false,allow_squash_merge:false,allow_rebase_merge:true,allow_auto_merge:false,delete_branch_on_merge:true}});
+  await configureMergeMethod(api);
   await api('branches/main/protection',{method:'PUT',body:{required_status_checks:{strict:true,contexts:checks},enforce_admins:true,
     required_pull_request_reviews:{dismiss_stale_reviews:true,require_code_owner_reviews:false,required_approving_review_count:0,require_last_push_approval:false},
     restrictions:current?.restrictions?{users:current.restrictions.users.map(user=>user.login),teams:current.restrictions.teams.map(team=>team.slug),apps:current.restrictions.apps.map(app=>app.slug)}:null,
