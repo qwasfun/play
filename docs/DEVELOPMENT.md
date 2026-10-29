@@ -87,3 +87,9 @@ npm run release:resume
 ```
 
 该操作明确解除暂停，并重新发布当前 main。不能在未查明失败原因时自动恢复。代码修复或回退都通过新 PR，不改写 main 历史。
+
+## 游戏模式契约
+
+合法配置有两种：只有普通模式，或普通模式加闯关模式。普通模式始终提供引擎、manifest、rules 和 art；只有闯关游戏才声明 manifest.campaign、包的 ./campaign 导出和注册表的 campaignLoader，并提供真实关卡数据。普通模式游戏不需要 campaign.js，也不应添加空关卡文件来通过验收。首页自动链接普通模式；其 /levels 路由返回未开放提示。每日挑战池保持历史映射，不因新增普通游戏而自动变化。
+
+公共关卡测试按 manifest.campaign 选择游戏，验证所有声明的关卡；原有 28 款、560 关及原始内容哈希仍受保护。tests/game-modes.test.mjs 使用隔离的普通模式样例验证缺少 campaign 文件的合法配置，并检查双模式入口和路由。
