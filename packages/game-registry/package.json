@@ -38,6 +38,7 @@
     "@playground/game-windmill": "1.0.0",
     "@playground/game-courier": "1.0.0",
     "@playground/game-weave": "1.0.0",
-    "@playground/game-jugs": "1.0.0"
+    "@playground/game-jugs": "1.0.0",
+    "@playground/game-orchard-sort": "1.0.0"
   }
 }

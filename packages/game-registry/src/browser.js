@@ -1,3 +1,4 @@
+import {art as orchardSortArt} from '@playground/game-orchard-sort/art';
 import {art as jugsArt} from '@playground/game-jugs/art';
 import {art as weaveArt} from '@playground/game-weave/art';
 import {art as courierArt} from '@playground/game-courier/art';
@@ -27,9 +28,10 @@ import {art as constellationArt} from '@playground/game-constellation/art';
 import {art as towerArt} from '@playground/game-tower/art';
 import {art as rainArt} from '@playground/game-rain/art';
 import {art as minesArt} from '@playground/game-mines/art';
-export const illustrations={star:starArt,bridge:bridgeArt,lights:lightsArt,echo:echoArt,catch:catchArt,bounce:bounceArt,pairs:pairsArt,merge:mergeArt,rings:ringsArt,snake:snakeArt,boxes:boxesArt,pipes:pipesArt,jump:jumpArt,bubbles:bubblesArt,slide:slideArt,rhythm:rhythmArt,constellation:constellationArt,tower:towerArt,rain:rainArt,mines:minesArt,lantern:lanternArt,sail:sailArt,balance:balanceArt,pebble:pebbleArt,windmill:windmillArt,courier:courierArt,weave:weaveArt,jugs:jugsArt};
 export const campaignLoaders={jugs:()=>import('@playground/game-jugs/campaign'),weave:()=>import('@playground/game-weave/campaign'),pebble:()=>import('@playground/game-pebble/campaign'),balance:()=>import('@playground/game-balance/campaign'),constellation:()=>import('@playground/game-constellation/campaign'),bubbles:()=>import('@playground/game-bubbles/campaign'),merge:()=>import('@playground/game-merge/campaign'),pairs:()=>import('@playground/game-pairs/campaign'),echo:()=>import('@playground/game-echo/campaign'),courier:()=>import('@playground/game-courier/campaign'),windmill:()=>import('@playground/game-windmill/campaign'),sail:()=>import('@playground/game-sail/campaign'),lantern:()=>import('@playground/game-lantern/campaign'),rain:()=>import('@playground/game-rain/campaign'),tower:()=>import('@playground/game-tower/campaign'),rhythm:()=>import('@playground/game-rhythm/campaign'),jump:()=>import('@playground/game-jump/campaign'),snake:()=>import('@playground/game-snake/campaign'),rings:()=>import('@playground/game-rings/campaign'),bounce:()=>import('@playground/game-bounce/campaign'),catch:()=>import('@playground/game-catch/campaign'),bridge:()=>import('@playground/game-bridge/campaign'),star:()=>import('@playground/game-star/campaign'),boxes:()=>import('@playground/game-boxes/campaign'),pipes:()=>import('@playground/game-pipes/campaign'),mines:()=>import('@playground/game-mines/campaign'),lights:()=>import('@playground/game-lights/campaign'),slide:()=>import('@playground/game-slide/campaign')};
+export const illustrations={'orchard-sort':orchardSortArt,star:starArt,bridge:bridgeArt,lights:lightsArt,echo:echoArt,catch:catchArt,bounce:bounceArt,pairs:pairsArt,merge:mergeArt,rings:ringsArt,snake:snakeArt,boxes:boxesArt,pipes:pipesArt,jump:jumpArt,bubbles:bubblesArt,slide:slideArt,rhythm:rhythmArt,constellation:constellationArt,tower:towerArt,rain:rainArt,mines:minesArt,lantern:lanternArt,sail:sailArt,balance:balanceArt,pebble:pebbleArt,windmill:windmillArt,courier:courierArt,weave:weaveArt,jugs:jugsArt};
 export const loaders={
+  'orchard-sort':()=>import('@playground/game-orchard-sort'),
   windmill:()=>import('@playground/game-windmill'),
   courier:()=>import('@playground/game-courier'),
   weave:()=>import('@playground/game-weave'),
