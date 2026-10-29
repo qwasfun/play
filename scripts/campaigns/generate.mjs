@@ -1,45 +1,536 @@
 import fs from 'node:fs';
-import {rng} from '../../packages/game-sdk/src/index.js';
-import {moveBoard,hasMoves} from '../../games/merge/src/model.js';
-import {findGroup,collapseBubbles} from '../../games/bubbles/src/model.js';
-import {shuffle,jugSolution,nonogram,solveNonogram,pegBoard,graphTrail,route} from './solvers.mjs';
-const stages=['入门','熟练','进阶','挑战'],all={},witness={};
-const save=(file,content)=>{if(process.argv.includes('--check')){if(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n')!==content)throw Error(`关卡内容无法复现：${file}`);}else fs.writeFileSync(file,content);};
-const range=(a,b,n)=>Math.round(a+(b-a)*n/19),pick=(r,n)=>Math.floor(r()*n);
-function add(id,n,data,objective,solution){const level={game:id,number:n+1,title:`${stages[Math.floor(n/5)]} · ${n%5+1}`,stage:Math.floor(n/5)+1,seed:`campaign-v1:${id}:${n+1}`,objective,...data};(all[id]??=[]).push(level);if(solution)(witness[id]??=[]).push(solution);return level;}
+import { rng } from '../../packages/game-sdk/src/index.js';
+import { moveBoard, hasMoves } from '../../games/merge/src/model.js';
+import { findGroup, collapseBubbles } from '../../games/bubbles/src/model.js';
+import {
+  shuffle,
+  jugSolution,
+  nonogram,
+  solveNonogram,
+  pegBoard,
+  graphTrail,
+  route,
+} from './solvers.mjs';
+const stages = ['入门', '熟练', '进阶', '挑战'],
+  all = {},
+  witness = {};
+const save = (file, content) => {
+  if (process.argv.includes('--check')) {
+    if (fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n') !== content)
+      throw Error(`关卡内容无法复现：${file}`);
+  } else fs.writeFileSync(file, content);
+};
+const range = (a, b, n) => Math.round(a + ((b - a) * n) / 19),
+  pick = (r, n) => Math.floor(r() * n);
+function add(id, n, data, objective, solution) {
+  const level = {
+    game: id,
+    number: n + 1,
+    title: `${stages[Math.floor(n / 5)]} · ${(n % 5) + 1}`,
+    stage: Math.floor(n / 5) + 1,
+    seed: `campaign-v1:${id}:${n + 1}`,
+    objective,
+    ...data,
+  };
+  (all[id] ??= []).push(level);
+  if (solution) (witness[id] ??= []).push(solution);
+  return level;
+}
 // Puzzles: accepted content always includes a legal witness stored outside runtime data.
-for(let n=0;n<20;n++){
- let r=rng(`campaign-v1:puzzles:${n}`),stage=Math.floor(n/5),length=range(3,12,n),sequence=Array.from({length},()=>pick(r,4));add('echo',n,{sequence,beat:.75-stage*.065},`记住并回应一段 ${length} 个位置的微光序列。`,sequence);
- const pairs=range(3,10,n),cols=pairs===3?3:4,board=shuffle(Array.from({length:pairs*2},(_,i)=>Math.floor(i/2)),r);add('pairs',n,{board,cols,preview:Math.max(0,2-stage*.6)},`找出全部 ${pairs} 对花朵；开局预览后再翻牌。`,Array.from({length:pairs},(_,v)=>board.map((x,i)=>x===v?i:-1).filter(i=>i>=0)).flat());
- const count=range(4,10,n),weights=shuffle(Array.from({length:18},(_,i)=>i+2),r).slice(0,count),chosen=shuffle(Array.from({length:count},(_,i)=>i),r).slice(0,Math.min(count-1,2+stage)),target=chosen.reduce((a,i)=>a+weights[i],0);add('balance',n,{weights,target},`从 ${count} 个果篮里选出总重恰好 ${target} 斤的一组。`,chosen);
- const pegs=range(4,16,n),peg=pegBoard(pegs,r);if(!peg)throw Error(`pebble ${n}`);add('pebble',n,{board:peg.board},`让 ${pegs} 颗茶点通过跳跃消除，最后剩一颗。`,peg.solution);
- const vertices=range(5,12,n),nodes=Array.from({length:vertices},(_,i)=>{const angle=-Math.PI/2+i*Math.PI*2/vertices;return{x:Math.round(300+220*Math.cos(angle)),y:Math.round(300+220*Math.sin(angle))};}),order=shuffle(Array.from({length:vertices},(_,i)=>i),r),edges=order.slice(1).map((v,i)=>[order[i],v]);if(stage>=1)edges.push([order.at(-1),order[0]]);if(stage>=2){const a=order[0],b=order[2],c=order[4];edges.push([a,b],[b,c],[c,a]);}if(stage===3){const a=order[1],b=order[5],c=order[8];edges.push([a,b],[b,c],[c,a]);}const trail=graphTrail(edges);if(trail.length!==edges.length+1)throw Error('graph');add('constellation',n,{nodes,edges},`一笔连过 ${vertices} 个星点之间的全部 ${edges.length} 条连线。`,trail);
- const size=stage<2?4:6,colors=stage+2;let bubble,solution;for(let attempt=0;attempt<200;attempt++){bubble=Array.from({length:size*size},(_,i)=>pick(r,colors));for(let row=0;row<size;row+=2)for(let col=0;col<size;col++)bubble[(row+1)*size+col]=bubble[row*size+col];const memo=new Set();function solve(b){if(b.every(v=>v==null))return[];const key=b.map(v=>v??'x').join('');if(memo.has(key))return null;memo.add(key);const seen=new Set();for(let i=0;i<b.length;i++){if(b[i]==null||seen.has(i))continue;const g=findGroup(b,i,size,size);g.forEach(j=>seen.add(j));if(g.length<2)continue;const next=[...b];g.forEach(j=>next[j]=null);const p=solve(collapseBubbles(next,size,size));if(p)return[i,...p];}return null;}solution=solve(bubble);if(solution&&solution.length>=2+stage)break;}if(!solution)throw Error('bubbles');add('bubbles',n,{size,colors:Math.min(5,colors),board:bubble},`清空 ${size}×${size} 的 ${Math.min(5,colors)} 色气泡花园。`,solution);
+for (let n = 0; n < 20; n++) {
+  let r = rng(`campaign-v1:puzzles:${n}`),
+    stage = Math.floor(n / 5),
+    length = range(3, 12, n),
+    sequence = Array.from({ length }, () => pick(r, 4));
+  add(
+    'echo',
+    n,
+    { sequence, beat: 0.75 - stage * 0.065 },
+    `记住并回应一段 ${length} 个位置的微光序列。`,
+    sequence,
+  );
+  const pairs = range(3, 10, n),
+    cols = pairs === 3 ? 3 : 4,
+    board = shuffle(
+      Array.from({ length: pairs * 2 }, (_, i) => Math.floor(i / 2)),
+      r,
+    );
+  add(
+    'pairs',
+    n,
+    { board, cols, preview: Math.max(0, 2 - stage * 0.6) },
+    `找出全部 ${pairs} 对花朵；开局预览后再翻牌。`,
+    Array.from({ length: pairs }, (_, v) =>
+      board.map((x, i) => (x === v ? i : -1)).filter((i) => i >= 0),
+    ).flat(),
+  );
+  const count = range(4, 10, n),
+    weights = shuffle(
+      Array.from({ length: 18 }, (_, i) => i + 2),
+      r,
+    ).slice(0, count),
+    chosen = shuffle(
+      Array.from({ length: count }, (_, i) => i),
+      r,
+    ).slice(0, Math.min(count - 1, 2 + stage)),
+    target = chosen.reduce((a, i) => a + weights[i], 0);
+  add(
+    'balance',
+    n,
+    { weights, target },
+    `从 ${count} 个果篮里选出总重恰好 ${target} 斤的一组。`,
+    chosen,
+  );
+  const pegs = range(4, 16, n),
+    peg = pegBoard(pegs, r);
+  if (!peg) throw Error(`pebble ${n}`);
+  add(
+    'pebble',
+    n,
+    { board: peg.board },
+    `让 ${pegs} 颗茶点通过跳跃消除，最后剩一颗。`,
+    peg.solution,
+  );
+  const vertices = range(5, 12, n),
+    nodes = Array.from({ length: vertices }, (_, i) => {
+      const angle = -Math.PI / 2 + (i * Math.PI * 2) / vertices;
+      return {
+        x: Math.round(300 + 220 * Math.cos(angle)),
+        y: Math.round(300 + 220 * Math.sin(angle)),
+      };
+    }),
+    order = shuffle(
+      Array.from({ length: vertices }, (_, i) => i),
+      r,
+    ),
+    edges = order.slice(1).map((v, i) => [order[i], v]);
+  if (stage >= 1) edges.push([order.at(-1), order[0]]);
+  if (stage >= 2) {
+    const a = order[0],
+      b = order[2],
+      c = order[4];
+    edges.push([a, b], [b, c], [c, a]);
+  }
+  if (stage === 3) {
+    const a = order[1],
+      b = order[5],
+      c = order[8];
+    edges.push([a, b], [b, c], [c, a]);
+  }
+  const trail = graphTrail(edges);
+  if (trail.length !== edges.length + 1) throw Error('graph');
+  add(
+    'constellation',
+    n,
+    { nodes, edges },
+    `一笔连过 ${vertices} 个星点之间的全部 ${edges.length} 条连线。`,
+    trail,
+  );
+  const size = stage < 2 ? 4 : 6,
+    colors = stage + 2;
+  let bubble, solution;
+  for (let attempt = 0; attempt < 200; attempt++) {
+    bubble = Array.from({ length: size * size }, (_) => pick(r, colors));
+    for (let row = 0; row < size; row += 2)
+      for (let col = 0; col < size; col++)
+        bubble[(row + 1) * size + col] = bubble[row * size + col];
+    const memo = new Set();
+    function solve(b) {
+      if (b.every((v) => v == null)) return [];
+      const key = b.map((v) => v ?? 'x').join('');
+      if (memo.has(key)) return null;
+      memo.add(key);
+      const seen = new Set();
+      for (let i = 0; i < b.length; i++) {
+        if (b[i] == null || seen.has(i)) continue;
+        const g = findGroup(b, i, size, size);
+        g.forEach((j) => seen.add(j));
+        if (g.length < 2) continue;
+        const next = [...b];
+        g.forEach((j) => (next[j] = null));
+        const p = solve(collapseBubbles(next, size, size));
+        if (p) return [i, ...p];
+      }
+      return null;
+    }
+    solution = solve(bubble);
+    if (solution && solution.length >= 2 + stage) break;
+  }
+  if (!solution) throw Error('bubbles');
+  add(
+    'bubbles',
+    n,
+    { size, colors: Math.min(5, colors), board: bubble },
+    `清空 ${size}×${size} 的 ${Math.min(5, colors)} 色气泡花园。`,
+    solution,
+  );
 }
-const jugCandidates=[];for(let a=2;a<=13;a++)for(let b=a+1;b<=13;b++)for(let target=1;target<b;target++){const p=jugSolution(a,b,target);if(p&&p.length>=2&&p.length<=14)jugCandidates.push({a,b,target,p});}
-const jugUsed=new Set();let lastJug=2;for(let n=0;n<20;n++){const desired=range(2,14,n),c=jugCandidates.filter(c=>!jugUsed.has(`${c.a},${c.b},${c.target}`)&&c.p.length>=lastJug).sort((a,b)=>Math.abs(a.p.length-desired)-Math.abs(b.p.length-desired)||a.a+a.b-b.a-b.b)[0];lastJug=c.p.length;jugUsed.add(`${c.a},${c.b},${c.target}`);add('jugs',n,{a:c.a,b:c.b,target:c.target,minimum:c.p.length},`用 ${c.a} 升和 ${c.b} 升的壶，量出 ${c.target} 升水。`,c.p);}
-const weaveCandidates=[],weaveSeen=new Set();for(let k=0;k<1800;k++){const r=rng(`weave-author:${k}`),board=Array.from({length:25},()=>r()<.5),clues=nonogram(board),key=JSON.stringify(clues),solved=solveNonogram(clues);if(solved.solutions.length===1&&!weaveSeen.has(key)){weaveSeen.add(key);weaveCandidates.push({board,clues,difficulty:solved.ambiguity*10+solved.nodes});}}weaveCandidates.sort((a,b)=>a.difficulty-b.difficulty);for(let n=0;n<20;n++){const c=weaveCandidates[Math.floor(n*(weaveCandidates.length-1)/19)];add('weave',n,{...c.clues,difficulty:c.difficulty},'根据每行、每列的连续色块数字，填出唯一的 5×5 花窗。',c.board.map((v,i)=>v?i:-1).filter(i=>i>=0));}
+const jugCandidates = [];
+for (let a = 2; a <= 13; a++)
+  for (let b = a + 1; b <= 13; b++)
+    for (let target = 1; target < b; target++) {
+      const p = jugSolution(a, b, target);
+      if (p && p.length >= 2 && p.length <= 14) jugCandidates.push({ a, b, target, p });
+    }
+const jugUsed = new Set();
+let lastJug = 2;
+for (let n = 0; n < 20; n++) {
+  const desired = range(2, 14, n),
+    c = jugCandidates
+      .filter((c) => !jugUsed.has(`${c.a},${c.b},${c.target}`) && c.p.length >= lastJug)
+      .sort(
+        (a, b) =>
+          Math.abs(a.p.length - desired) - Math.abs(b.p.length - desired) || a.a + a.b - b.a - b.b,
+      )[0];
+  lastJug = c.p.length;
+  jugUsed.add(`${c.a},${c.b},${c.target}`);
+  add(
+    'jugs',
+    n,
+    { a: c.a, b: c.b, target: c.target, minimum: c.p.length },
+    `用 ${c.a} 升和 ${c.b} 升的壶，量出 ${c.target} 升水。`,
+    c.p,
+  );
+}
+const weaveCandidates = [],
+  weaveSeen = new Set();
+for (let k = 0; k < 1800; k++) {
+  const r = rng(`weave-author:${k}`),
+    board = Array.from({ length: 25 }, () => r() < 0.5),
+    clues = nonogram(board),
+    key = JSON.stringify(clues),
+    solved = solveNonogram(clues);
+  if (solved.solutions.length === 1 && !weaveSeen.has(key)) {
+    weaveSeen.add(key);
+    weaveCandidates.push({ board, clues, difficulty: solved.ambiguity * 10 + solved.nodes });
+  }
+}
+weaveCandidates.sort((a, b) => a.difficulty - b.difficulty);
+for (let n = 0; n < 20; n++) {
+  const c = weaveCandidates[Math.floor((n * (weaveCandidates.length - 1)) / 19)];
+  add(
+    'weave',
+    n,
+    { ...c.clues, difficulty: c.difficulty },
+    '根据每行、每列的连续色块数字，填出唯一的 5×5 花窗。',
+    c.board.map((v, i) => (v ? i : -1)).filter((i) => i >= 0),
+  );
+}
 // Deterministic merge boards and spawn stream, with beam-search input witnesses.
-for(let n=0;n<20;n++){const stage=Math.floor(n/5),target=[32,64,128,256][stage];let accepted;for(let attempt=0;attempt<30&&!accepted;attempt++){const r=rng(`merge-author:${n}:${attempt}`),board=Array.from({length:16},()=>r()<.55?2**(1+pick(r,Math.max(2,stage+2))):0),spawns=Array.from({length:512},()=>({slot:pick(r,65536),value:r()<.9?2:4}));let beam=[{board,path:[],spawn:0}],seen=new Set();for(let depth=0;depth<160&&!accepted&&beam.length;depth++){const next=[];for(const state of beam)for(const dir of ['left','up','right','down']){let b=moveBoard(state.board,dir);if(!b.moved)continue;const path=[...state.path,dir];if(Math.max(...b.board)>=target){accepted={board,spawns,path};break;}const empty=b.board.map((v,i)=>v? -1:i).filter(i=>i>=0),entry=spawns[state.spawn];if(empty.length)b.board[empty[entry.slot%empty.length]]=entry.value;const key=b.board.join(',')+':'+(state.spawn+1);if(seen.has(key)||!hasMoves(b.board))continue;seen.add(key);const emptyCount=b.board.filter(v=>!v).length,rank=emptyCount*100+Math.max(...b.board)*6+b.board.reduce((sum,v)=>sum+(v?v*Math.log2(v):0),0);next.push({board:b.board,path,spawn:state.spawn+1,rank});}beam=next.sort((a,b)=>b.rank-a.rank).slice(0,100);}}if(!accepted)throw Error(`merge ${n}`);add('merge',n,{board:accepted.board,spawns:accepted.spawns,target},`通过合并数字，得到 ${target}。生成顺序固定。`,accepted.path);}
-// Finite action schedules. Safe paths and operation windows are authored explicitly.
-for(let n=0;n<20;n++){
- const r=rng(`campaign-v1:actions:${n}`),stage=Math.floor(n/5),target=(a,b)=>range(a,b,n),lanes=Array.from({length:50},(_,i)=>(pick(r,3)+i)%3);
- let goal=target(6,24),schedule=[],t=2;for(let i=0;i<goal+2;i++){const lane=pick(r,2);schedule.push({time:t,lane,type:'mail'});if(stage||i%2)schedule.push({time:t,lane:1-lane,type:'rock'});if(stage>=2)schedule.push({time:t+.45,lane,type:'rock'});t+=1.5-stage*.12;}schedule.sort((a,b)=>a.time-b.time);add('star',n,{target:goal,schedule,endTime:t},`收集 ${goal} 封信，切换轨道避开碎石。`);
- goal=target(4,16);const islands=Array.from({length:goal},(_,i)=>({gap:Math.round(95+pick(r,150)+Math.sin(i+n)*15),width:90-stage*13-pick(r,8),speed:135+stage*22+pick(r,35)}));add('bridge',n,{target:goal,islands},`搭好 ${goal} 段桥，把桥端落在下一座云岛上。`);
- goal=target(8,30);schedule=[];t=.5;for(let i=0;i<goal+2;i++){const x=110+lanes[i]*180+pick(r,31)-15,speed=180+stage*20;schedule.push({time:t,x,speed,type:'fruit',variety:i%3,rotation:r()*6});if(i%(4-stage)===0)schedule.push({time:t+.12,x:x<300?480:120,speed,type:'rock',rotation:r()*6});t+=1.55-stage*.13;}add('catch',n,{target:goal,schedule,endTime:t+3},`接住 ${goal} 个水果，避开落下的石头。`);
- goal=target(8,28);schedule=[];t=.5;for(let i=0;i<goal+2;i++){const fallTime=2.15; schedule.push({id:i,time:t,crossTime:t+fallTime,x:110+lanes[i]*180+pick(r,31)-15,type:i%4===3?'sun':'rain',speed:358/fallTime});t+=1.5-stage*.12;}add('rain',n,{target:goal,schedule},`撑伞接住 ${goal} 份雨滴和阳光，最多漏接两次。`);
- goal=target(4,18);t=2.6;schedule=Array.from({length:goal+2},(_,i)=>{const v={id:i,time:t,width:30+stage*7+pick(r,9),height:35+stage*12+pick(r,8),color:i%3};t+=2.2-stage*.22+r()*.4;return v;});add('jump',n,{target:goal,schedule},`跳过 ${goal} 个木桩，注意高矮和间距。`);
- goal=target(8,40);t=2.4;schedule=Array.from({length:goal+2},(_,i)=>{const v={id:i,time:t,lane:(pick(r,4)+i)%4};t+=(i%5===4?1.1:.78-stage*.1)+r()*.12;return v;});add('rhythm',n,{target:goal,schedule,window:.19-stage*.02},`接住 ${goal} 个音符；音符到达横线时点击对应轨道。`);
- goal=target(4,18);const stages=Array.from({length:goal},(_,i)=>({id:i,speed:125+stage*25+pick(r,45),offset:pick(r,720),color:(n+i)%6}));add('tower',n,{target:goal,width:240-stage*25,stages},`对齐并叠好 ${goal} 层小楼，保留足够的支撑宽度。`);
- goal=target(6,28);add('lantern',n,{target:goal,schedule:Array.from({length:goal+2},()=>pick(r,9)),preview:.65-stage*.1,period:1.65-stage*.22},`点亮 ${goal} 盏萤灯；等金灯出现后再点。`);
- goal=target(5,24);add('sail',n,{target:goal,gates:Array.from({length:goal+2},(_,i)=>(i+pick(r,3))%3),interval:2.4-stage*.32},`从石门缺口通过 ${goal} 道峡湾。`);
- goal=target(4,16);add('windmill',n,{target:goal,targets:Array.from({length:goal},()=>r()*Math.PI*2),speed:1.3+stage*.25,window:.36-stage*.035},`指针进入金色花瓣时采蜜，命中 ${goal} 次。`);
- goal=target(3,10);const rings=Array.from({length:goal},(_,i)=>{const vx=180+r()*100,vy=-(280+r()*85),time=.9+r()*.35,wind=(r()-.5)*30;return{target:{x:88+vx*time+wind*time*time/2,y:390+vy*time+165*time*time,radius:38-stage*5-pick(r,4)},wind};});add('rings',n,{target:goal,rings},`把小球依次送入 ${goal} 个金环，留意距离与轻风。`);
- goal=target(8,32);const slots=shuffle(Array.from({length:36},(_,i)=>i),r).slice(0,goal),bricks=slots.map(i=>({x:42+i%6*86+(n%3)*3,y:78+Math.floor(i/6)*33,width:73,height:23,row:Math.floor(i/6)%4,detail:i%3,hp:stage>=2&&i%4===0?2:1}));add('bounce',n,{target:goal,bricks},`清空 ${goal} 块糖砖${stage>=2?'，带数字的糖砖需要多次击打':''}。`);
- // A wide rectangular circuit gives the growing snake a safe return route.
- goal=target(4,16);const left=1+(n%2),right=10-(n%3===0?1:0),top=1,bottom=8,cycle=[];for(let x=left;x<=right;x++)cycle.push(top*12+x);for(let y=top+1;y<=bottom;y++)cycle.push(y*12+right);for(let x=right-1;x>=left;x--)cycle.push(bottom*12+x);for(let y=bottom-1;y>top;y--)cycle.push(y*12+left);const food=[],snakePath=[];let pos=64;for(let x=5;x<=right;x++){snakePath.push(60+x);pos=60+x;}let ci=cycle.indexOf(pos);for(let i=0;i<goal;i++){for(let j=0;j<2+(i+n)%3;j++){ci=(ci+1)%cycle.length;snakePath.push(cycle[ci]);}food.push(cycle[ci]);}const safe=new Set([...cycle,...snakePath,62,63,64]),obstacles=shuffle(Array.from({length:120},(_,i)=>i).filter(i=>!safe.has(i)),r).slice(0,stage*4+2);add('snake',n,{target:goal,step:.3-stage*.035,obstacles,food},`吃到 ${goal} 颗星星，绕开固定石块和自己的身体。`,snakePath);
- goal=target(2,8);let walls=[],patrols=[],letters=[],routes;for(let attempt=0;attempt<100;attempt++){const beeRow=2+(n%2),beeCells=Array.from({length:4},(_,i)=>beeRow*6+i+1),candidate=shuffle(Array.from({length:35},(_,i)=>i+1).filter(i=>!beeCells.includes(i)),r).slice(0,stage+1);walls=candidate;patrols=[beeCells.concat([...beeCells].reverse().slice(1,-1))];const blocked=[...walls,...beeCells],reachable=Array.from({length:35},(_,i)=>i+1).filter(i=>!blocked.includes(i)&&route(0,i,blocked));letters=shuffle(reachable,r).slice(0,goal);let from=0;routes=[];for(const to of letters){const p=route(from,to,blocked);if(!p){routes=null;break;}routes.push(...p);from=to;}if(routes&&letters.length===goal)break;}if(!routes)throw Error('courier');add('courier',n,{target:goal,start:0,walls,patrols,letters,beat:.8-stage*.1},`按顺序送达 ${goal} 封信，避开巡逻蜜蜂。`,routes);
+for (let n = 0; n < 20; n++) {
+  const stage = Math.floor(n / 5),
+    target = [32, 64, 128, 256][stage];
+  let accepted;
+  for (let attempt = 0; attempt < 30 && !accepted; attempt++) {
+    const r = rng(`merge-author:${n}:${attempt}`),
+      board = Array.from({ length: 16 }, () =>
+        r() < 0.55 ? 2 ** (1 + pick(r, Math.max(2, stage + 2))) : 0,
+      ),
+      spawns = Array.from({ length: 512 }, () => ({
+        slot: pick(r, 65536),
+        value: r() < 0.9 ? 2 : 4,
+      }));
+    let beam = [{ board, path: [], spawn: 0 }],
+      seen = new Set();
+    for (let depth = 0; depth < 160 && !accepted && beam.length; depth++) {
+      const next = [];
+      for (const state of beam)
+        for (const dir of ['left', 'up', 'right', 'down']) {
+          let b = moveBoard(state.board, dir);
+          if (!b.moved) continue;
+          const path = [...state.path, dir];
+          if (Math.max(...b.board) >= target) {
+            accepted = { board, spawns, path };
+            break;
+          }
+          const empty = b.board.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0),
+            entry = spawns[state.spawn];
+          if (empty.length) b.board[empty[entry.slot % empty.length]] = entry.value;
+          const key = b.board.join(',') + ':' + (state.spawn + 1);
+          if (seen.has(key) || !hasMoves(b.board)) continue;
+          seen.add(key);
+          const emptyCount = b.board.filter((v) => !v).length,
+            rank =
+              emptyCount * 100 +
+              Math.max(...b.board) * 6 +
+              b.board.reduce((sum, v) => sum + (v ? v * Math.log2(v) : 0), 0);
+          next.push({ board: b.board, path, spawn: state.spawn + 1, rank });
+        }
+      beam = next.sort((a, b) => b.rank - a.rank).slice(0, 100);
+    }
+  }
+  if (!accepted) throw Error(`merge ${n}`);
+  add(
+    'merge',
+    n,
+    { board: accepted.board, spawns: accepted.spawns, target },
+    `通过合并数字，得到 ${target}。生成顺序固定。`,
+    accepted.path,
+  );
 }
-for(const[id,levels]of Object.entries(all)){if(levels.length!==20)throw Error(id);save(`games/${id}/src/campaign-data.js`,`// Fixed campaign content v1. Author with scripts/campaigns/generate.mjs.\nexport const levels=${JSON.stringify(levels,null,2)};\n`);}
-fs.mkdirSync('tests/fixtures',{recursive:true});save('tests/fixtures/new-campaign-solutions.json',JSON.stringify(witness)+'\n');
-console.log(`Authored ${Object.keys(all).length} campaigns / ${Object.values(all).flat().length} levels`);
+// Finite action schedules. Safe paths and operation windows are authored explicitly.
+for (let n = 0; n < 20; n++) {
+  const r = rng(`campaign-v1:actions:${n}`),
+    stage = Math.floor(n / 5),
+    target = (a, b) => range(a, b, n),
+    lanes = Array.from({ length: 50 }, (_, i) => (pick(r, 3) + i) % 3);
+  let goal = target(6, 24),
+    schedule = [],
+    t = 2;
+  for (let i = 0; i < goal + 2; i++) {
+    const lane = pick(r, 2);
+    schedule.push({ time: t, lane, type: 'mail' });
+    if (stage || i % 2) schedule.push({ time: t, lane: 1 - lane, type: 'rock' });
+    if (stage >= 2) schedule.push({ time: t + 0.45, lane, type: 'rock' });
+    t += 1.5 - stage * 0.12;
+  }
+  schedule.sort((a, b) => a.time - b.time);
+  add('star', n, { target: goal, schedule, endTime: t }, `收集 ${goal} 封信，切换轨道避开碎石。`);
+  goal = target(4, 16);
+  const islands = Array.from({ length: goal }, (_, i) => ({
+    gap: Math.round(95 + pick(r, 150) + Math.sin(i + n) * 15),
+    width: 90 - stage * 13 - pick(r, 8),
+    speed: 135 + stage * 22 + pick(r, 35),
+  }));
+  add('bridge', n, { target: goal, islands }, `搭好 ${goal} 段桥，把桥端落在下一座云岛上。`);
+  goal = target(8, 30);
+  schedule = [];
+  t = 0.5;
+  for (let i = 0; i < goal + 2; i++) {
+    const x = 110 + lanes[i] * 180 + pick(r, 31) - 15,
+      speed = 180 + stage * 20;
+    schedule.push({ time: t, x, speed, type: 'fruit', variety: i % 3, rotation: r() * 6 });
+    if (i % (4 - stage) === 0)
+      schedule.push({
+        time: t + 0.12,
+        x: x < 300 ? 480 : 120,
+        speed,
+        type: 'rock',
+        rotation: r() * 6,
+      });
+    t += 1.55 - stage * 0.13;
+  }
+  add(
+    'catch',
+    n,
+    { target: goal, schedule, endTime: t + 3 },
+    `接住 ${goal} 个水果，避开落下的石头。`,
+  );
+  goal = target(8, 28);
+  schedule = [];
+  t = 0.5;
+  for (let i = 0; i < goal + 2; i++) {
+    const fallTime = 2.15;
+    schedule.push({
+      id: i,
+      time: t,
+      crossTime: t + fallTime,
+      x: 110 + lanes[i] * 180 + pick(r, 31) - 15,
+      type: i % 4 === 3 ? 'sun' : 'rain',
+      speed: 358 / fallTime,
+    });
+    t += 1.5 - stage * 0.12;
+  }
+  add('rain', n, { target: goal, schedule }, `撑伞接住 ${goal} 份雨滴和阳光，最多漏接两次。`);
+  goal = target(4, 18);
+  t = 2.6;
+  schedule = Array.from({ length: goal + 2 }, (_, i) => {
+    const v = {
+      id: i,
+      time: t,
+      width: 30 + stage * 7 + pick(r, 9),
+      height: 35 + stage * 12 + pick(r, 8),
+      color: i % 3,
+    };
+    t += 2.2 - stage * 0.22 + r() * 0.4;
+    return v;
+  });
+  add('jump', n, { target: goal, schedule }, `跳过 ${goal} 个木桩，注意高矮和间距。`);
+  goal = target(8, 40);
+  t = 2.4;
+  schedule = Array.from({ length: goal + 2 }, (_, i) => {
+    const v = { id: i, time: t, lane: (pick(r, 4) + i) % 4 };
+    t += (i % 5 === 4 ? 1.1 : 0.78 - stage * 0.1) + r() * 0.12;
+    return v;
+  });
+  add(
+    'rhythm',
+    n,
+    { target: goal, schedule, window: 0.19 - stage * 0.02 },
+    `接住 ${goal} 个音符；音符到达横线时点击对应轨道。`,
+  );
+  goal = target(4, 18);
+  const stages = Array.from({ length: goal }, (_, i) => ({
+    id: i,
+    speed: 125 + stage * 25 + pick(r, 45),
+    offset: pick(r, 720),
+    color: (n + i) % 6,
+  }));
+  add(
+    'tower',
+    n,
+    { target: goal, width: 240 - stage * 25, stages },
+    `对齐并叠好 ${goal} 层小楼，保留足够的支撑宽度。`,
+  );
+  goal = target(6, 28);
+  add(
+    'lantern',
+    n,
+    {
+      target: goal,
+      schedule: Array.from({ length: goal + 2 }, () => pick(r, 9)),
+      preview: 0.65 - stage * 0.1,
+      period: 1.65 - stage * 0.22,
+    },
+    `点亮 ${goal} 盏萤灯；等金灯出现后再点。`,
+  );
+  goal = target(5, 24);
+  add(
+    'sail',
+    n,
+    {
+      target: goal,
+      gates: Array.from({ length: goal + 2 }, (_, i) => (i + pick(r, 3)) % 3),
+      interval: 2.4 - stage * 0.32,
+    },
+    `从石门缺口通过 ${goal} 道峡湾。`,
+  );
+  goal = target(4, 16);
+  add(
+    'windmill',
+    n,
+    {
+      target: goal,
+      targets: Array.from({ length: goal }, () => r() * Math.PI * 2),
+      speed: 1.3 + stage * 0.25,
+      window: 0.36 - stage * 0.035,
+    },
+    `指针进入金色花瓣时采蜜，命中 ${goal} 次。`,
+  );
+  goal = target(3, 10);
+  const rings = Array.from({ length: goal }, (_) => {
+    const vx = 180 + r() * 100,
+      vy = -(280 + r() * 85),
+      time = 0.9 + r() * 0.35,
+      wind = (r() - 0.5) * 30;
+    return {
+      target: {
+        x: 88 + vx * time + (wind * time * time) / 2,
+        y: 390 + vy * time + 165 * time * time,
+        radius: 38 - stage * 5 - pick(r, 4),
+      },
+      wind,
+    };
+  });
+  add('rings', n, { target: goal, rings }, `把小球依次送入 ${goal} 个金环，留意距离与轻风。`);
+  goal = target(8, 32);
+  const slots = shuffle(
+      Array.from({ length: 36 }, (_, i) => i),
+      r,
+    ).slice(0, goal),
+    bricks = slots.map((i) => ({
+      x: 42 + (i % 6) * 86 + (n % 3) * 3,
+      y: 78 + Math.floor(i / 6) * 33,
+      width: 73,
+      height: 23,
+      row: Math.floor(i / 6) % 4,
+      detail: i % 3,
+      hp: stage >= 2 && i % 4 === 0 ? 2 : 1,
+    }));
+  add(
+    'bounce',
+    n,
+    { target: goal, bricks },
+    `清空 ${goal} 块糖砖${stage >= 2 ? '，带数字的糖砖需要多次击打' : ''}。`,
+  );
+  // A wide rectangular circuit gives the growing snake a safe return route.
+  goal = target(4, 16);
+  const left = 1 + (n % 2),
+    right = 10 - (n % 3 === 0 ? 1 : 0),
+    top = 1,
+    bottom = 8,
+    cycle = [];
+  for (let x = left; x <= right; x++) cycle.push(top * 12 + x);
+  for (let y = top + 1; y <= bottom; y++) cycle.push(y * 12 + right);
+  for (let x = right - 1; x >= left; x--) cycle.push(bottom * 12 + x);
+  for (let y = bottom - 1; y > top; y--) cycle.push(y * 12 + left);
+  const food = [],
+    snakePath = [];
+  let pos = 64;
+  for (let x = 5; x <= right; x++) {
+    snakePath.push(60 + x);
+    pos = 60 + x;
+  }
+  let ci = cycle.indexOf(pos);
+  for (let i = 0; i < goal; i++) {
+    for (let j = 0; j < 2 + ((i + n) % 3); j++) {
+      ci = (ci + 1) % cycle.length;
+      snakePath.push(cycle[ci]);
+    }
+    food.push(cycle[ci]);
+  }
+  const safe = new Set([...cycle, ...snakePath, 62, 63, 64]),
+    obstacles = shuffle(
+      Array.from({ length: 120 }, (_, i) => i).filter((i) => !safe.has(i)),
+      r,
+    ).slice(0, stage * 4 + 2);
+  add(
+    'snake',
+    n,
+    { target: goal, step: 0.3 - stage * 0.035, obstacles, food },
+    `吃到 ${goal} 颗星星，绕开固定石块和自己的身体。`,
+    snakePath,
+  );
+  goal = target(2, 8);
+  let walls = [],
+    patrols = [],
+    letters = [],
+    routes;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const beeRow = 2 + (n % 2),
+      beeCells = Array.from({ length: 4 }, (_, i) => beeRow * 6 + i + 1),
+      candidate = shuffle(
+        Array.from({ length: 35 }, (_, i) => i + 1).filter((i) => !beeCells.includes(i)),
+        r,
+      ).slice(0, stage + 1);
+    walls = candidate;
+    patrols = [beeCells.concat([...beeCells].reverse().slice(1, -1))];
+    const blocked = [...walls, ...beeCells],
+      reachable = Array.from({ length: 35 }, (_, i) => i + 1).filter(
+        (i) => !blocked.includes(i) && route(0, i, blocked),
+      );
+    letters = shuffle(reachable, r).slice(0, goal);
+    let from = 0;
+    routes = [];
+    for (const to of letters) {
+      const p = route(from, to, blocked);
+      if (!p) {
+        routes = null;
+        break;
+      }
+      routes.push(...p);
+      from = to;
+    }
+    if (routes && letters.length === goal) break;
+  }
+  if (!routes) throw Error('courier');
+  add(
+    'courier',
+    n,
+    { target: goal, start: 0, walls, patrols, letters, beat: 0.8 - stage * 0.1 },
+    `按顺序送达 ${goal} 封信，避开巡逻蜜蜂。`,
+    routes,
+  );
+}
+for (const [id, levels] of Object.entries(all)) {
+  if (levels.length !== 20) throw Error(id);
+  save(
+    `games/${id}/src/campaign-data.js`,
+    `// Fixed campaign content v1. Author with scripts/campaigns/generate.mjs.\nexport const levels=${JSON.stringify(levels, null, 2)};\n`,
+  );
+}
+fs.mkdirSync('tests/fixtures', { recursive: true });
+save('tests/fixtures/new-campaign-solutions.json', JSON.stringify(witness) + '\n');
+console.log(
+  `Authored ${Object.keys(all).length} campaigns / ${Object.values(all).flat().length} levels`,
+);

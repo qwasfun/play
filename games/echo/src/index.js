@@ -1,4 +1,4 @@
-import {createCampaignGame} from './campaign-engine.js';
+import { createCampaignGame } from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const LIMIT = 180;
@@ -18,11 +18,13 @@ export function createEchoSequence(seed) {
 }
 
 function padAt(x, y) {
-  return PADS.findIndex(pad => x >= pad.x && x <= pad.x + PAD_W && y >= pad.y && y <= pad.y + PAD_H);
+  return PADS.findIndex(
+    (pad) => x >= pad.x && x <= pad.x + PAD_W && y >= pad.y && y <= pad.y + PAD_H,
+  );
 }
 
-export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
-  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
+export function createGame({ level: campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if (campaignLevel) return createCampaignGame({ level: campaignLevel, onFinish, sound });
   const sequence = createEchoSequence(seed);
   let elapsed = 0;
   let rounds = 0;
@@ -111,15 +113,40 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
       if (type === 'primary-down') answer(padAt(payload.x, payload.y));
       if (type !== 'key-down' || payload.repeat) return;
       const key = String(payload.key).toLowerCase();
-      const mapping = { arrowup: 0, w: 0, arrowright: 1, d: 1, arrowdown: 2, s: 2, arrowleft: 3, a: 3 };
+      const mapping = {
+        arrowup: 0,
+        w: 0,
+        arrowright: 1,
+        d: 1,
+        arrowdown: 2,
+        s: 2,
+        arrowleft: 3,
+        a: 3,
+      };
       if (Object.hasOwn(mapping, key)) answer(mapping[key]);
     },
     getState() {
       return {
-        score: rounds, rounds, round: Math.min(TARGET, rounds + 1), elapsed, finished, won,
-        phase, activePad, inputIndex,
+        score: rounds,
+        rounds,
+        round: Math.min(TARGET, rounds + 1),
+        elapsed,
+        finished,
+        won,
+        phase,
+        activePad,
+        inputIndex,
         progress: `${rounds} / ${TARGET} 轮`,
-        hint: phase === 'playback' ? '先看一看，记住亮起的顺序' : phase === 'input' ? `轮到你啦 · ${inputIndex} / ${rounds + 1}` : phase === 'between' ? '记得真准！准备下一轮' : won ? '十二轮，全部记住了！' : '下次再听听森林的回声',
+        hint:
+          phase === 'playback'
+            ? '先看一看，记住亮起的顺序'
+            : phase === 'input'
+              ? `轮到你啦 · ${inputIndex} / ${rounds + 1}`
+              : phase === 'between'
+                ? '记得真准！准备下一轮'
+                : won
+                  ? '十二轮，全部记住了！'
+                  : '下次再听听森林的回声',
       };
     },
     draw(ctx) {
@@ -129,10 +156,19 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
       for (let i = 0; i < 14; i++) {
         ctx.fillStyle = i % 2 ? '#dce7ce' : '#e1eacb';
         ctx.beginPath();
-        ctx.arc(28 + (i * 83) % 548, 36 + (i * 131) % 410, 3 + i % 3, 0, Math.PI * 2);
+        ctx.arc(28 + ((i * 83) % 548), 36 + ((i * 131) % 410), 3 + (i % 3), 0, Math.PI * 2);
         ctx.fill();
       }
-      const message = phase === 'playback' ? '仔细看 · 森林正在说话' : phase === 'input' ? '轮到你 · 按顺序回应' : phase === 'between' ? '很好，下一轮会多一个声音' : won ? '你记住了整片森林' : '每一次倾听，都会更熟悉';
+      const message =
+        phase === 'playback'
+          ? '仔细看 · 森林正在说话'
+          : phase === 'input'
+            ? '轮到你 · 按顺序回应'
+            : phase === 'between'
+              ? '很好，下一轮会多一个声音'
+              : won
+                ? '你记住了整片森林'
+                : '每一次倾听，都会更熟悉';
       label(ctx, message, 300, 29, 17, '#4e6c56', 'center', 600);
       for (let i = 0; i < 4; i++) {
         const pad = PADS[i];
@@ -165,7 +201,7 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
           ctx.arc(x, y, 17, 0, Math.PI * 2);
           ctx.fill();
           for (let r = 0; r < 8; r++) {
-            const a = r * Math.PI / 4;
+            const a = (r * Math.PI) / 4;
             ctx.beginPath();
             ctx.moveTo(x + Math.cos(a) * 24, y + Math.sin(a) * 24);
             ctx.lineTo(x + Math.cos(a) * 31, y + Math.sin(a) * 31);
@@ -173,7 +209,7 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
           }
         } else if (i === 2) {
           for (let r = 0; r < 5; r++) {
-            const a = r * Math.PI * 2 / 5 - Math.PI / 2;
+            const a = (r * Math.PI * 2) / 5 - Math.PI / 2;
             ctx.beginPath();
             ctx.arc(x + Math.cos(a) * 17, y + Math.sin(a) * 17, 12, 0, Math.PI * 2);
             ctx.fill();
@@ -201,7 +237,16 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
         ctx.arc(300 - (length - 1) * 7 + i * 14, 435, 4, 0, Math.PI * 2);
         ctx.fill();
       }
-      label(ctx, `第 ${Math.min(TARGET, rounds + 1)} 轮 / 12 · 点击图案或使用方向键`, 300, 463, 14, '#65816b', 'center', 500);
+      label(
+        ctx,
+        `第 ${Math.min(TARGET, rounds + 1)} 轮 / 12 · 点击图案或使用方向键`,
+        300,
+        463,
+        14,
+        '#65816b',
+        'center',
+        500,
+      );
     },
     destroy() {},
   };

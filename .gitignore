@@ -12,3 +12,4 @@ output/playwright/
 .dev.vars*
 output/worker/
 output/automation/
+.eslintcache

@@ -1,16 +1,209 @@
-async(page)=>{
- const fixtures=/* INPUT_REPLAYS */null,origin=new URL(page.url()).origin,browser=page.context().browser(),checks=[],errors=[],key='tiny-break-arcade:campaign:v1',legacy='tiny-break-arcade:v1';
- const check=(name,passed)=>{checks.push({name,passed:!!passed});if(!passed)throw Error(name);};
- const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'}),p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));p.setDefaultTimeout(10000);
- await context.route('**/v1/**',async route=>{const u=new URL(route.request().url()),data=u.pathname==='/v1/guests'||u.pathname==='/v1/me'?{player:{id:'local-qa',nickname:'本地测试'}}:u.pathname==='/v1/leaderboards'?{total:0,entries:[],me:null}:u.pathname==='/v1/runs'?{run:{id:'local-run',seed:42}}:{accepted:true,rank:1};await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});});
- await p.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{value:undefined,configurable:true});});await p.goto(origin);
- await p.evaluate(({key,legacy})=>{localStorage.setItem(key,JSON.stringify({version:1,games:{lights:{version:1,best:{1:{won:true,steps:3,elapsed:12}}},mines:{version:1,best:{1:{won:true,steps:9,elapsed:14}}}}}));localStorage.setItem(legacy,JSON.stringify({version:1,favorites:['lights'],recent:[],sound:false,best:{lights:{score:3,steps:3,elapsed:12,won:true}},daily:{}}));},{key,legacy});await p.reload();check('all 28 cards select campaigns',await p.locator('.game-card .play-link[href^="#/levels/"]').count()===28);await p.goto(origin+'/#/favorites');await p.locator('.game-card[data-game="lights"]').waitFor();check('favorite still enters campaign',await p.locator('.game-card[data-game="lights"] .play-link').getAttribute('href')==='#/levels/lights');await p.goto(origin+'/#/levels/lights/2?cv=1');await p.locator('[data-action="start"]').waitFor();check('old 100 save unlock remains',true);
- const tap=async point=>{const b=await p.locator('canvas').boundingBox(),size=await p.locator('canvas').evaluate(c=>({w:c.width,h:c.height}));await p.touchscreen.tap(b.x+point.x/size.w*b.width,b.y+point.y/size.h*b.height);};
- async function winJugs(target=p){await target.goto(origin+'/#/levels/jugs/1?cv=1');await target.locator('[data-action="start"]').tap();await target.locator('#game-overlay').waitFor({state:'hidden'});for(const e of fixtures.jugs.levels[0].events)if(e.type==='primary-up'){const b=await target.locator('canvas').boundingBox();await target.touchscreen.tap(b.x+e.payload.x/600*b.width,b.y+e.payload.y/600*b.height);}await target.locator('.result-card').waitFor();}
- await winJugs();check('real touch win',await p.locator('.result-card h2').innerText().then(t=>t.includes('完成了')));await p.getByRole('button',{name:'分享这一关 ↗',exact:true}).tap();await p.locator('.share-fallback textarea').waitFor();check('versioned share link',await p.locator('.share-fallback textarea').inputValue().then(t=>t.includes('#/levels/jugs/1?cv=1')));const data=await p.evaluate(({key,legacy})=>({campaign:JSON.parse(localStorage.getItem(key)),ordinary:JSON.parse(localStorage.getItem(legacy))}),{key,legacy});check('new win preserves old campaign best',data.campaign.games.lights.best[1].steps===3&&data.campaign.games.mines.best[1].elapsed===14);check('normal scores untouched',data.ordinary.best.lights.steps===3);
- await p.goto(origin+'/#/play/jugs');await p.locator('[data-action="start"]').waitFor();check('ordinary canvas and countdown unchanged',await p.locator('canvas').getAttribute('height')==='480'&&await p.locator('.game-toolbar').innerText().then(t=>t.includes('剩余时间')));await p.goto(origin+'/#/play/lights');await p.locator('[data-open-board]').tap();await p.locator('.leaderboard-status').filter({hasText:'0 位玩家'}).waitFor();check('ordinary leaderboard still loads',true);await p.getByLabel('榜单类型').selectOption('daily');await p.locator('.leaderboard-status').filter({hasText:'0 位玩家'}).waitFor();check('daily leaderboard still loads',true);
- await p.goto(origin+'/#/daily');await p.locator('[data-action="start"]').waitFor();check('daily route still opens ordinary challenge',await p.locator('.daily-tag').innerText().then(t=>t.includes('挑战')));await p.goto(origin+'/#/play/star?date=2026-10-26&v=1');await p.locator('[data-action="start"]').waitFor();check('historical dated link preserved',new URL(p.url()).hash.includes('date=2026-10-26')&&await p.locator('.daily-tag').innerText().then(t=>t.includes('历史挑战')));
- for(const[route,reason]of [['#/levels/jugs/21','关卡'],['#/levels/jugs/1?cv=2','版本']]){await p.goto(origin+'/'+route);check('invalid link '+reason,await p.locator('main').innerText().then(t=>t.includes(reason)));}
- await context.close();const unavailable=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});await unavailable.addInitScript(()=>{Storage.prototype.getItem=()=>{throw Error('unavailable');};Storage.prototype.setItem=()=>{throw Error('unavailable');};});const q=await unavailable.newPage();q.on('pageerror',e=>errors.push(e.message));await winJugs(q);check('unavailable storage still wins',await q.locator('.result-card h2').innerText().then(t=>t.includes('完成了')));check('unavailable storage notice shown',await q.locator('#storage-notice').isVisible());await q.getByRole('link',{name:'下一关 →',exact:true}).tap();await q.locator('[data-action="start"]').waitFor();check('in-memory unlock continues',new URL(q.url()).hash.includes('/jugs/2'));await unavailable.close();
- check('no compatibility runtime errors',errors.length===0);return{passed:checks.length,checks};
-}
+async (page) => {
+  const fixtures = /* INPUT_REPLAYS */ null,
+    origin = new URL(page.url()).origin,
+    browser = page.context().browser(),
+    checks = [],
+    errors = [],
+    key = 'tiny-break-arcade:campaign:v1',
+    legacy = 'tiny-break-arcade:v1';
+  const check = (name, passed) => {
+    checks.push({ name, passed: !!passed });
+    if (!passed) throw Error(name);
+  };
+  const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+      serviceWorkers: 'block',
+    }),
+    p = await context.newPage();
+  p.on('pageerror', (e) => errors.push(e.message));
+  p.setDefaultTimeout(10000);
+  await context.route('**/v1/**', async (route) => {
+    const u = new URL(route.request().url()),
+      data =
+        u.pathname === '/v1/guests' || u.pathname === '/v1/me'
+          ? { player: { id: 'local-qa', nickname: '本地测试' } }
+          : u.pathname === '/v1/leaderboards'
+            ? { total: 0, entries: [], me: null }
+            : u.pathname === '/v1/runs'
+              ? { run: { id: 'local-run', seed: 42 } }
+              : { accepted: true, rank: 1 };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(data),
+    });
+  });
+  await p.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+  });
+  await p.goto(origin);
+  await p.evaluate(
+    ({ key, legacy }) => {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          version: 1,
+          games: {
+            lights: { version: 1, best: { 1: { won: true, steps: 3, elapsed: 12 } } },
+            mines: { version: 1, best: { 1: { won: true, steps: 9, elapsed: 14 } } },
+          },
+        }),
+      );
+      localStorage.setItem(
+        legacy,
+        JSON.stringify({
+          version: 1,
+          favorites: ['lights'],
+          recent: [],
+          sound: false,
+          best: { lights: { score: 3, steps: 3, elapsed: 12, won: true } },
+          daily: {},
+        }),
+      );
+    },
+    { key, legacy },
+  );
+  await p.reload();
+  check(
+    'all 28 cards select campaigns',
+    (await p.locator('.game-card .play-link[href^="#/levels/"]').count()) === 28,
+  );
+  await p.goto(origin + '/#/favorites');
+  await p.locator('.game-card[data-game="lights"]').waitFor();
+  check(
+    'favorite still enters campaign',
+    (await p.locator('.game-card[data-game="lights"] .play-link').getAttribute('href')) ===
+      '#/levels/lights',
+  );
+  await p.goto(origin + '/#/levels/lights/2?cv=1');
+  await p.locator('[data-action="start"]').waitFor();
+  check('old 100 save unlock remains', true);
+
+  async function winJugs(target = p) {
+    await target.goto(origin + '/#/levels/jugs/1?cv=1');
+    await target.locator('[data-action="start"]').tap();
+    await target.locator('#game-overlay').waitFor({ state: 'hidden' });
+    for (const e of fixtures.jugs.levels[0].events)
+      if (e.type === 'primary-up') {
+        const b = await target.locator('canvas').boundingBox();
+        await target.touchscreen.tap(
+          b.x + (e.payload.x / 600) * b.width,
+          b.y + (e.payload.y / 600) * b.height,
+        );
+      }
+    await target.locator('.result-card').waitFor();
+  }
+  await winJugs();
+  check(
+    'real touch win',
+    await p
+      .locator('.result-card h2')
+      .innerText()
+      .then((t) => t.includes('完成了')),
+  );
+  await p.getByRole('button', { name: '分享这一关 ↗', exact: true }).tap();
+  await p.locator('.share-fallback textarea').waitFor();
+  check(
+    'versioned share link',
+    await p
+      .locator('.share-fallback textarea')
+      .inputValue()
+      .then((t) => t.includes('#/levels/jugs/1?cv=1')),
+  );
+  const data = await p.evaluate(
+    ({ key, legacy }) => ({
+      campaign: JSON.parse(localStorage.getItem(key)),
+      ordinary: JSON.parse(localStorage.getItem(legacy)),
+    }),
+    { key, legacy },
+  );
+  check(
+    'new win preserves old campaign best',
+    data.campaign.games.lights.best[1].steps === 3 &&
+      data.campaign.games.mines.best[1].elapsed === 14,
+  );
+  check('normal scores untouched', data.ordinary.best.lights.steps === 3);
+  await p.goto(origin + '/#/play/jugs');
+  await p.locator('[data-action="start"]').waitFor();
+  check(
+    'ordinary canvas and countdown unchanged',
+    (await p.locator('canvas').getAttribute('height')) === '480' &&
+      (await p
+        .locator('.game-toolbar')
+        .innerText()
+        .then((t) => t.includes('剩余时间'))),
+  );
+  await p.goto(origin + '/#/play/lights');
+  await p.locator('[data-open-board]').tap();
+  await p.locator('.leaderboard-status').filter({ hasText: '0 位玩家' }).waitFor();
+  check('ordinary leaderboard still loads', true);
+  await p.getByLabel('榜单类型').selectOption('daily');
+  await p.locator('.leaderboard-status').filter({ hasText: '0 位玩家' }).waitFor();
+  check('daily leaderboard still loads', true);
+  await p.goto(origin + '/#/daily');
+  await p.locator('[data-action="start"]').waitFor();
+  check(
+    'daily route still opens ordinary challenge',
+    await p
+      .locator('.daily-tag')
+      .innerText()
+      .then((t) => t.includes('挑战')),
+  );
+  await p.goto(origin + '/#/play/star?date=2026-10-26&v=1');
+  await p.locator('[data-action="start"]').waitFor();
+  check(
+    'historical dated link preserved',
+    new URL(p.url()).hash.includes('date=2026-10-26') &&
+      (await p
+        .locator('.daily-tag')
+        .innerText()
+        .then((t) => t.includes('历史挑战'))),
+  );
+  for (const [route, reason] of [
+    ['#/levels/jugs/21', '关卡'],
+    ['#/levels/jugs/1?cv=2', '版本'],
+  ]) {
+    await p.goto(origin + '/' + route);
+    check(
+      'invalid link ' + reason,
+      await p
+        .locator('main')
+        .innerText()
+        .then((t) => t.includes(reason)),
+    );
+  }
+  await context.close();
+  const unavailable = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  await unavailable.addInitScript(() => {
+    Storage.prototype.getItem = () => {
+      throw Error('unavailable');
+    };
+    Storage.prototype.setItem = () => {
+      throw Error('unavailable');
+    };
+  });
+  const q = await unavailable.newPage();
+  q.on('pageerror', (e) => errors.push(e.message));
+  await winJugs(q);
+  check(
+    'unavailable storage still wins',
+    await q
+      .locator('.result-card h2')
+      .innerText()
+      .then((t) => t.includes('完成了')),
+  );
+  check('unavailable storage notice shown', await q.locator('#storage-notice').isVisible());
+  await q.getByRole('link', { name: '下一关 →', exact: true }).tap();
+  await q.locator('[data-action="start"]').waitFor();
+  check('in-memory unlock continues', new URL(q.url()).hash.includes('/jugs/2'));
+  await unavailable.close();
+  check('no compatibility runtime errors', errors.length === 0);
+  return { passed: checks.length, checks };
+};

@@ -1,5 +1,56 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {createGame,makePuzzles} from '../src/index.js';import {rules} from '../src/rules.js';
-const click=(g,i)=>{const p={x:160+i%3*140,y:205+Math.floor(i/3)*90};g.input('primary-down',p);g.input('primary-up',p);};
-test('500 seeded sets are solvable and deterministic',()=>{for(let seed=0;seed<500;seed++){const puzzles=makePuzzles(seed);assert.deepEqual(puzzles,makePuzzles(seed));for(const p of puzzles)assert.equal(p.solution.reduce((s,i)=>s+p.weights[i],0),p.target);}});
-test('five exact baskets win; wrong answer and cancelled input preserve score',()=>{let result;const g=createGame({seed:9,onFinish:r=>result=r});g.input('key-down',{key:'Enter'});assert.equal(g.getState().rounds,0);g.input('primary-down',{x:160,y:205});g.input('primary-cancel');g.input('primary-up',{x:160,y:205});assert.equal(g.getState().selected.length,0);for(const p of makePuzzles(9)){for(const i of p.solution)click(g,i);g.input('key-down',{key:'Enter'});}assert.equal(result.score,500);assert.deepEqual(rules.validate(result),[]);});
-test('keyboard selection toggles, timeout submits valid partial once',()=>{let n=0,result;const g=createGame({seed:2,onFinish:r=>{n++;result=r;}});g.input('key-down',{key:'ArrowRight'});g.input('key-down',{key:' ',repeat:true});assert.equal(g.getState().selected.length,0);g.input('key-down',{key:' '});assert.deepEqual(g.getState().selected,[1]);g.update(180);g.update(5);assert.equal(n,1);assert.deepEqual(rules.validate(result),[]);});
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createGame, makePuzzles } from '../src/index.js';
+import { rules } from '../src/rules.js';
+const click = (g, i) => {
+  const p = { x: 160 + (i % 3) * 140, y: 205 + Math.floor(i / 3) * 90 };
+  g.input('primary-down', p);
+  g.input('primary-up', p);
+};
+test('500 seeded sets are solvable and deterministic', () => {
+  for (let seed = 0; seed < 500; seed++) {
+    const puzzles = makePuzzles(seed);
+    assert.deepEqual(puzzles, makePuzzles(seed));
+    for (const p of puzzles)
+      assert.equal(
+        p.solution.reduce((s, i) => s + p.weights[i], 0),
+        p.target,
+      );
+  }
+});
+test('five exact baskets win; wrong answer and cancelled input preserve score', () => {
+  let result;
+  const g = createGame({ seed: 9, onFinish: (r) => (result = r) });
+  g.input('key-down', { key: 'Enter' });
+  assert.equal(g.getState().rounds, 0);
+  g.input('primary-down', { x: 160, y: 205 });
+  g.input('primary-cancel');
+  g.input('primary-up', { x: 160, y: 205 });
+  assert.equal(g.getState().selected.length, 0);
+  for (const p of makePuzzles(9)) {
+    for (const i of p.solution) click(g, i);
+    g.input('key-down', { key: 'Enter' });
+  }
+  assert.equal(result.score, 500);
+  assert.deepEqual(rules.validate(result), []);
+});
+test('keyboard selection toggles, timeout submits valid partial once', () => {
+  let n = 0,
+    result;
+  const g = createGame({
+    seed: 2,
+    onFinish: (r) => {
+      n++;
+      result = r;
+    },
+  });
+  g.input('key-down', { key: 'ArrowRight' });
+  g.input('key-down', { key: ' ', repeat: true });
+  assert.equal(g.getState().selected.length, 0);
+  g.input('key-down', { key: ' ' });
+  assert.deepEqual(g.getState().selected, [1]);
+  g.update(180);
+  g.update(5);
+  assert.equal(n, 1);
+  assert.deepEqual(rules.validate(result), []);
+});

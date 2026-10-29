@@ -1,1 +1,21 @@
-export const manifest={id:'orchard-sort',title:'果园分篮',english:'ORCHARD BASKETS',category:'逻辑益智',tag:'动脑',duration:'约 1–3 分钟',isNew:true,extraLabel:'归篮进度',targetText:'三种水果各归一篮',icon:'♧',description:'借用空篮周转，每次搬动篮顶一颗水果，把同种水果归到一起。',controls:'点选源篮再点目标 / 方向键选择 / 空格搬动 / Z 撤销',limit:180,cta:'开始整理果园',rules:['四个篮子每篮最多三颗，每次只能搬动源篮最上方一颗；目标篮有空位即可放入，不要求同色。','把三种水果分别装进三个满篮，余下一篮留空，即完成一盘；共三盘，每盘 100 分。','180 秒内完成三盘通关；点同一篮取消选择，Z 或画布按钮撤销，撤销不退回步数和时间。']};
+export const manifest = {
+  id: 'orchard-sort',
+  title: '果园分篮',
+  english: 'ORCHARD BASKETS',
+  category: '逻辑益智',
+  tag: '动脑',
+  duration: '约 1–3 分钟',
+  isNew: true,
+  extraLabel: '归篮进度',
+  targetText: '三种水果各归一篮',
+  icon: '♧',
+  description: '借用空篮周转，每次搬动篮顶一颗水果，把同种水果归到一起。',
+  controls: '点选源篮再点目标 / 方向键选择 / 空格搬动 / Z 撤销',
+  limit: 180,
+  cta: '开始整理果园',
+  rules: [
+    '四个篮子每篮最多三颗，每次只能搬动源篮最上方一颗；目标篮有空位即可放入，不要求同色。',
+    '把三种水果分别装进三个满篮，余下一篮留空，即完成一盘；共三盘，每盘 100 分。',
+    '180 秒内完成三盘通关；点同一篮取消选择，Z 或画布按钮撤销，撤销不退回步数和时间。',
+  ],
+};
