@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const SPACE = new Set([' ', 'Space', 'Spacebar']);
@@ -18,7 +19,8 @@ export function evaluateBridge(length, island) {
   return { success, perfect, points: success ? (perfect ? 150 : 100) : 0 };
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const islands = generateIslands(seed);
   let elapsed = 0, lives = 3, score = 0, progress = 0, length = 0;
   let holding = false, phase = 'idle', phaseTime = 0, done = false;

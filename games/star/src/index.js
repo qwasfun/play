@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {generateStarSchedule} from './model.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
@@ -8,7 +9,8 @@ const SPACE = new Set([' ', 'Space', 'Spacebar']);
 
 export {generateStarSchedule} from './model.js';
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const schedule = generateStarSchedule(seed);
   const stars = Array.from({ length: 54 }, (_, index) => {
     const random = rng(`${seed}:sky:${index}`);

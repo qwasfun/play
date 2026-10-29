@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "bubbles",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600}}},
   "title": "泡泡消消",
   "english": "BUBBLE GARDEN",
   "category": "连块消除",

@@ -12,8 +12,12 @@ await mkdir(output,{recursive:true});
 const fixture=await mkdtemp(resolve(output,'pwa-update-'));
 const roots={A:resolve(fixture,'A'),B:resolve(fixture,'B')};
 const legacyIndex=process.argv.indexOf('--from-ref'),legacyRef=legacyIndex<0?null:process.argv[legacyIndex+1];
+const directoryIndex=process.argv.indexOf('--legacy-dir'),legacyDirectory=directoryIndex<0?null:process.argv[directoryIndex+1];
+if(directoryIndex>=0&&!legacyDirectory)throw Error('历史版本：请提供已构建的网页目录');
+if(legacyDirectory&&legacyRef)throw Error('历史版本：目录与 Git 提交请选择一种');
 if(legacyIndex>=0&&!legacyRef)throw Error('历史版本：请提供有效的本地 Git 提交');
-if(legacyRef){
+if(legacyDirectory){await readFile(resolve(legacyDirectory,'index.html'));await cp(resolve(legacyDirectory),roots.A,{recursive:true});}
+else if(legacyRef){
   const commit=execFileSync('git',['rev-parse','--verify','--end-of-options',legacyRef+'^{commit}'],{cwd:project,encoding:'utf8'}).trim();
   const files=execFileSync('git',['ls-tree','-r','--name-only',commit,'--','dist'],{cwd:project,encoding:'utf8'}).trim().split('\n').filter(Boolean);
   if(!files.includes('dist/index.html'))throw Error('历史版本：该提交未包含完整的 dist 网页源码');

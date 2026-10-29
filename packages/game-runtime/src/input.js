@@ -1,7 +1,7 @@
 export function bindGameInput(canvas, {isRunning, onInput, onUpdate, onPause, signal}) {
   let pointer = null;
   const heldKeys = new Set();
-  const keys = new Set([' ', 'Enter', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D']);
+  const keys = new Set([' ', 'Enter', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D', 'z', 'Z', 'u', 'U', 'Backspace']);
   const coordinates = event => {
     const rect = canvas.getBoundingClientRect();
     return {x:(event.clientX-rect.left)*(canvas.width||600)/rect.width,y:(event.clientY-rect.top)*(canvas.height||480)/rect.height};

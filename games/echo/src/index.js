@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const LIMIT = 180;
@@ -20,7 +21,8 @@ function padAt(x, y) {
   return PADS.findIndex(pad => x >= pad.x && x <= pad.x + PAD_W && y >= pad.y && y <= pad.y + PAD_H);
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const sequence = createEchoSequence(seed);
   let elapsed = 0;
   let rounds = 0;

@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "tower",
+  "campaign": {"version":1,"total":20,"recordPolicy":"action","presentation":{"canvas":{"width":600,"height":480},"lives":3,"extraLabel":"剩余机会"}},
   "title": "叠叠高塔",
   "english": "TINY TOWER",
   "category": "对齐堆叠",

@@ -1,6 +1,8 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
 export function makeSchedule(seed){const random=rng(`${seed}:lantern:v1`);return Array.from({length:24},()=>Math.floor(random()*9));}
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
  const schedule=makeSchedule(seed);let elapsed=0,score=0,lives=3,handled=0,hits=0,cursor=4,finished=false,won=false,pressed=null,hit=false,notice='等金色亮灯再点，灰色小花请放过';
  function finish(){if(finished)return;finished=true;won=handled===24&&lives>0;onFinish({score,elapsed,lives,handled,hits,won});}
  function settle(){if(!hit){lives--;notice='萤灯飞走了，下一盏再试试';}handled++;hit=false;if(!lives||handled===24)finish();}

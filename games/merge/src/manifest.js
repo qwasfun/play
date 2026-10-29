@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "merge",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600}}},
   "title": "数字合合乐",
   "english": "COZY NUMBERS",
   "category": "滑动合成",

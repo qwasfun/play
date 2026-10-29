@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "snake",
+  "campaign": {"version":1,"total":20,"recordPolicy":"action","presentation":{"canvas":{"width":600,"height":480}}},
   "title": "小蛇吃星星",
   "english": "STAR SNAKE",
   "category": "路线反应",

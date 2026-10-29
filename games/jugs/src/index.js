@@ -1,5 +1,7 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
  let elapsed=0,score=0,finished=false,won=false,cursor=0,pressed=-1;
  const random=rng(`${seed}:jugs:v1`);
  let a=0,b=0,rounds=0,steps=0;const targets=[4,2,1],names=['装满小壶','装满大壶','倒空小壶','倒空大壶','小 → 大','大 → 小'];

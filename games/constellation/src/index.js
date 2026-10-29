@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
 
 const LIMIT=180, RADIUS=48;
@@ -33,7 +34,8 @@ export function validConstellationStep(puzzle,path,next){
   if(!puzzle.edges.some(([a,b])=>edgeKey(a,b)===key))return false;
   return !path.slice(1).some((to,i)=>edgeKey(path[i],to)===key);
 }
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const puzzles=generateConstellations(seed);
   let level=0,path=[],selected=0,steps=0,elapsed=0,banked=0,finished=false,won=false,transition=0,gesture=null;
   let message='选一颗星星，一笔走过每条虚线';
