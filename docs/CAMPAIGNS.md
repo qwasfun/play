@@ -22,3 +22,5 @@ npm run verify:games
 生成器与求解器在 `scripts/campaigns/`；谜题合法解、动作路线及真实输入回放在 `tests/fixtures/`。求解器不进入浏览器运行包。`npm run campaign:browser-fixtures` 生成首关、阶段代表关和末关的浏览器输入回放；`scripts/all-campaign-qa.js`、`all-campaign-layout-qa.js`、`all-campaign-compat-qa.js` 与 `all-campaign-preview-qa.js` 分别覆盖完整通关、手机与离线、旧记录兼容及独立预览。
 
 验收日志、报告、截图和旧版升级夹具保存在忽略目录 `output/playwright/`。新增关卡上线须按仓库平台变更流程另行提交与发布。
+
+跨游戏更新还会通过 `scripts/legacy-playthroughs.mjs` 提供的既有游戏兼容入口，对普通模式执行完整输入回放；既有四款专用实玩入口继续复用。浏览器与隔离后端使用相同的确定种子，本机模式也固定测试种子。回放只经前端输入操作游戏，结果仍由真实引擎结算和真实处理器校验。新增游戏仍须提供自己的 `qa/playthrough.mjs`，不会自动采用旧游戏兼容入口。
