@@ -1,6 +1,6 @@
 // Isolated release-transition fixture. Production dist is read only.
 import http from 'node:http';
-import {cp,mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {cp,mkdir,mkdtemp,readFile,writeFile,readdir,rename} from 'node:fs/promises';
 import {resolve,extname,sep,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createPrecache,renderPrecache} from './prepare-pwa.mjs';
@@ -29,6 +29,22 @@ const stylesheet=Object.values(manifest).flatMap(entry=>entry.css||[])[0];
 if(!stylesheet)throw Error('更新测试资源：构建清单中缺少样式');
 const style=resolve(roots.B,stylesheet);
 await writeFile(style,(await readFile(style,'utf8'))+'\n/* Offline update fixture: release B. */\n');
+// An old window must request a URL that no longer exists on the B server.
+const tower=Object.entries(manifest).find(([key])=>key.endsWith('games/tower/src/index.js'))?.[1].file;
+if(!tower)throw Error('更新测试资源：构建清单中缺少高塔');
+const replacement='assets/update-fixture-abcdefgh.js';
+await rename(resolve(roots.B,tower),resolve(roots.B,replacement));
+async function rewriteReferences(directory){
+  for(const entry of await readdir(directory,{withFileTypes:true})){
+    const path=resolve(directory,entry.name);
+    if(entry.isDirectory())await rewriteReferences(path);
+    else if(/\.(?:js|json|html)$/.test(entry.name)){
+      const content=await readFile(path,'utf8');
+      await writeFile(path,content.replaceAll(tower,replacement).replaceAll(tower.slice(7),replacement.slice(7)));
+    }
+  }
+}
+await rewriteReferences(roots.B);
 const releases={};
 for(const release of ['A','B']){
   const metadata=await createPrecache(roots[release]);

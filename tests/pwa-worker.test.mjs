@@ -39,12 +39,12 @@ class MemoryCaches{
   async keys(){return[...this.entries.keys()];}
   async delete(name){this.deleted.push(name);return this.entries.delete(name);}
 }
-function setup({scope='https://games.test/play/',version='test-release',cacheStorage=new MemoryCaches()}={}){
+function setup({scope='https://games.test/play/',version='test-release',cacheStorage=new MemoryCaches(),windows=[]}={}){
   const handlers={},network=new Map(),calls={fetch:0,claim:0,skipWaiting:0};
   const metadata={version,assets:Object.keys(fixture),revisions:Object.fromEntries(Object.entries(fixture).map(([path,file])=>[path,hash(file.body)]))};
   for(const[path,file]of Object.entries(fixture))network.set(new URL(path,scope).href,{...file});
   let offline=false;
-  const self={registration:{scope},clients:{claim:async()=>{calls.claim++;}},skipWaiting:async()=>{calls.skipWaiting++;},addEventListener:(type,handler)=>{handlers[type]=handler;}};
+  const self={registration:{scope},clients:{matchAll:async()=>windows,claim:async()=>{calls.claim++;}},skipWaiting:async()=>{calls.skipWaiting++;},addEventListener:(type,handler)=>{handlers[type]=handler;}};
   const context=vm.createContext({self,caches:cacheStorage,URL,Request,Response,Headers,TextEncoder,crypto:webcrypto,
     importScripts:path=>{assert.equal(path,'./precache.js');self.PLAYGROUND_PRECACHE=structuredClone(metadata);},
     fetch:async request=>{
@@ -70,7 +70,7 @@ function setup({scope='https://games.test/play/',version='test-release',cacheSto
   return{self,metadata,network,calls,caches:cacheStorage,dispatch,fetchResource,message,scope,prefix,cacheName,setOffline:value=>{offline=value;}};
 }
 
-test('precache generation covers all twenty lazy game modules and excludes deployment metadata',async()=>{
+test('precache generation covers the dynamic game catalog and excludes deployment metadata',async()=>{
   const root=resolve('dist'),metadata=await createPrecache(root),ids=(await import('@playground/game-registry')).games.map(game=>game.id);
   const paths=modulePaths(JSON.parse(await readFile(resolve(root,'module-map.json'),'utf8')));
   for(const id of ids)assert.ok(metadata.assets.includes('./'+paths[`games/${id}.js`]));
@@ -79,6 +79,9 @@ test('precache generation covers all twenty lazy game modules and excludes deplo
   for(const file of ['./sw.js','./precache.js','./CNAME'])assert.equal(metadata.assets.includes(file),false);
   assert.equal(Object.keys(metadata.revisions).length,metadata.assets.length);
   assert.match(metadata.version,/^[0-9a-f]{20}$/);assert.ok(renderPrecache(metadata).startsWith('// Generated'));
+  const manifest=JSON.parse(await readFile(resolve(root,'manifest.webmanifest'),'utf8'));
+  assert.ok(manifest.description.startsWith(`${ids.length} 款`));
+  assert.match(await readFile(resolve(root,'index.html'),'utf8'),new RegExp(`<meta name="description" content="[^"]*${ids.length} 款`));
 });
 test('precache version is stable and changes for an asset or worker while ignoring CNAME',async()=>{
   const temporary=await mkdtemp(join(tmpdir(),'playground-precache-'));
@@ -145,6 +148,27 @@ test('activation claims once and cleans only obsolete caches for this scope',asy
   await worker.dispatch('activate');assert.equal(worker.calls.claim,1);assert.equal(worker.calls.skipWaiting,0);
   assert.equal(await worker.caches.has(worker.prefix+'old'),false);assert.equal(await worker.caches.has(worker.cacheName),true);
   assert.equal(await worker.caches.has('three-minute-playground-offline:/sibling/:old'),true);assert.equal(await worker.caches.has('another-application'),true);
+});
+
+test('only explicit APPLY_UPDATE activates a complete release',async()=>{
+  const worker=setup();
+  const incomplete=await worker.message('APPLY_UPDATE');assert.match(incomplete.error,/离线资源不完整/);assert.equal(worker.calls.skipWaiting,0);
+  await worker.dispatch('install');assert.equal(worker.calls.skipWaiting,0);
+  assert.deepEqual(await worker.message('APPLY_UPDATE'),{accepted:true,version:'test-release'});assert.equal(worker.calls.skipWaiting,1);
+});
+
+test('activation with live windows preserves complete old hashed assets for offline lazy imports',async()=>{
+  const worker=setup({windows:[{id:'old-game'}]});await worker.dispatch('install');
+  const old=await worker.caches.open(worker.prefix+'previous'),url=new URL('./assets/game-abcdefgh.js',worker.scope).href;
+  await old.put(new URL('__offline_complete__',worker.scope).href,new Response('{"version":"previous"}'));
+  await old.put(url,new Response('export const previous=true;'));
+  const unrelated=await worker.caches.open('another-app');await unrelated.put(new URL('./assets/private-abcdefgh.js',worker.scope).href,new Response('private'));
+  await worker.dispatch('activate');assert.equal(await worker.caches.has(worker.prefix+'previous'),true);worker.setOffline(true);
+  assert.match(await(await worker.fetchResource(url+'?lazy=1')).text(),/previous=true/);
+  await assert.rejects(worker.fetchResource('./assets/private-abcdefgh.js'),/offline/);
+  assert.equal(await worker.fetchResource('./assets/unhashed.js'),undefined);
+  await old.put(new URL('__offline_complete__',worker.scope).href,new Response('{"version":"incomplete"}'));
+  await assert.rejects(worker.fetchResource(url),/offline/);
 });
 test('status detects a lost asset even with the commit marker and retry restores the complete release',async()=>{
   const worker=setup();await worker.dispatch('install');const cache=await worker.caches.open(worker.cacheName);

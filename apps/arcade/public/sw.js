@@ -71,15 +71,16 @@ function prepareOffline(){
   return filling;
 }
 self.addEventListener('install',event=>{
-  // Deliberately no skipWaiting: an update cannot replace a running game's
-  // worker. Close every old playground window to activate the next release.
+  // Updates wait unless a user explicitly requests APPLY_UPDATE.
   event.waitUntil(prepareOffline());
 });
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     if(!(await offlineStatus()).ready)throw Error('离线资源尚未完整准备');
     const names=await caches.keys();
-    await Promise.all(names.filter(name=>name.startsWith(PREFIX)&&name!==CACHE).map(name=>caches.delete(name)));
+    // Existing windows may still import modules with the previous build's hashes.
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    if(!windows.length)await Promise.all(names.filter(name=>name.startsWith(PREFIX)&&name!==CACHE).map(name=>caches.delete(name)));
     await self.clients.claim();
   })());
 });
@@ -87,23 +88,36 @@ self.addEventListener('fetch',event=>{
   const request=event.request,url=new URL(request.url);
   if(request.method!=='GET'||url.origin!==SCOPE.origin)return;
   const asset=ASSETS.get(url.pathname);
-  if(!asset)return;
-  const canonical=asset.url;
+  const oldAsset=url.pathname.startsWith(new URL('./assets/',SCOPE).pathname)&&/[-_][\w-]{8,}\.(?:js|css|svg|png)$/.test(url.pathname);
+  if(!asset&&!oldAsset)return;
+  const canonical=asset?.url||new URL(url.pathname,SCOPE.origin).href;
   event.respondWith((async()=>{
     if(await caches.has(CACHE)){
       const cache=await caches.open(CACHE),marker=await cache.match(COMPLETE);
       let complete=false;try{complete=!!marker&&(await marker.json()).version===BUILD.version;}catch{}
       if(complete){const cached=await cache.match(canonical);if(cached)return cached;}
     }
+    if(!asset&&oldAsset){
+      for(const name of (await caches.keys()).reverse()){
+        if(!name.startsWith(PREFIX)||name===CACHE)continue;
+        const cache=await caches.open(name),marker=await cache.match(COMPLETE);
+        let complete=false;try{complete=(await marker?.json())?.version===name.slice(PREFIX.length);}catch{}
+        if(complete){const cached=await cache.match(canonical);if(cached)return cached;}
+      }
+    }
     return fetch(request);
   })());
 });
 self.addEventListener('message',event=>{
   const type=event.data?.type,port=event.ports?.[0];
-  if(!port||!['OFFLINE_STATUS','RETRY_OFFLINE'].includes(type))return;
+  if(!port||!['OFFLINE_STATUS','RETRY_OFFLINE','APPLY_UPDATE'].includes(type))return;
   event.waitUntil((async()=>{
     try{
       if(type==='RETRY_OFFLINE')await prepareOffline();
+      if(type==='APPLY_UPDATE'){
+        if(!(await offlineStatus()).ready)throw Error('新版本离线资源不完整，请联网重新检查更新。');
+        await self.skipWaiting();port.postMessage({accepted:true,version:BUILD.version});return;
+      }
       port.postMessage(await offlineStatus());
     }catch(error){port.postMessage({ready:false,version:BUILD.version,assetCount:BUILD.assets.length,error:error.message});}
   })());
