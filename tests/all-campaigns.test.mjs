@@ -8,9 +8,10 @@ import {playLevel} from '../scripts/campaigns/replay.mjs';
 import {jugSolution,solveNonogram} from '../scripts/campaigns/solvers.mjs';
 import {createCampaignStore,CAMPAIGN_KEY} from '../apps/arcade/src/campaign-storage.js';
 import {recordPolicy,cleanLevelResult,campaignView} from '@playground/game-sdk/level';
-const old=['boxes','pipes','mines','lights','slide'],ids=games.map(g=>g.id).filter(id=>!old.includes(id));
+import {campaignGames,loadCampaignModules} from './helpers/campaign-games.mjs';
+const old=['boxes','pipes','mines','lights','slide'],ids=campaignGames(games).map(g=>g.id).filter(id=>!old.includes(id));
 const solutions=JSON.parse(fs.readFileSync(new URL('./fixtures/new-campaign-solutions.json',import.meta.url)));
-const modules={};for(const id of ids)modules[id]={...await import(`../games/${id}/src/index.js`),...await import(`../games/${id}/src/campaign.js`)};
+const modules=await loadCampaignModules(games.filter(g=>!old.includes(g.id)),specifier=>import(new URL('../'+specifier,import.meta.url)));
 const canvas=new Proxy({},{get:(o,key)=>key==='measureText'?()=>({width:10}):key==='createLinearGradient'?()=>({addColorStop(){}}):()=>{},set:()=>true});
 for(const id of ids)test(`${id}: twenty distinct fixed levels finish using real engine inputs, survive replay and settle once`,()=>{
  const{campaign,createGame}=modules[id],identities=new Set();assert.equal(campaign.version,1);assert.equal(campaign.levels.length,20);
@@ -21,7 +22,7 @@ for(const id of ids)test(`${id}: twenty distinct fixed levels finish using real 
  }
 });
 test('the original 100 level definitions retain their exact content version and content hashes',()=>{
- const hashes=['1ae1e1a3e31fa9f919e3215f5ed1dd6b3e23d7a50b64866e96e18c7374a812d9','bb3d03e2a41538bfe939a53d8b78053589ddc760a6dfc8d2b77f8ec6c6d35cc0','3111589f6396e728299d710dd87b194f3c474d169ef0421087e38ec4af7be699','fa19a4ef24ca83715e5fd6da0c104d6149a803accd5d15b1efe839511744a5e6','d485238484353445fcaa5340674ef9d8ae38a653e3e2d7740f3941bc5d279d0f'];old.forEach((id,i)=>assert.equal(createHash('sha256').update(fs.readFileSync(new URL(`../games/${id}/src/campaign-data.js`,import.meta.url),'utf8').replace(/\r\n/g,'\n')).digest('hex'),hashes[i]));assert.equal(games.filter(g=>g.campaign).length,28);assert.equal(games.reduce((n,g)=>n+g.campaign.total,0),560);
+ const hashes=['1ae1e1a3e31fa9f919e3215f5ed1dd6b3e23d7a50b64866e96e18c7374a812d9','bb3d03e2a41538bfe939a53d8b78053589ddc760a6dfc8d2b77f8ec6c6d35cc0','3111589f6396e728299d710dd87b194f3c474d169ef0421087e38ec4af7be699','fa19a4ef24ca83715e5fd6da0c104d6149a803accd5d15b1efe839511744a5e6','d485238484353445fcaa5340674ef9d8ae38a653e3e2d7740f3941bc5d279d0f'];old.forEach((id,i)=>assert.equal(createHash('sha256').update(fs.readFileSync(new URL(`../games/${id}/src/campaign-data.js`,import.meta.url),'utf8').replace(/\r\n/g,'\n')).digest('hex'),hashes[i]));const originalIds=['star','bridge','lights','echo','catch','bounce','pairs','merge','rings','snake','boxes','pipes','jump','bubbles','slide','rhythm','constellation','tower','rain','mines','lantern','sail','balance','pebble','windmill','courier','weave','jugs'];assert.equal(new Set(originalIds).size,28);const original=originalIds.map(id=>games.find(g=>g.id===id));assert.ok(original.every(g=>g?.campaign));assert.equal(original.reduce((n,g)=>n+g.campaign.total,0),560);
 });
 test('all new campaign entries are exported and precached; authoring solvers are excluded from production',async()=>{
  const map=JSON.parse(fs.readFileSync(new URL('../dist/module-map.json',import.meta.url))),precache=fs.readFileSync(new URL('../dist/precache.js',import.meta.url),'utf8');for(const id of ids){const{campaign}=await import(`../games/${id}/dist/campaign.js`);assert.deepEqual(campaign,modules[id].campaign);const entry=Object.entries(map).find(([key])=>key.endsWith(`games/${id}/src/campaign.js`));assert.ok(entry);assert.ok(precache.includes(entry[1].file));}assert.ok(!Object.keys(map).some(k=>k.includes('solvers')||k.includes('scripts/campaigns')));
