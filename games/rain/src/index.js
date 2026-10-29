@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
 
 const LIMIT=60, TARGET=24, UMBRELLA_Y=330, WIDTH=116, SPEED=440;
@@ -14,7 +15,8 @@ export function generateRainSchedule(seed){
 
 export function rainBlocked(dropX,umbrellaX){return Math.abs(dropX-umbrellaX)<=WIDTH/2+1e-9;}
 
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const schedule=generateRainSchedule(seed),keys=new Set(),sparks=[];
   let elapsed=0,score=0,lives=3,handled=0,caught=0,x=300,dragging=false,finished=false,won=false,flash=0;
   let notice='移动小伞，雨滴和阳光都要接住';

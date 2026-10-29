@@ -1,5 +1,6 @@
 export const manifest = {
   "id": "weave",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600},"controls":"点击格子 / 方向键选择 / 空格填色 · 自动检查"}},
   "title": "花窗数织",
   "english": "FLOWER NONOGRAM",
   "category": "逻辑益智",

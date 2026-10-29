@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "rhythm",
+  "campaign": {"version":1,"total":20,"recordPolicy":"action","presentation":{"canvas":{"width":600,"height":480},"lives":5,"extraLabel":"剩余机会"}},
   "title": "节奏点点",
   "english": "POCKET RHYTHM",
   "category": "节拍反应",

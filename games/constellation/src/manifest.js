@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "constellation",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600}}},
   "title": "一笔星图",
   "english": "ONE LINE SKY",
   "category": "一笔连线",

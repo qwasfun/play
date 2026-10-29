@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "echo",
+  "campaign": {"version":1,"total":20,"recordPolicy":"elapsed","presentation":{"canvas":{"width":600,"height":480}}},
   "title": "萤火回声",
   "english": "FIREFLY ECHO",
   "category": "顺序记忆",

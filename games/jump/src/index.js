@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng, roundRect, label} from '@playground/game-sdk';
 
 const LIMIT=60, TARGET=12, SPEED=176, PLAYER_X=150, GROUND=367;
@@ -18,7 +19,8 @@ export function jumpHeight(time){
   return Math.max(0,JUMP_VELOCITY*time-GRAVITY*time*time/2);
 }
 
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const schedule=generateJumpSchedule(seed);
   const resolved=new Set(),collisions=new Set();
   let elapsed=0,score=0,lives=3,passed=0,finished=false,won=false,jumpAt=null,flash=0,notice='看见小木桩，轻轻跳过去';

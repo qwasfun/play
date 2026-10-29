@@ -1,6 +1,7 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
   "id": "pairs",
+  "campaign": {"version":1,"total":20,"recordPolicy":"elapsed","presentation":{"canvas":{"width":600,"height":600}}},
   "title": "翻翻小花园",
   "english": "BLOOM PAIRS",
   "category": "记忆配对",

@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng, roundRect, label} from '@playground/game-sdk';
 
 const LIMIT=90, TARGET=12, MIN_X=120, MAX_X=480, SPAN=MAX_X-MIN_X;
@@ -31,7 +32,8 @@ export function towerOverlap(top,moving){
   return{x:(left+right)/2,width:Math.max(0,right-left),perfect:false};
 }
 
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const stages=generateTower(seed),blocks=[{x:300,width:240,color:0,perfect:true}],pieces=[];
   let elapsed=0,score=0,lives=3,level=0,phase='moving',cooldown=0,finished=false,won=false;
   let notice='对准下方楼层，轻轻一按落下来';

@@ -1,0 +1,8 @@
+import {levelSession,boardInput,drawCells} from '@playground/game-sdk/level';
+export function createCampaignGame(options){const {level}=options,session=levelSession(options,{lives:3}),s=session.state;let position=level.start,handled=0,beat=0;
+ const bees=()=>level.patrols.map(path=>path[beat%path.length]);
+ function collect(){if(bees().includes(position)){session.miss();position=level.start;return;}if(position===level.letters[handled]){handled++;s.score=handled*100;if(handled===level.target)session.finish(true);}}
+ function move(i){if(!session.active||i<0||i>=36||level.walls.includes(i)||Math.abs(i%6-position%6)+Math.abs(Math.floor(i/6)-Math.floor(position/6))!==1)return;position=i;session.step();collect();}
+ const controls=boardInput({cols:6,activate:move,extra(type,p){if(type!=='key-down'||p.repeat)return false;const k=String(p.key).toLowerCase(),d=({arrowleft:-1,a:-1,arrowright:1,d:1,arrowup:-6,w:-6,arrowdown:6,s:6})[k];if(d!==undefined){move(position+d);return true;}return false;}});
+ return{update(dt){const before=s.elapsed;session.update(dt);if(!session.active)return;for(let n=Math.floor(before/level.beat)+1;n<=Math.floor(s.elapsed/level.beat)&&session.active;n++){beat=n;collect();}},input:controls.input,getState(){return{...s,position,handled,bees:bees(),nextBees:level.patrols.map(path=>path[(beat+1)%path.length]),extra:`${handled} / ${level.target}`,hint:'按顺序送信；圆点预告蜜蜂下一站，注意避让'};},draw(ctx){const current=bees(),next=level.patrols.map(path=>path[(beat+1)%path.length]);drawCells(ctx,Array.from({length:36},(_,i)=>i),6,6,{selected:position,fill:i=>level.walls.includes(i)?'#789b74':'#e5dfc6',text:i=>i===position?'你':current.includes(i)?'蜂':i===level.letters[handled]?'✉':next.includes(i)?'·':''});},destroy:()=>session.destroy()};
+}

@@ -1,6 +1,6 @@
 // Isolated release-transition fixture. Production dist is read only.
 import http from 'node:http';
-import {cp,mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
+import {cp,mkdir,mkdtemp,readFile,writeFile,readdir,rename} from 'node:fs/promises';
 import {resolve,extname,sep,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createPrecache,renderPrecache} from './prepare-pwa.mjs';
@@ -12,8 +12,12 @@ await mkdir(output,{recursive:true});
 const fixture=await mkdtemp(resolve(output,'pwa-update-'));
 const roots={A:resolve(fixture,'A'),B:resolve(fixture,'B')};
 const legacyIndex=process.argv.indexOf('--from-ref'),legacyRef=legacyIndex<0?null:process.argv[legacyIndex+1];
+const directoryIndex=process.argv.indexOf('--legacy-dir'),legacyDirectory=directoryIndex<0?null:process.argv[directoryIndex+1];
+if(directoryIndex>=0&&!legacyDirectory)throw Error('历史版本：请提供已构建的网页目录');
+if(legacyDirectory&&legacyRef)throw Error('历史版本：目录与 Git 提交请选择一种');
 if(legacyIndex>=0&&!legacyRef)throw Error('历史版本：请提供有效的本地 Git 提交');
-if(legacyRef){
+if(legacyDirectory){await readFile(resolve(legacyDirectory,'index.html'));await cp(resolve(legacyDirectory),roots.A,{recursive:true});}
+else if(legacyRef){
   const commit=execFileSync('git',['rev-parse','--verify','--end-of-options',legacyRef+'^{commit}'],{cwd:project,encoding:'utf8'}).trim();
   const files=execFileSync('git',['ls-tree','-r','--name-only',commit,'--','dist'],{cwd:project,encoding:'utf8'}).trim().split('\n').filter(Boolean);
   if(!files.includes('dist/index.html'))throw Error('历史版本：该提交未包含完整的 dist 网页源码');
@@ -25,6 +29,22 @@ const stylesheet=Object.values(manifest).flatMap(entry=>entry.css||[])[0];
 if(!stylesheet)throw Error('更新测试资源：构建清单中缺少样式');
 const style=resolve(roots.B,stylesheet);
 await writeFile(style,(await readFile(style,'utf8'))+'\n/* Offline update fixture: release B. */\n');
+// An old window must request a URL that no longer exists on the B server.
+const tower=Object.entries(manifest).find(([key])=>key.endsWith('games/tower/src/index.js'))?.[1].file;
+if(!tower)throw Error('更新测试资源：构建清单中缺少高塔');
+const replacement='assets/update-fixture-abcdefgh.js';
+await rename(resolve(roots.B,tower),resolve(roots.B,replacement));
+async function rewriteReferences(directory){
+  for(const entry of await readdir(directory,{withFileTypes:true})){
+    const path=resolve(directory,entry.name);
+    if(entry.isDirectory())await rewriteReferences(path);
+    else if(/\.(?:js|json|html)$/.test(entry.name)){
+      const content=await readFile(path,'utf8');
+      await writeFile(path,content.replaceAll(tower,replacement).replaceAll(tower.slice(7),replacement.slice(7)));
+    }
+  }
+}
+await rewriteReferences(roots.B);
 const releases={};
 for(const release of ['A','B']){
   const metadata=await createPrecache(roots[release]);

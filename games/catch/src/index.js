@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {generateHarvest} from './model.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
@@ -13,7 +14,8 @@ export function catchesAtRim(item, previousY, basketX) {
     && Math.abs(item.x - basketX) <= BASKET_WIDTH / 2 + radius * 0.35;
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const schedule = generateHarvest(seed);
   const keys = new Set();
   let basketX = 300, dragging = false, elapsed = 0, score = 0, lives = 3;

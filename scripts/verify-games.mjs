@@ -8,6 +8,7 @@ import {games} from '@playground/game-registry';
 import {startQaServer} from './qa-server.mjs';
 import {verifyBatch} from './batch-2026-10-28-qa.js';
 import {generateMines} from '../games/mines/src/index.js';
+import {legacyScenarioIds,playLegacy} from './legacy-playthroughs.mjs';
 
 const require=createRequire(import.meta.url),{chromium}=require('playwright');
 const artifacts='output/playwright', report={checks:[],errors:[],rankings:[],games:games.map(game=>game.id)};
@@ -21,6 +22,9 @@ const check=(name,value)=>{if(!value)throw Error(name);report.checks.push(name);
 async function context(mobile,serviceWorkers='block') {
   const context=await browser.newContext({viewport:{width:mobile?390:1280,height:mobile?844:900},hasTouch:mobile,isMobile:mobile,serviceWorkers});
   await server.route(context);
+  // Ranked runs use the fixture backend seed; local-only games need the same
+  // deterministic browser seed so their real input scenarios describe the board.
+  await context.addInitScript(()=>{const original=crypto.getRandomValues.bind(crypto);crypto.getRandomValues=values=>values instanceof Uint32Array&&values.length===1?(values[0]=42,values):original(values);});
   context.on('page',page=>page.on('pageerror',error=>report.errors.push(error.message)));
   return context;
 }
@@ -53,21 +57,22 @@ async function playChanged(mobile) {
   }
   for(const id of changed.filter(id=>!legacy.includes(id))){
     const scenario=resolve(`games/${id}/qa/playthrough.mjs`);
-    try{await access(scenario);}catch{throw Error(`游戏 ${id}：请提供 qa/playthrough.mjs，使用真实桌面及触屏输入完成游戏，不得直接触发结算`);}
-    const {play}=await import(pathToFileURL(scenario));
+    let play;
+    try{await access(scenario);({play}=await import(pathToFileURL(scenario)));}catch(error){if(error.code!=='ENOENT')throw error;if(!legacyScenarioIds.includes(id))throw Error(`游戏 ${id}：请提供 qa/playthrough.mjs，使用真实桌面及触屏输入完成游戏，不得直接触发结算`);play=options=>playLegacy(id,options);}
     if(typeof play!=='function')throw Error(`游戏 ${id}：验收文件必须导出 play({page,mobile,point,seed})`);
     const ctx=await context(mobile),page=await ctx.newPage();
     try{
       await page.clock.install();await page.clock.pauseAt(new Date());
       await page.goto(server.origin+'/#/play/'+id);await page.locator('[data-action="start"]').click();await page.locator('#pause:enabled').waitFor();
       const point=async(x,y)=>{const canvas=page.locator('#game-canvas');await canvas.scrollIntoViewIfNeeded();const box=await canvas.boundingBox();const width=games.find(game=>game.id===id).canvas?.width||600,height=games.find(game=>game.id===id).canvas?.height||480;const px=box.x+x/width*box.width,py=box.y+y/height*box.height;if(mobile)await page.touchscreen.tap(px,py);else await page.mouse.click(px,py);};
-      await play({page,mobile,point,seed:42});
+      try{await play({page,mobile,point,seed:42});}catch(error){await page.screenshot({path:`${artifacts}/${id}-${mobile?'touch':'desktop'}-failure.png`,fullPage:true});throw new Error(`游戏 ${id} / ${mobile?'触屏':'桌面'}：${error.message}`,{cause:error});}
       await page.locator('.result-card').waitFor();
       if(!localOnly.includes(id))await page.locator('.rank-result').filter({hasText:'第 '}).waitFor();
       check(`${id}/${mobile}/completed${localOnly.includes(id)?'-local':'-and-ranked'}`,true);
       await page.screenshot({path:`${artifacts}/${id}-${mobile?'touch':'desktop'}-ranked.png`});
       await page.reload();await page.locator('[data-action="start"]').waitFor();
       check(`${id}/${mobile}/saved`,await page.evaluate(id=>!!JSON.parse(localStorage.getItem('tiny-break-arcade:v1')||'{}').best?.[id],id));
+      console.log('PASS complete ordinary playthrough',id,mobile?'touch':'desktop');
     }finally{await ctx.close();}
   }
 }

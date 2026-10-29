@@ -1,5 +1,6 @@
 export const manifest = {
   "id": "balance",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600},"controls":"点击果篮 / 方向键选择 / 空格切换 · 自动称重"}},
   "title": "果篮天平",
   "english": "ORCHARD BALANCE",
   "category": "加法组合",

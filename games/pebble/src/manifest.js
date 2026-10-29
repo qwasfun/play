@@ -1,5 +1,6 @@
 export const manifest = {
   "id": "pebble",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600}}},
   "title": "茶点跳跳棋",
   "english": "TEATIME PEGS",
   "category": "跳子规划",

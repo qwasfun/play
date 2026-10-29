@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const ORIGIN = { x: 88, y: 390 }, GRAVITY = 330, GROUND = 431;
@@ -110,7 +111,8 @@ export function stepRings(state, dt, emit = () => {}) {
   return null;
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const state = createRingState(seed);
   return {
     update(dt) { const result = stepRings(state, dt, sound); if (result) onFinish(result); },
