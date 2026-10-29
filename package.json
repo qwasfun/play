@@ -23,7 +23,9 @@
     "api:setup": "node scripts/api.mjs setup",
     "api:dev": "node scripts/api.mjs dev",
     "api:build": "node scripts/api.mjs build",
-    "campaign:generate": "node scripts/generate-campaigns.mjs"
+    "campaign:generate": "node scripts/generate-campaigns.mjs",
+    "campaign:generate:new": "node scripts/campaigns/generate.mjs",
+    "campaign:browser-fixtures": "node scripts/campaigns/browser-fixtures.mjs"
   },
   "devDependencies": {
     "acorn": "^8.19.0",

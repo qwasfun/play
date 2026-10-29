@@ -1,5 +1,7 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
  let elapsed=0,score=0,finished=false,won=false,cursor=0,pressed=-1;
  const random=rng(`${seed}:weave:v1`);
  const solution=Array.from({length:25},()=>random()<.48);if(!solution.some(Boolean))solution[12]=true;const filled=Array(25).fill(false);let notice='照着线索织一扇花窗';const groups=a=>{const out=[];let n=0;for(const v of [...a,false]){if(v)n++;else if(n){out.push(n);n=0;}}return out.length?out:[0];};const rows=Array.from({length:5},(_,r)=>groups(solution.slice(r*5,r*5+5))),cols=Array.from({length:5},(_,c)=>groups(solution.filter((_,i)=>i%5===c)));

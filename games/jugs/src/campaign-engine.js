@@ -1,0 +1,6 @@
+import {label,roundRect} from '@playground/game-sdk';
+import {levelSession,boardInput,drawCells} from '@playground/game-sdk/level';
+export function createCampaignGame(options){const {level}=options,session=levelSession(options),s=session.state;let a=0,b=0;const bounds={x:20,y:330,width:560,height:240},names=['装满左壶','装满右壶','倒空左壶','倒空右壶','左倒入右','右倒入左'];
+ const controls=boardInput({cols:3,rows:2,bounds,activate(i){if(!session.active)return;const pourA=Math.min(a,level.b-b),pourB=Math.min(b,level.a-a),next=[[level.a,b],[a,level.b],[0,b],[a,0],[a-pourA,b+pourA],[a+pourB,b-pourB]][i];if(next[0]===a&&next[1]===b)return;[a,b]=next;session.step();s.score=s.steps;if(a===level.target||b===level.target)session.finish(true);}});
+ return{update:dt=>session.update(dt),input:controls.input,getState(){return{...s,a,b,extra:`目标 ${level.target} 升`,hint:'装满、倒空或相互倾倒，量出目标水量'};},draw(ctx){drawCells(ctx,names,3,2,{bounds,selected:controls.selected,text:v=>v,fill:()=>'#e9d7b5'});[a,b].forEach((v,i)=>{const x=135+i*270,cap=i?level.b:level.a;roundRect(ctx,x-75,75,150,205,16,'#d1dcd0');if(v)roundRect(ctx,x-69,274-v/cap*190,138,v/cap*190,8,'#88bdbd');label(ctx,`${v} / ${cap} 升`,x,300,25);});label(ctx,`量出 ${level.target} 升`,300,32,25);},destroy:()=>session.destroy()};
+}

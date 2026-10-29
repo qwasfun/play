@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const COLS = 12, ROWS = 10, STEP = 0.18, CELL = 36, BOARD_X = 84, BOARD_Y = 72;
@@ -81,7 +82,8 @@ export function stepSnake(state, dt, emit = () => {}) {
   return null;
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const state = createSnakeState(seed);
   return {
     update(dt) { const result = stepSnake(state, dt, sound); if (result) onFinish(result); },

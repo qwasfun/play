@@ -1,5 +1,7 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
  let elapsed=0,score=0,finished=false,won=false,cursor=0,pressed=-1;
  const random=rng(`${seed}:courier:v1`);
  let position=0,handled=0,lives=3,phase=0,bee=0;const path=[12,13,14,15,16,17,16,15,14,13],walls=[8,9,20,21],letters=[5,30,11,24,35];function move(to){if(to<0||to>=36||walls.includes(to)||Math.abs(to%6-position%6)+Math.abs(Math.floor(to/6)-Math.floor(position/6))!==1)return;position=to;collect();}function collect(){if(position===path[bee]){lives--;position=0;if(!lives)finish();return;}if(position===letters[handled]){handled++;score=handled*100;sound('win');if(handled===5)finish(true);}}

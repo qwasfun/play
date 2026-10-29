@@ -1,6 +1,8 @@
+import {createCampaignGame} from './campaign-engine.js';
 import {rng,roundRect,label} from '@playground/game-sdk';
 export function makePuzzles(seed){const random=rng(`${seed}:balance:v1`);return Array.from({length:5},()=>{const weights=Array.from({length:6},()=>2+Math.floor(random()*13)),solution=Array.from({length:6},(_,i)=>i);for(let i=5;i>0;i--){const j=Math.floor(random()*(i+1));[solution[i],solution[j]]=[solution[j],solution[i]];}const chosen=solution.slice(0,2+Math.floor(random()*3));return{weights,target:chosen.reduce((sum,i)=>sum+weights[i],0),solution:chosen};});}
-export function createGame({seed,onFinish=()=>{},sound=()=>{}}){const puzzles=makePuzzles(seed);let elapsed=0,score=0,rounds=0,cursor=0,selected=new Set(),finished=false,won=false,pressed=null,notice='挑选果篮，让总重等于目标';
+export function createGame({level:campaignLevel,seed,onFinish=()=>{},sound=()=>{}}){
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});const puzzles=makePuzzles(seed);let elapsed=0,score=0,rounds=0,cursor=0,selected=new Set(),finished=false,won=false,pressed=null,notice='挑选果篮，让总重等于目标';
  function finish(){if(finished)return;finished=true;won=rounds===5;onFinish({score,elapsed,rounds,won});}
  function choose(i){if(i===6){const total=[...selected].reduce((s,j)=>s+puzzles[rounds].weights[j],0);if(total===puzzles[rounds].target){rounds++;score=rounds*100;selected.clear();notice='刚刚好！下一道果篮来啦';sound('win');if(rounds===5)finish();}else{notice=total<puzzles[rounds].target?'还轻一点，再添一篮吧':'有点重啦，试着换一篮';sound('tap');}}else if(i>=0){if(selected.has(i))selected.delete(i);else selected.add(i);}}
  const cell=p=>{if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return -1;if(p.x>=180&&p.x<=420&&p.y>=370&&p.y<=430)return 6;if(p.x<90||p.x>=510||p.y<160||p.y>=340)return -1;return Math.floor((p.y-160)/90)*3+Math.floor((p.x-90)/140);};

@@ -8,6 +8,7 @@ import {games} from '@playground/game-registry';
 import {startQaServer} from './qa-server.mjs';
 import {verifyBatch} from './batch-2026-10-28-qa.js';
 import {generateMines} from '../games/mines/src/index.js';
+import {legacyScenarioIds,playLegacy} from './legacy-playthroughs.mjs';
 
 const require=createRequire(import.meta.url),{chromium}=require('playwright');
 const artifacts='output/playwright', report={checks:[],errors:[],rankings:[],games:games.map(game=>game.id)};
@@ -53,8 +54,8 @@ async function playChanged(mobile) {
   }
   for(const id of changed.filter(id=>!legacy.includes(id))){
     const scenario=resolve(`games/${id}/qa/playthrough.mjs`);
-    try{await access(scenario);}catch{throw Error(`游戏 ${id}：请提供 qa/playthrough.mjs，使用真实桌面及触屏输入完成游戏，不得直接触发结算`);}
-    const {play}=await import(pathToFileURL(scenario));
+    let play;
+    try{await access(scenario);({play}=await import(pathToFileURL(scenario)));}catch(error){if(error.code!=='ENOENT')throw error;if(!legacyScenarioIds.includes(id))throw Error(`游戏 ${id}：请提供 qa/playthrough.mjs，使用真实桌面及触屏输入完成游戏，不得直接触发结算`);play=options=>playLegacy(id,options);}
     if(typeof play!=='function')throw Error(`游戏 ${id}：验收文件必须导出 play({page,mobile,point,seed})`);
     const ctx=await context(mobile),page=await ctx.newPage();
     try{

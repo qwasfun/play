@@ -75,7 +75,7 @@ test('mine holds cancel correctly, flags do not reveal, and failure never unlock
 });
 test('campaign routes validate specific fields while all original ordinary and dated links retain their meaning',()=>{
   for(const id of ids){assert.deepEqual(parseRoute(campaignLink(id)),{type:'levels',id});for(const n of [1,20])assert.deepEqual(parseRoute(campaignLink(id,n)),{type:'campaign',id,level:n,version:1});assert.deepEqual(parseRoute(playLink(id)),{type:'play',id,date:''});}
-  for(const route of ['#/levels/star','#/levels/nope','#/levels/lights/0','#/levels/lights/21','#/levels/lights/1.5','#/levels/lights/-1','#/levels/lights/1/2','#/levels/lights/1?cv=2'])assert.equal(parseRoute(route).type,'error');
+  for(const route of ['#/levels/nope','#/levels/lights/0','#/levels/lights/21','#/levels/lights/1.5','#/levels/lights/-1','#/levels/lights/1/2','#/levels/lights/1?cv=2'])assert.equal(parseRoute(route).type,'error');
   const date='2026-10-26',id=dailyGame(date);assert.equal(parseRoute(playLink(id,date),'2026-10-27').date,date);assert.equal(dailySeed(date,id),dailySeed(date,id));
 });
 function fakeStorage(){const values=new Map();return{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)};}

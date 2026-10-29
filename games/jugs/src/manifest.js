@@ -1,5 +1,6 @@
 export const manifest = {
   "id": "jugs",
+  "campaign": {"version":1,"total":20,"recordPolicy":"steps","presentation":{"canvas":{"width":600,"height":600},"controls":"点击操作 / 方向键选择 / 空格或回车执行"}},
   "title": "量水茶坊",
   "english": "TEA MEASURES",
   "category": "逻辑益智",

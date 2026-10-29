@@ -1,3 +1,4 @@
+import {createCampaignGame} from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const LIMIT = 120;
@@ -84,7 +85,8 @@ function flower(ctx, kind, x, y) {
   }
 }
 
-export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
+export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
   const board = generatePairs(seed);
   const matched = Array(12).fill(false);
   let faceUp = [];

@@ -1,5 +1,6 @@
 export const manifest = {
   "id": "sail",
+  "campaign": {"version":1,"total":20,"recordPolicy":"action","presentation":{"canvas":{"width":600,"height":480},"lives":3,"extraLabel":"剩余机会"}},
   "title": "风帆过峡",
   "english": "COZY SAIL",
   "category": "航道闪避",
