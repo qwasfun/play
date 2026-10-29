@@ -2,7 +2,7 @@
   "id": "./",
   "name": "玩呀",
   "short_name": "玩呀",
-  "description": "20 款中文小游戏与每日挑战，支持手机、电脑和离线游玩。",
+  "description": "中文小游戏与每日挑战，支持手机、电脑和离线游玩。",
   "lang": "zh-CN",
   "start_url": "./#/",
   "scope": "./",
