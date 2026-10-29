@@ -146,7 +146,15 @@ const samples={
   star:{score:10,lives:0},bridge:{score:100,progress:1,lives:0},lights:{score:8,steps:8,won:true},echo:{score:2,rounds:2},catch:{score:20,lives:0},bounce:{score:20,lives:0},pairs:{score:684,steps:12,won:true},merge:{score:760,won:true},rings:{score:100,progress:1,lives:0},snake:{score:10,stars:1},boxes:{score:420,steps:10,won:true},pipes:{score:400,steps:10,won:true},jump:{score:100,passed:1,lives:0},bubbles:{score:100,cleared:2,round:1},slide:{score:450,steps:10,won:true},rhythm:{score:150,hits:2,perfects:1,combo:2,lives:0},constellation:{score:700,steps:20,won:true},tower:{score:150,level:1,lives:0},rain:{score:40,caught:1,handled:4,lives:0},mines:{score:470,opened:13,won:true}
 };
 for(const game of games)test(`${game.id}: valid representative result reaches the board and invalid game metrics are rejected`,async()=>{
-  const s=setup(),v=await guest(s),result={score:0,elapsed:10,won:false,...samples[game.id]};
+  const s=setup(),v=await guest(s);let result;
+  if(samples[game.id]) result={score:0,elapsed:10,won:false,...samples[game.id]};
+  else {
+    // Future game packages own their result schema; obtain a genuine timeout result.
+    const {createGame}=await import(`@playground/game-${game.id}`);
+    const instance=createGame({seed:42,onFinish:value=>{result=value;}});
+    for(let tick=0;tick<=Math.ceil(game.limit*60)+1&&!result;tick++)instance.update(1/60);
+    instance.destroy?.();assert.ok(result,game.id+' must settle a real run');
+  }
   assert.deepEqual(validateResult(game.id,result),[]);
   assert.equal((await s.submit(v,await s.start(v,game.id),result)).status,200);
   assert.equal((await s.board(v,game.id)).data.total,1);
