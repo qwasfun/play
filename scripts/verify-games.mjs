@@ -22,6 +22,9 @@ const check=(name,value)=>{if(!value)throw Error(name);report.checks.push(name);
 async function context(mobile,serviceWorkers='block') {
   const context=await browser.newContext({viewport:{width:mobile?390:1280,height:mobile?844:900},hasTouch:mobile,isMobile:mobile,serviceWorkers});
   await server.route(context);
+  // Ranked runs use the fixture backend seed; local-only games need the same
+  // deterministic browser seed so their real input scenarios describe the board.
+  await context.addInitScript(()=>{const original=crypto.getRandomValues.bind(crypto);crypto.getRandomValues=values=>values instanceof Uint32Array&&values.length===1?(values[0]=42,values):original(values);});
   context.on('page',page=>page.on('pageerror',error=>report.errors.push(error.message)));
   return context;
 }
@@ -62,13 +65,14 @@ async function playChanged(mobile) {
       await page.clock.install();await page.clock.pauseAt(new Date());
       await page.goto(server.origin+'/#/play/'+id);await page.locator('[data-action="start"]').click();await page.locator('#pause:enabled').waitFor();
       const point=async(x,y)=>{const canvas=page.locator('#game-canvas');await canvas.scrollIntoViewIfNeeded();const box=await canvas.boundingBox();const width=games.find(game=>game.id===id).canvas?.width||600,height=games.find(game=>game.id===id).canvas?.height||480;const px=box.x+x/width*box.width,py=box.y+y/height*box.height;if(mobile)await page.touchscreen.tap(px,py);else await page.mouse.click(px,py);};
-      await play({page,mobile,point,seed:42});
+      try{await play({page,mobile,point,seed:42});}catch(error){await page.screenshot({path:`${artifacts}/${id}-${mobile?'touch':'desktop'}-failure.png`,fullPage:true});throw new Error(`游戏 ${id} / ${mobile?'触屏':'桌面'}：${error.message}`,{cause:error});}
       await page.locator('.result-card').waitFor();
       if(!localOnly.includes(id))await page.locator('.rank-result').filter({hasText:'第 '}).waitFor();
       check(`${id}/${mobile}/completed${localOnly.includes(id)?'-local':'-and-ranked'}`,true);
       await page.screenshot({path:`${artifacts}/${id}-${mobile?'touch':'desktop'}-ranked.png`});
       await page.reload();await page.locator('[data-action="start"]').waitFor();
       check(`${id}/${mobile}/saved`,await page.evaluate(id=>!!JSON.parse(localStorage.getItem('tiny-break-arcade:v1')||'{}').best?.[id],id));
+      console.log('PASS complete ordinary playthrough',id,mobile?'touch':'desktop');
     }finally{await ctx.close();}
   }
 }
