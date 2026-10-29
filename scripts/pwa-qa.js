@@ -5,12 +5,12 @@ async(page)=>{
   for(const[key,entry]of Object.entries(buildMap)){
     if(key.endsWith('packages/game-registry/src/index.js'))qaModules['catalog.js']=entry.file;
     if(key.endsWith('packages/game-registry/src/core.js'))qaModules['core.js']=entry.file;
-    const match=key.match(/(?:^|\/)games\/(\w+)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
+    const match=key.match(/(?:^|\/)games\/([a-z][a-z0-9]*(?:-[a-z0-9]+)*)\/src\/index\.js$/);if(match)qaModules['games/'+match[1]+'.js']=entry.file;
   }
   const installQaImports=map=>{
     window.__qaModules=map;
     window.__qaImport=specifier=>{
-      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/(\w+)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
+      const url=new URL(specifier,location.href),match=url.pathname.match(/games\/([a-z][a-z0-9]*(?:-[a-z0-9]+)*)\.js$/),key=match?'games/'+match[1]+'.js':url.pathname.split('/').pop();
       if(!map[key])throw Error('验收模块：未找到 '+key);
       return import(new URL(map[key],new URL('./',location.href)).href);
     };
