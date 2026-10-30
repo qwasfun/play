@@ -1,4 +1,4 @@
-import {createCampaignGame} from './campaign-engine.js';
+import { createCampaignGame } from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const SIZE = 4;
@@ -13,7 +13,13 @@ export function toggledBoard(board, index) {
   if (!Number.isInteger(index) || index < 0 || index >= 16) return next;
   const row = Math.floor(index / SIZE);
   const col = index % SIZE;
-  for (const [dr, dc] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]) {
+  for (const [dr, dc] of [
+    [0, 0],
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]) {
     const r = row + dr;
     const c = col + dc;
     if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) next[r * SIZE + c] ^= 1;
@@ -31,7 +37,7 @@ export function generateLights(seed) {
   const solution = positions.slice(0, 5 + Math.floor(random() * 5));
   let board = Array(16).fill(0);
   for (const index of solution) board = toggledBoard(board, index);
-  if (board.every(value => value === 0)) {
+  if (board.every((value) => value === 0)) {
     solution.push(positions[solution.length]);
     board = toggledBoard(board, solution[solution.length - 1]);
   }
@@ -45,8 +51,8 @@ function tileAt(x, y) {
   return row * 4 + col;
 }
 
-export function createGame({level, seed, onFinish = () => {}, sound = () => {} }) {
-  if(level)return createCampaignGame({level,onFinish,sound});
+export function createGame({ level, seed, onFinish = () => {}, sound = () => {} }) {
+  if (level) return createCampaignGame({ level, onFinish, sound });
   let board = generateLights(seed).board;
   let elapsed = 0;
   let steps = 0;
@@ -69,7 +75,7 @@ export function createGame({level, seed, onFinish = () => {}, sound = () => {} }
     selected = index;
     steps++;
     sound('tap');
-    if (board.every(value => value === 0)) {
+    if (board.every((value) => value === 0)) {
       won = true;
       sound('win');
       finish('solved');
@@ -111,10 +117,16 @@ export function createGame({level, seed, onFinish = () => {}, sound = () => {} }
     getState() {
       const lit = board.reduce((sum, value) => sum + value, 0);
       return {
-        score: steps, steps, elapsed, won, finished,
+        score: steps,
+        steps,
+        elapsed,
+        won,
+        finished,
         progress: `${lit} 盏灯还亮着`,
         hint: '点击翻转十字区域 · 熄灭全部灯光',
-        board: [...board], selected, canUndo: history.length > 0,
+        board: [...board],
+        selected,
+        canUndo: history.length > 0,
       };
     },
     draw(ctx) {
@@ -137,7 +149,16 @@ export function createGame({level, seed, onFinish = () => {}, sound = () => {} }
           ctx.stroke();
           ctx.restore();
         }
-        label(ctx, String(i + 1).padStart(2, '0'), x + 15, y + 18, 10, board[i] ? '#ad8d43' : '#a299b3', 'center', 600);
+        label(
+          ctx,
+          String(i + 1).padStart(2, '0'),
+          x + 15,
+          y + 18,
+          10,
+          board[i] ? '#ad8d43' : '#a299b3',
+          'center',
+          600,
+        );
         const cx = x + TILE / 2;
         const cy = y + 39;
         if (board[i]) {
@@ -170,6 +191,8 @@ export function createGame({level, seed, onFinish = () => {}, sound = () => {} }
       }
       label(ctx, '方向键选择 · 空格翻转 · 需要时可以撤销', 300, 458, 14, '#76678c', 'center', 500);
     },
-    destroy() { pressed = -1; },
+    destroy() {
+      pressed = -1;
+    },
   };
 }

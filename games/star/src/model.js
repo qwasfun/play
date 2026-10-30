@@ -1,4 +1,4 @@
-import {rng} from '@playground/game-sdk';
+import { rng } from '@playground/game-sdk';
 export function generateStarSchedule(seed) {
   const random = rng(`${seed}:star-schedule`);
   const events = [];

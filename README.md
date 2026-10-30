@@ -124,13 +124,13 @@ npx --yes --package @playwright/cli playwright-cli -s=mobileqa close
 
 ## 结构与扩展
 
-| 工作区 | 职责 |
-| --- | --- |
-| `apps/arcade` | 首页、路由、收藏、历史记录、每日挑战、排行榜界面、统计和 PWA |
-| `games/<id>` | 每款游戏自己的引擎、元信息、原创插画、成绩规则、测试与说明 |
-| `packages/game-sdk` | JSDoc 接口、随机数、绘图、SVG 和通用成绩校验机制，不读取游戏目录 |
-| `packages/game-runtime` | 固定步长、输入、开始/暂停/重开/撤销、全屏和销毁；通过宿主回调接入存储与网络 |
-| `packages/game-registry` | 明确的游戏顺序、纯逻辑规则集、历史挑战日历，以及浏览器插画与动态加载入口 |
+| 工作区                   | 职责                                                                        |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `apps/arcade`            | 首页、路由、收藏、历史记录、每日挑战、排行榜界面、统计和 PWA                |
+| `games/<id>`             | 每款游戏自己的引擎、元信息、原创插画、成绩规则、测试与说明                  |
+| `packages/game-sdk`      | JSDoc 接口、随机数、绘图、SVG 和通用成绩校验机制，不读取游戏目录            |
+| `packages/game-runtime`  | 固定步长、输入、开始/暂停/重开/撤销、全屏和销毁；通过宿主回调接入存储与网络 |
+| `packages/game-registry` | 明确的游戏顺序、纯逻辑规则集、历史挑战日历，以及浏览器插画与动态加载入口    |
 
 每款游戏名为 `@playground/game-<id>`，只依赖 SDK，不得引用其他游戏、注册表或游乐场。主入口提供 `createGame({seed,onFinish,sound})`，返回 `update(dt)`、`draw(ctx)`、`input(type,payload)`、`getState()`、`destroy()`；`/manifest`、`/art`、`/rules` 分别导出 `manifest`、`art()`、`rules`。`rules` 提供 validate、stored、compare、format、clean、ranking，以及可选 seedCap；服务端使用不含 DOM/CSS 的纯逻辑入口。新增计数字段及中文标签由游戏自己的规则配置声明。
 
@@ -197,14 +197,14 @@ npx --yes --package @playwright/cli playwright-cli --raw -s=rankqa run-code --fi
 
 ### 接口与基础防刷
 
-| 接口 | 行为 |
-| --- | --- |
-| `POST /v1/guests` | 建立或恢复匿名会话，返回公开玩家资料 |
-| `GET/PATCH /v1/me` | 读取身份、修改昵称 |
-| `POST /v1/runs` | 提交 `gameId, mode, date, ruleVersion`，领取 `id, seed, expiresAt`；普通模式可附 `restartOf` 复用自己的原关卡 |
-| `POST /v1/runs/:id/result` | 提交游戏结算字段，返回 `accepted, eligible, improved, rank` |
-| `GET /v1/leaderboards` | 按 `gameId, mode, date, ruleVersion` 查询，返回 `entries, me, total` |
-| `GET /healthz` | 存活检查 |
+| 接口                       | 行为                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/guests`          | 建立或恢复匿名会话，返回公开玩家资料                                                                          |
+| `GET/PATCH /v1/me`         | 读取身份、修改昵称                                                                                            |
+| `POST /v1/runs`            | 提交 `gameId, mode, date, ruleVersion`，领取 `id, seed, expiresAt`；普通模式可附 `restartOf` 复用自己的原关卡 |
+| `POST /v1/runs/:id/result` | 提交游戏结算字段，返回 `accepted, eligible, improved, rank`                                                   |
+| `GET /v1/leaderboards`     | 按 `gameId, mode, date, ruleVersion` 查询，返回 `entries, me, total`                                          |
+| `GET /healthz`             | 存活检查                                                                                                      |
 
 接口只允许配置的网站来源；写操作必须带合法 Origin，读写不缓存。身份凭证仅通过 Cookie 发送，玩家公开 ID 不是身份凭据。每个 IP 每分钟最多 120 次写入；每位玩家每分钟最多 10 次开局、20 次成绩提交、10 次昵称修改，超限返回 429 和 Retry-After。IP 通过独立服务端密钥加盐散列后用于限流，不保存原始 IP。
 

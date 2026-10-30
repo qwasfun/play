@@ -1,6 +1,69 @@
-import {levelSession,drawCells} from '@playground/game-sdk/level';
-import {moveBoard,hasMoves} from './model.js';
-export function createCampaignGame(options){const {level}=options,session=levelSession(options),s=session.state;let board=[...level.board],spawn=0,start=null;
- function move(dir){if(!session.active)return;const next=moveBoard(board,dir);if(!next.moved)return;session.step();board=next.board;s.score+=next.score;if(Math.max(...board)>=level.target){session.finish(true);return;}const empty=board.map((v,i)=>v===0?i:-1).filter(i=>i>=0),entry=level.spawns[spawn++%level.spawns.length];if(empty.length)board[empty[entry.slot%empty.length]]=entry.value;if(!hasMoves(board))session.finish(false,'no-moves');}
- return{update:dt=>session.update(dt),input(type,p={}){if(type==='primary-down')start=p;if(type==='primary-cancel')start=null;if(type==='primary-up'&&start){const dx=p.x-start.x,dy=p.y-start.y;if(Math.hypot(dx,dy)>=18)move(Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up');start=null;}if(type==='key-down'&&!p.repeat){const dir=({arrowleft:'left',a:'left',arrowright:'right',d:'right',arrowup:'up',w:'up',arrowdown:'down',s:'down'})[String(p.key).toLowerCase()];if(dir)move(dir);}},getState(){return{...s,board:[...board],spawnIndex:spawn,extra:`最大 ${Math.max(...board)} / ${level.target}`,hint:'滑动或方向键合并相同数字'};},draw(ctx){drawCells(ctx,board,4,4,{text:v=>v||'',fill:v=>v?`hsl(${24+Math.log2(v)*14} 45% 78%)`:'#e1dacc'});},destroy:()=>session.destroy()};
+import { levelSession, drawCells } from '@playground/game-sdk/level';
+import { moveBoard, hasMoves } from './model.js';
+export function createCampaignGame(options) {
+  const { level } = options,
+    session = levelSession(options),
+    s = session.state;
+  let board = [...level.board],
+    spawn = 0,
+    start = null;
+  function move(dir) {
+    if (!session.active) return;
+    const next = moveBoard(board, dir);
+    if (!next.moved) return;
+    session.step();
+    board = next.board;
+    s.score += next.score;
+    if (Math.max(...board) >= level.target) {
+      session.finish(true);
+      return;
+    }
+    const empty = board.map((v, i) => (v === 0 ? i : -1)).filter((i) => i >= 0),
+      entry = level.spawns[spawn++ % level.spawns.length];
+    if (empty.length) board[empty[entry.slot % empty.length]] = entry.value;
+    if (!hasMoves(board)) session.finish(false, 'no-moves');
+  }
+  return {
+    update: (dt) => session.update(dt),
+    input(type, p = {}) {
+      if (type === 'primary-down') start = p;
+      if (type === 'primary-cancel') start = null;
+      if (type === 'primary-up' && start) {
+        const dx = p.x - start.x,
+          dy = p.y - start.y;
+        if (Math.hypot(dx, dy) >= 18)
+          move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up');
+        start = null;
+      }
+      if (type === 'key-down' && !p.repeat) {
+        const dir = {
+          arrowleft: 'left',
+          a: 'left',
+          arrowright: 'right',
+          d: 'right',
+          arrowup: 'up',
+          w: 'up',
+          arrowdown: 'down',
+          s: 'down',
+        }[String(p.key).toLowerCase()];
+        if (dir) move(dir);
+      }
+    },
+    getState() {
+      return {
+        ...s,
+        board: [...board],
+        spawnIndex: spawn,
+        extra: `最大 ${Math.max(...board)} / ${level.target}`,
+        hint: '滑动或方向键合并相同数字',
+      };
+    },
+    draw(ctx) {
+      drawCells(ctx, board, 4, 4, {
+        text: (v) => v || '',
+        fill: (v) => (v ? `hsl(${24 + Math.log2(v) * 14} 45% 78%)` : '#e1dacc'),
+      });
+    },
+    destroy: () => session.destroy(),
+  };
 }

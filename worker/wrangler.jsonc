@@ -6,20 +6,23 @@
   "compatibility_date": "2026-10-26",
   "workers_dev": false,
   "preview_urls": false,
-  "routes": [{"pattern":"play-api.185036.xyz","custom_domain":true}],
+  "routes": [{ "pattern": "play-api.185036.xyz", "custom_domain": true }],
   "vars": {
     "ENVIRONMENT": "production",
     "REQUEST_CLEANUP": "true",
     "ALLOWED_ORIGINS": "https://play.185036.xyz",
     "UMAMI_WEBSITE_ID": "",
-    "UMAMI_SEND_URL": "https://gateway.umami.is/api/send"
+    "UMAMI_SEND_URL": "https://gateway.umami.is/api/send",
   },
-  "d1_databases": [{
-    "binding": "DB", "database_name": "arcade-leaderboard",
-    "database_id": "a6338501-67ca-4500-a0f7-81bd542efea4",
-    "migrations_dir": "migrations"
-  }],
-  "triggers": {"crons": []},
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "arcade-leaderboard",
+      "database_id": "a6338501-67ca-4500-a0f7-81bd542efea4",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "triggers": { "crons": [] },
   "env": {
     "local": {
       "routes": [],
@@ -28,13 +31,16 @@
         "REQUEST_CLEANUP": "true",
         "ALLOWED_ORIGINS": "http://127.0.0.1:4174,http://localhost:4174,http://127.0.0.1:4175,http://localhost:4175",
         "UMAMI_WEBSITE_ID": "",
-        "UMAMI_SEND_URL": "https://gateway.umami.is/api/send"
+        "UMAMI_SEND_URL": "https://gateway.umami.is/api/send",
       },
-      "d1_databases": [{
-        "binding": "DB", "database_name": "arcade-leaderboard",
-        "database_id": "00000000-0000-0000-0000-000000000001",
-        "migrations_dir": "migrations"
-      }]
-    }
-  }
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "arcade-leaderboard",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+  },
 }

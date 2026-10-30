@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "games/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "games/*",
+    "apps/*"
+  ],
   "engines": {
     "node": ">=24.9.0"
   },
@@ -19,7 +23,11 @@
     "verify:games": "node scripts/verify-games.mjs",
     "repo:configure": "node scripts/configure-repository.mjs",
     "release:resume": "node scripts/release-state.mjs resume",
-    "check": "node scripts/check.mjs && node scripts/prepare-pwa.mjs --check",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "check": "npm run lint && npm run format:check && node scripts/check.mjs && node scripts/prepare-pwa.mjs --check",
     "api:setup": "node scripts/api.mjs setup",
     "api:dev": "node scripts/api.mjs dev",
     "api:build": "node scripts/api.mjs build",
@@ -28,7 +36,12 @@
     "campaign:browser-fixtures": "node scripts/campaigns/browser-fixtures.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "acorn": "^8.19.0",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
     "vite": "^8.3.5",
     "wrangler": "^4.153.0"
   }

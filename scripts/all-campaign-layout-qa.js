@@ -1,12 +1,173 @@
-async(page)=>{
- const origin=new URL(page.url()).origin,context=await page.context().browser().newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true}),mobile=await context.newPage(),checks=[],errors=[];
- const check=(name,passed,detail)=>{checks.push({name,passed:!!passed,detail});if(!passed)throw Error(JSON.stringify(checks.at(-1)));};mobile.on('pageerror',e=>errors.push(e.message));mobile.setDefaultTimeout(12000);
- const map=await(await page.request.get(origin+'/module-map.json')).json(),ids=['star','bridge','echo','catch','bounce','pairs','merge','rings','snake','jump','bubbles','rhythm','constellation','tower','rain','lantern','sail','balance','pebble','windmill','courier','weave','jugs'],levels={};
- await mobile.goto(origin);for(const id of ids){const entry=Object.entries(map).find(([key])=>key.endsWith(`games/${id}/src/campaign.js`))[1];levels[id]=(await mobile.evaluate(async f=>(await import(new URL(f,location.href))).campaign,entry.file)).levels;}
- const key='tiny-break-arcade:campaign:v1';await mobile.evaluate(({key,ids})=>{const data={version:1,games:{}};for(const id of ids){data.games[id]={version:1,best:{}};for(let n=1;n<20;n++)data.games[id].best[n]={won:true,steps:999,score:1,mistakes:2,elapsed:999};}localStorage.setItem(key,JSON.stringify(data));},{key,ids});await mobile.reload();
- function hitSize(id,l){if(id==='bubbles')return [560/l.size,560/l.size];if(id==='pairs')return[560/l.cols,560/Math.ceil(l.board.length/l.cols)];if(id==='weave')return[94,94];if(['balance','jugs'].includes(id))return id==='jugs'?[560/3,120]:[560/(l.weights.length<=6?3:5),400/Math.ceil(l.weights.length/(l.weights.length<=6?3:5))];if(id==='courier')return[560/6,560/6];if(id==='pebble')return[112,112];if(id==='constellation')return[92,92];if(id==='lantern')return[168,112];if(id==='echo')return[210,170];return null;}
- for(const[width,height]of[[320,568],[568,320],[390,844],[844,390],[1280,900]]){await mobile.setViewportSize({width,height});for(const id of ids){await mobile.goto(origin+`/#/levels/${id}/20?cv=1`);await mobile.locator('[data-action="start"]').waitFor();const metric=await mobile.evaluate(()=>{const c=document.querySelector('canvas'),r=c.getBoundingClientRect(),buttons=[...document.querySelectorAll('.game-controls button')].map(el=>el.getBoundingClientRect());return{width:r.width,height:r.height,logicalWidth:c.width,logicalHeight:c.height,overflow:document.documentElement.scrollWidth>innerWidth,minButton:Math.min(...buttons.map(r=>r.height)),bottom:r.bottom,top:r.top};}),hit=hitSize(id,levels[id][19]);check(`${id} ${width}x${height} layout`,!metric.overflow&&metric.minButton>=44&&(!hit||Math.min(hit[0]*metric.width/metric.logicalWidth,hit[1]*metric.height/metric.logicalHeight)>=44),{...metric,hit});}}
- await mobile.setViewportSize({width:390,height:844});await mobile.goto(origin+'/#/levels/weave/20?cv=1');await mobile.locator('[data-action="start"]').tap();await mobile.locator('#game-overlay').waitFor({state:'hidden'});const canvas=mobile.locator('canvas'),box=await canvas.boundingBox();await mobile.touchscreen.tap(box.x+157/600*box.width,box.y+157/600*box.height);check('touch cell activation',await mobile.locator('#live-score').innerText()==='1');await mobile.setViewportSize({width:844,height:390});await mobile.getByRole('button',{name:'继续游戏 ▶',exact:true}).waitFor();check('rotation pauses and retains steps',await mobile.locator('#live-score').innerText()==='1');await mobile.getByRole('button',{name:'继续游戏 ▶',exact:true}).tap();await mobile.locator('#fullscreen-toggle').tap();check('touch fullscreen',await mobile.locator('.play-main.is-fullscreen').count()===1);await mobile.locator('#fullscreen-toggle').tap();await mobile.setViewportSize({width:390,height:844});await mobile.goto(origin+'/#/levels/weave/20?cv=1');await mobile.reload();await mobile.locator('[data-action="start"]').tap();await mobile.locator('#game-overlay').waitFor({state:'hidden'});await mobile.screenshot({path:'output/playwright/560-weave-mobile.png',fullPage:true});await mobile.goto(origin+'/#/levels/lantern/20?cv=1');await mobile.locator('[data-action="start"]').tap();await mobile.locator('#game-overlay').waitFor({state:'hidden'});await mobile.screenshot({path:'output/playwright/560-lantern-mobile.png',fullPage:true});
- await mobile.goto(origin+'/#/');await mobile.locator('[data-offline-status][data-state="ready"]').first().waitFor();await mobile.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);for(const id of ids){await mobile.goto(origin+`/#/levels/${id}`);await mobile.reload();await mobile.locator('.level-grid').first().waitFor();await mobile.goto(origin+`/#/levels/${id}/20?cv=1`);await mobile.locator('[data-action="start"]').waitFor();check(id+' offline direct route',true);}await context.setOffline(false);
- check('no mobile errors',errors.length===0,errors);await context.close();return{passed:checks.length,checks};
-}
+async (page) => {
+  const origin = new URL(page.url()).origin,
+    context = await page
+      .context()
+      .browser()
+      .newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }),
+    mobile = await context.newPage(),
+    checks = [],
+    errors = [];
+  const check = (name, passed, detail) => {
+    checks.push({ name, passed: !!passed, detail });
+    if (!passed) throw Error(JSON.stringify(checks.at(-1)));
+  };
+  mobile.on('pageerror', (e) => errors.push(e.message));
+  mobile.setDefaultTimeout(12000);
+  const map = await (await page.request.get(origin + '/module-map.json')).json(),
+    ids = [
+      'star',
+      'bridge',
+      'echo',
+      'catch',
+      'bounce',
+      'pairs',
+      'merge',
+      'rings',
+      'snake',
+      'jump',
+      'bubbles',
+      'rhythm',
+      'constellation',
+      'tower',
+      'rain',
+      'lantern',
+      'sail',
+      'balance',
+      'pebble',
+      'windmill',
+      'courier',
+      'weave',
+      'jugs',
+    ],
+    levels = {};
+  await mobile.goto(origin);
+  for (const id of ids) {
+    const entry = Object.entries(map).find(([key]) =>
+      key.endsWith(`games/${id}/src/campaign.js`),
+    )[1];
+    levels[id] = (
+      await mobile.evaluate(
+        async (f) => (await import(new URL(f, location.href))).campaign,
+        entry.file,
+      )
+    ).levels;
+  }
+  const key = 'tiny-break-arcade:campaign:v1';
+  await mobile.evaluate(
+    ({ key, ids }) => {
+      const data = { version: 1, games: {} };
+      for (const id of ids) {
+        data.games[id] = { version: 1, best: {} };
+        for (let n = 1; n < 20; n++)
+          data.games[id].best[n] = { won: true, steps: 999, score: 1, mistakes: 2, elapsed: 999 };
+      }
+      localStorage.setItem(key, JSON.stringify(data));
+    },
+    { key, ids },
+  );
+  await mobile.reload();
+  function hitSize(id, l) {
+    if (id === 'bubbles') return [560 / l.size, 560 / l.size];
+    if (id === 'pairs') return [560 / l.cols, 560 / Math.ceil(l.board.length / l.cols)];
+    if (id === 'weave') return [94, 94];
+    if (['balance', 'jugs'].includes(id))
+      return id === 'jugs'
+        ? [560 / 3, 120]
+        : [
+            560 / (l.weights.length <= 6 ? 3 : 5),
+            400 / Math.ceil(l.weights.length / (l.weights.length <= 6 ? 3 : 5)),
+          ];
+    if (id === 'courier') return [560 / 6, 560 / 6];
+    if (id === 'pebble') return [112, 112];
+    if (id === 'constellation') return [92, 92];
+    if (id === 'lantern') return [168, 112];
+    if (id === 'echo') return [210, 170];
+    return null;
+  }
+  for (const [width, height] of [
+    [320, 568],
+    [568, 320],
+    [390, 844],
+    [844, 390],
+    [1280, 900],
+  ]) {
+    await mobile.setViewportSize({ width, height });
+    for (const id of ids) {
+      await mobile.goto(origin + `/#/levels/${id}/20?cv=1`);
+      await mobile.locator('[data-action="start"]').waitFor();
+      const metric = await mobile.evaluate(() => {
+          const c = document.querySelector('canvas'),
+            r = c.getBoundingClientRect(),
+            buttons = [...document.querySelectorAll('.game-controls button')].map((el) =>
+              el.getBoundingClientRect(),
+            );
+          return {
+            width: r.width,
+            height: r.height,
+            logicalWidth: c.width,
+            logicalHeight: c.height,
+            overflow: document.documentElement.scrollWidth > innerWidth,
+            minButton: Math.min(...buttons.map((r) => r.height)),
+            bottom: r.bottom,
+            top: r.top,
+          };
+        }),
+        hit = hitSize(id, levels[id][19]);
+      check(
+        `${id} ${width}x${height} layout`,
+        !metric.overflow &&
+          metric.minButton >= 44 &&
+          (!hit ||
+            Math.min(
+              (hit[0] * metric.width) / metric.logicalWidth,
+              (hit[1] * metric.height) / metric.logicalHeight,
+            ) >= 44),
+        { ...metric, hit },
+      );
+    }
+  }
+  await mobile.setViewportSize({ width: 390, height: 844 });
+  await mobile.goto(origin + '/#/levels/weave/20?cv=1');
+  await mobile.locator('[data-action="start"]').tap();
+  await mobile.locator('#game-overlay').waitFor({ state: 'hidden' });
+  const canvas = mobile.locator('canvas'),
+    box = await canvas.boundingBox();
+  await mobile.touchscreen.tap(box.x + (157 / 600) * box.width, box.y + (157 / 600) * box.height);
+  check('touch cell activation', (await mobile.locator('#live-score').innerText()) === '1');
+  await mobile.setViewportSize({ width: 844, height: 390 });
+  await mobile.getByRole('button', { name: '继续游戏 ▶', exact: true }).waitFor();
+  check(
+    'rotation pauses and retains steps',
+    (await mobile.locator('#live-score').innerText()) === '1',
+  );
+  await mobile.getByRole('button', { name: '继续游戏 ▶', exact: true }).tap();
+  await mobile.locator('#fullscreen-toggle').tap();
+  check('touch fullscreen', (await mobile.locator('.play-main.is-fullscreen').count()) === 1);
+  await mobile.locator('#fullscreen-toggle').tap();
+  await mobile.setViewportSize({ width: 390, height: 844 });
+  await mobile.goto(origin + '/#/levels/weave/20?cv=1');
+  await mobile.reload();
+  await mobile.locator('[data-action="start"]').tap();
+  await mobile.locator('#game-overlay').waitFor({ state: 'hidden' });
+  await mobile.screenshot({ path: 'output/playwright/560-weave-mobile.png', fullPage: true });
+  await mobile.goto(origin + '/#/levels/lantern/20?cv=1');
+  await mobile.locator('[data-action="start"]').tap();
+  await mobile.locator('#game-overlay').waitFor({ state: 'hidden' });
+  await mobile.screenshot({ path: 'output/playwright/560-lantern-mobile.png', fullPage: true });
+  await mobile.goto(origin + '/#/');
+  await mobile.locator('[data-offline-status][data-state="ready"]').first().waitFor();
+  await mobile.waitForFunction(() => !!navigator.serviceWorker.controller);
+  await context.setOffline(true);
+  for (const id of ids) {
+    await mobile.goto(origin + `/#/levels/${id}`);
+    await mobile.reload();
+    await mobile.locator('.level-grid').first().waitFor();
+    await mobile.goto(origin + `/#/levels/${id}/20?cv=1`);
+    await mobile.locator('[data-action="start"]').waitFor();
+    check(id + ' offline direct route', true);
+  }
+  await context.setOffline(false);
+  check('no mobile errors', errors.length === 0, errors);
+  await context.close();
+  return { passed: checks.length, checks };
+};

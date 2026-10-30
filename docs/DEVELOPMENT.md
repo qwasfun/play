@@ -2,6 +2,21 @@
 
 只有 `main` 是长期分支。每天一个新游戏、一个独立工作目录、一个 PR；人工的内容和设计调整也通过短期分支进入主分支。本次不配置定时器，未来的 GPT 定时任务调用同一流程即可。
 
+## 代码格式与静态检查
+
+所有工作区共用根目录的 Prettier 和 ESLint 配置，工具依赖固定版本并通过 `npm ci` 安装。JavaScript 使用双空格缩进、单引号、分号、100 字符换行宽度和 LF 换行。
+
+```powershell
+npm run format       # 统一源码、配置和文档格式
+npm run format:check # 只检查格式
+npm run lint         # 检查 JavaScript，要求零警告
+npm run lint:fix     # 自动修复可安全处理的问题，剩余问题需手动处理
+```
+
+ESLint 按浏览器、Node 和 Worker 运行环境检查代码；有意保留的未使用参数以 `_` 开头。生成的关卡数据、解题夹具、锁文件、依赖、本地私密配置和构建输出不参加格式化，避免破坏已发布关卡哈希或生成结果的复现。
+
+`npm run check` 同时执行 ESLint、Prettier、原有语法和包边界检查，以及构建后的 PWA 清单检查。先运行 `npm test`（包含构建），再运行 `npm run check`。PR 验收和发布工作流已使用同一检查入口，格式或静态检查失败会阻止后续步骤。
+
 ## 开始和重试
 
 在仓库中运行：
@@ -34,7 +49,7 @@ npm run game:task -- ready 123
 每个新增游戏提供 `games/<id>/qa/playthrough.mjs`：
 
 ```js
-export async function play({page, mobile, point, seed}) {
+export async function play({ page, mobile, point, seed }) {
   // 页面已进入目标游戏、点击开始，并暂停浏览器时钟；真实后端种子为 seed。
   // point(x,y) 把逻辑画布坐标转换成当前桌面点击或触屏点击。
   // 在这里执行该玩法所需的真实输入；需要推进时钟时用 page.clock.runFor(ms)。

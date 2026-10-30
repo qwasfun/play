@@ -1,13 +1,22 @@
 export const manifest = {
-  id: 'kite', title: '纸鸢乘风', english: 'KITE IN BLOOM',
-  category: '灵巧动作', tag: '动手', duration: '约 1 分钟', isNew: true,
-  extraLabel: '剩余机会', targetText: '穿过十二道花环', icon: '◇', lives: 3,
+  id: 'kite',
+  title: '纸鸢乘风',
+  english: 'KITE IN BLOOM',
+  category: '灵巧动作',
+  tag: '动手',
+  duration: '约 1 分钟',
+  isNew: true,
+  extraLabel: '剩余机会',
+  targetText: '穿过十二道花环',
+  icon: '◇',
+  lives: 3,
   description: '牵着纸鸢平稳升降，穿过随风轻摆的花环，把春风装进口袋。',
   controls: '按住上半屏升高 / 下半屏降低，松手停住；↑↓ 或 W/S',
-  limit: 60, cta: '牵起这阵春风',
+  limit: 60,
+  cta: '牵起这阵春风',
   rules: [
     '纸鸢向前飞行，按住画布上半区升高、下半区降低；也可按住 ↑ / W、↓ / S，松开停在当前高度。',
     '花环会随风上下轻摆；纸鸢中心抵达花环时，整个纸鸢位于开口内才算穿过，每个 100 分。',
-    '共十二道花环，走完旅途且至少穿过十道即通关；错过三道或 60 秒结束。暂停、转屏及全屏切换会松开牵线。'
-  ]
+    '共十二道花环，走完旅途且至少穿过十道即通关；错过三道或 60 秒结束。暂停、转屏及全屏切换会松开牵线。',
+  ],
 };
