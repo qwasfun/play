@@ -1,3 +1,5 @@
+import { manifest as kite } from '@playground/game-kite/manifest';
+import { rules as kiteRules } from '@playground/game-kite/rules';
 import { manifest as orchardSort } from '@playground/game-orchard-sort/manifest';
 import { rules as orchardSortRules } from '@playground/game-orchard-sort/rules';
 import { manifest as jugs } from '@playground/game-jugs/manifest';
@@ -86,12 +88,14 @@ export const games = [
   weave,
   jugs,
   orchardSort,
+  kite,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  kite: kiteRules,
   'orchard-sort': orchardSortRules,
   star: starRules,
   bridge: bridgeRules,
