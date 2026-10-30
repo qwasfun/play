@@ -1,6 +1,6 @@
 import { createCampaignStore } from './campaign-storage.js';
 import { renderLevels, renderCampaign, campaignEntryLink } from './campaign-ui.js';
-import { games, byId } from '@playground/game-registry';
+import { games, byId, leaderboardPolicy } from '@playground/game-registry';
 import { loaders } from '@playground/game-registry/browser';
 import { mountGame, gameSurface } from '@playground/game-runtime';
 import {
@@ -17,7 +17,8 @@ import { art } from './art.js';
 import { bindTouchActivation } from '@playground/game-runtime/activation';
 import { setupPwa } from './pwa.js';
 import { createLeaderboardClient } from './leaderboard-client.js';
-import { mountLeaderboard, mountSubmission } from './leaderboard-ui.js';
+import { mountLeaderboard, mountSubmission, mountPendingSubmissions } from './leaderboard-ui.js';
+import { createSubmissionQueue } from './leaderboard-submissions.js';
 import { createAnalytics } from './analytics.js';
 
 const app = document.querySelector('#app');
@@ -38,6 +39,14 @@ const store = createStore(local, () => {
 const campaignStore = createCampaignStore(local, () => {
   notice.hidden = false;
 });
+const submissions = createSubmissionQueue({
+  client: leaderboard,
+  storage: local,
+  onUnavailable: () => {
+    notice.hidden = false;
+  },
+});
+mountPendingSubmissions(notice, submissions);
 let active = null,
   routeToken = 0,
   homeFilter = '全部',
@@ -168,16 +177,8 @@ async function gamePage(route, token) {
   }
   if (token !== routeToken) return;
   let seed = date ? dailySeed(date, game.id) : crypto.getRandomValues(new Uint32Array(1))[0];
-  const localOnly = [
-    'lantern',
-    'sail',
-    'balance',
-    'pebble',
-    'windmill',
-    'courier',
-    'weave',
-    'jugs',
-  ].includes(game.id);
+  const policy = leaderboardPolicy(game.id);
+  const localOnly = !policy[date ? 'daily' : 'normal'];
   let rankedRun = null,
     lastOnlineRun = null,
     localReason = '',
@@ -199,12 +200,14 @@ async function gamePage(route, token) {
           date,
           track,
           signal,
+          submissions,
         });
     },
     async onBeforeStart({ overlay }) {
       submissionController?.abort();
       rankedRun = null;
       localReason = '休闲榜尚未开放，成绩继续保存在本机。';
+      if (localOnly) localReason = policy.reason || '排行榜模式：尚未开放，本局成绩保存在本机。';
       if (date && date !== beijingDate())
         localReason = '历史挑战仅供游玩和查看榜单，本局成绩保存在本机。';
       else if (leaderboard.enabled && !localOnly) {
@@ -261,6 +264,7 @@ async function gamePage(route, token) {
         result,
         reason: localReason,
         signal: submissionController.signal,
+        submissions,
       });
     },
     async onShare(lastResult, overlay) {

@@ -1,4 +1,4 @@
-import { byId, gameRules } from '@playground/game-registry';
+import { byId, gameRules, leaderboardPolicy } from '@playground/game-registry';
 import {
   RULE_VERSION,
   beijingDate,
@@ -41,7 +41,7 @@ const isLocal = (request, env) =>
 const cookieName = (request, env) =>
   isLocal(request, env) ? 'arcade_guest_dev' : '__Host-arcade_guest';
 
-async function body(request) {
+async function body(request, maxBytes = 8192) {
   if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))
     fail(415, 'body', '提交内容：请使用 JSON 格式');
   const reader = request.body?.getReader();
@@ -52,9 +52,9 @@ async function body(request) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.length;
-      if (size > 8192) {
+      if (size > maxBytes) {
         await reader.cancel();
-        fail(413, 'body', '提交内容：最多允许 8 KiB，请减少提交内容');
+        fail(413, 'body', `提交内容：最多允许 ${maxBytes / 1024} KiB，请减少提交内容`);
       }
       chunks.push(value);
     }
@@ -79,6 +79,13 @@ function board(input, now, { starting = false } = {}) {
     version = Number(input.ruleVersion ?? RULE_VERSION);
   if (!Object.hasOwn(byId, gameId)) fail(400, 'gameId', '游戏：请选择已开放的游戏');
   if (!['normal', 'daily'].includes(mode)) fail(400, 'mode', '模式：请选择普通模式或每日挑战');
+  if (starting && !leaderboardPolicy(gameId)[mode])
+    fail(
+      400,
+      'mode',
+      leaderboardPolicy(gameId).reason || '排行榜模式：本游戏尚未开放此模式，请选择普通模式',
+      'ranking_disabled',
+    );
   if (
     !Number.isSafeInteger(version) ||
     version < 1 ||
@@ -423,8 +430,8 @@ export function createHandler({ now = () => Date.now(), sendEvent = reportScore 
                 '对局：提交期限已过，成绩已保存在本机，请开始新对局',
                 'run_expired',
               );
-            const value = await body(request),
-              errors = validateResult(run.game_id, value);
+            const value = await body(request, gameRules[run.game_id].maxBodyBytes),
+              errors = validateResult(run.game_id, value, { seed: run.seed });
             if (errors.length) {
               const error = new ApiError(400, 'score', '');
               error.errors = errors;

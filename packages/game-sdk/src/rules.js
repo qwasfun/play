@@ -50,20 +50,24 @@ export function createResultRules({
   stored = () => true,
   ranking = { field: 'score', sign: -1, requiresWin: false },
   seedCap,
+  verify = () => [],
+  proof = false,
 }) {
   return {
     ranking,
     seedCap,
+    maxBodyBytes: proof ? 128 * 1024 : 8192,
     clean(value) {
       const out = { score: value.score, elapsed: value.elapsed, won: value.won };
       for (const key of Object.keys(counters))
         if (Number.isInteger(value[key])) out[key] = value[key];
+      if (proof && typeof value.proof === 'string') out.proof = value.proof;
       return out;
     },
     stored: (r) => Boolean(isRecord(r) && stored(r)),
     compare: (next, previous) => !previous || compare(next, previous),
     format: (r) => (r ? format(r) : '等待你的第一个纪录'),
-    validate(value) {
+    validate(value, context) {
       const errors = [],
         r = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
       const add = (field, message) => errors.push({ field, code: 'invalid_result', message });
@@ -87,6 +91,7 @@ export function createResultRules({
           add(field, `${labels[field] || names[field] || field}：请输入 0–${max} 之间的整数`);
       if (!errors.length && !check(r))
         add('score', '得分、通关状态与游戏进度：不符合游戏规则，请重新游玩后提交');
+      if (!errors.length && context) errors.push(...verify(r, context));
       return errors;
     },
   };

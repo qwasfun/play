@@ -1,4 +1,5 @@
 export const manifest = {
+  leaderboard: { normal: true, daily: false },
   id: 'orchard-sort',
   title: '果园分篮',
   english: 'ORCHARD BASKETS',

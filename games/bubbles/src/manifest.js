@@ -1,5 +1,6 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
+  leaderboard: { normal: true, daily: true },
   id: 'bubbles',
   campaign: {
     version: 1,

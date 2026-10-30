@@ -1,5 +1,6 @@
 /** @type {import('@playground/game-sdk').GameManifest} */
 export const manifest = {
+  leaderboard: { normal: true, daily: true },
   campaign: { version: 1, total: 20 },
   id: 'lights',
   undo: true,

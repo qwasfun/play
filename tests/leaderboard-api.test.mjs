@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { createD1 } from './helpers/d1.mjs';
 import worker, { createHandler, reportScore, cleanupIfDue } from '../worker/index.js';
 import { dailyGame, dailySeed } from '@playground/game-registry/core';
-import { games } from '@playground/game-registry';
+import { games, leaderboardPolicy } from '@playground/game-registry';
+import { generateLights, toggledBoard, createGame as createLights } from '@playground/game-lights';
 import { validateResult } from '@playground/game-registry/rules';
 
 function setup(iso = '2026-10-26T12:00:00+08:00') {
@@ -202,20 +203,114 @@ test('each player keeps only their best result, ties share competition ranks, an
   assert.equal(r.data.entries[0].nickname, '新的昵称');
   assert.equal(r.data.me.result.elapsed, 9);
 });
-test('lights requires a win, then compares steps and elapsed rather than score descending', async () => {
+function lightsResult(seed, extra = '', elapsed = 10) {
+  const proof =
+    extra +
+    generateLights(seed)
+      .solution.map((i) => i.toString(16))
+      .join('');
+  let result;
+  const game = createLights({
+    seed,
+    onFinish: (value) => {
+      result = value;
+    },
+  });
+  game.update(elapsed);
+  for (const action of proof) {
+    if (result) break;
+    if (action === 'u') game.input('undo');
+    else {
+      const index = parseInt(action, 16);
+      const point = { x: 156 + (index % 4) * 96, y: 91 + Math.floor(index / 4) * 96 };
+      game.input('primary-down', point);
+      game.input('primary-up', point);
+    }
+  }
+  game.destroy();
+  assert.ok(result?.won);
+  return result;
+}
+
+function undoPrefix(seed, count = 1) {
+  const { board } = generateLights(seed);
+  const cell = Array.from({ length: 16 }, (_, i) => i).find((i) =>
+    toggledBoard(board, i).some(Boolean),
+  );
+  return (cell.toString(16) + 'u').repeat(count);
+}
+
+test('lights replays its seed and undo history, then ranks by steps and elapsed', async () => {
   const s = setup(),
     a = await guest(s),
     b = await guest(s);
+  const unfinished = await s.start(a, 'lights');
   assert.equal(
-    (await s.submit(a, await s.start(a, 'lights'), { score: 1, steps: 1, elapsed: 1, won: false }))
-      .data.eligible,
+    (await s.submit(a, unfinished, { score: 0, steps: 0, elapsed: 1, won: false, proof: '' })).data
+      .eligible,
     0,
   );
-  assert.equal((await s.board(a, 'lights')).data.total, 0);
-  await s.submit(a, await s.start(a, 'lights'), { score: 7, steps: 7, elapsed: 20, won: true });
-  await s.submit(b, await s.start(b, 'lights'), { score: 8, steps: 8, elapsed: 10, won: true });
+  const first = await s.start(a, 'lights'),
+    second = await s.start(b, 'lights');
+  // Same board, with b making and undoing an extra move.
+  s.db.db.prepare('UPDATE runs SET seed=? WHERE id=?').run(first.seed, second.id);
+  assert.equal((await s.submit(a, first, lightsResult(first.seed, '', 20))).status, 200);
+  assert.equal(
+    (await s.submit(b, second, lightsResult(first.seed, undoPrefix(first.seed), 10))).status,
+    200,
+  );
   assert.equal((await s.board(a, 'lights')).data.me.rank, 1);
 });
+
+test('forged lights wins, missing proofs and changed counters cannot consume a run', async () => {
+  const s = setup(),
+    v = await guest(s),
+    run = await s.start(v, 'lights');
+  const good = lightsResult(run.seed);
+  for (const result of [
+    { score: 0, steps: 0, elapsed: 0, won: true, proof: '' },
+    { score: 1, steps: 1, elapsed: 0, won: true, proof: '' },
+    { ...good, proof: undefined },
+    { ...good, proof: 'u' + good.proof },
+    { ...good, proof: good.proof + '0' },
+    { ...good, proof: 'private-invalid-value' },
+    { ...good, steps: good.steps + 1, score: good.score + 1 },
+  ]) {
+    const rejected = await s.submit(v, run, result);
+    assert.equal(rejected.status, 400);
+    assert.ok(rejected.data.errors[0].field);
+    assert.ok(!JSON.stringify(rejected.data).includes('private-invalid-value'));
+  }
+  assert.equal((await s.board(v, 'lights')).data.total, 0);
+  assert.equal((await s.submit(v, run, good)).status, 200);
+});
+
+test('game capabilities reject local-only starts but preserve historical board reads', async () => {
+  const s = setup(),
+    v = await guest(s);
+  for (const game of games.filter((game) => !leaderboardPolicy(game.id).normal)) {
+    const response = await v.call('/v1/runs', {
+      method: 'POST',
+      body: { gameId: game.id, mode: 'normal' },
+    });
+    assert.equal(response.status, 400);
+    assert.equal(response.data.errors[0].code, 'ranking_disabled');
+    assert.equal((await s.board(v, game.id)).status, 200);
+  }
+});
+
+test('proof payloads beyond 8 KiB remain valid, while oversized traces are rejected', async () => {
+  const s = setup(),
+    v = await guest(s),
+    run = await s.start(v, 'lights');
+  const result = lightsResult(run.seed, undoPrefix(run.seed, 5000));
+  assert.ok(JSON.stringify(result).length > 8192);
+  const oversized = await s.submit(v, run, { ...result, proof: '0'.repeat(100001) });
+  assert.equal(oversized.status, 400);
+  assert.equal(oversized.data.errors[0].field, 'proof');
+  assert.equal((await s.submit(v, run, result)).status, 200);
+});
+
 test('retries return the original receipt, even after expiry or with changed payload, and emit analytics once', async () => {
   const s = setup(),
     v = await guest(s),
@@ -468,8 +563,12 @@ for (const game of games)
       assert.ok(result, game.id + ' must settle a real run');
     }
     assert.deepEqual(validateResult(game.id, result), []);
-    assert.equal((await s.submit(v, await s.start(v, game.id), result)).status, 200);
-    assert.equal((await s.board(v, game.id)).data.total, 1);
+    if (leaderboardPolicy(game.id).normal) {
+      const run = await s.start(v, game.id);
+      if (game.id === 'lights') result = lightsResult(run.seed);
+      assert.equal((await s.submit(v, run, result)).status, 200);
+      assert.equal((await s.board(v, game.id)).data.total, 1);
+    }
     assert.ok(validateResult(game.id, { ...result, score: 1000000000 }).length);
   });
 

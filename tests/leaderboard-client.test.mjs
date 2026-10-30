@@ -2,6 +2,41 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createLeaderboardClient } from '../apps/arcade/src/leaderboard-client.js';
 import { createAnalytics } from '../apps/arcade/src/analytics.js';
+import { games, leaderboardPolicy } from '@playground/game-registry';
+
+test('all games explicitly declare shared ranking capabilities', () => {
+  for (const game of games) {
+    assert.ok(
+      Object.hasOwn(game, 'leaderboard'),
+      `${game.id} must declare leaderboard capabilities`,
+    );
+    const policy = leaderboardPolicy(game.id);
+    assert.equal(typeof policy.normal, 'boolean', game.id);
+    assert.equal(typeof policy.daily, 'boolean', game.id);
+    if (!policy.normal) assert.ok(policy.reason, game.id);
+  }
+  assert.equal(leaderboardPolicy('orchard-sort').daily, false);
+  assert.equal(leaderboardPolicy('kite').normal, true);
+  assert.equal(leaderboardPolicy('kite').daily, false);
+  assert.equal(leaderboardPolicy('missing-game').normal, false);
+});
+
+test('public board reads require no guest creation; confirmed identities are reused', async () => {
+  const calls = [];
+  const client = createLeaderboardClient({
+    baseUrl: 'https://api.example.test',
+    fetcher: async (url) => {
+      calls.push(url);
+      return Response.json(url.endsWith('/v1/guests') ? { player: { id: 'player' } } : {});
+    },
+  });
+  await client.board({ gameId: 'star', mode: 'normal' });
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].includes('/v1/leaderboards?'));
+  await Promise.all([client.ensureGuest(), client.ensureGuest()]);
+  await client.ensureGuest();
+  assert.equal(calls.filter((url) => url.endsWith('/v1/guests')).length, 1);
+});
 
 test('API client includes cookies, uses the supplied seed and preserves field errors', async () => {
   const calls = [];
