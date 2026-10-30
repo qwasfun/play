@@ -7,6 +7,7 @@ import { githubApi } from './github-api.mjs';
 import { inspectChanges } from './game-policy.mjs';
 import { writeReleaseRef } from './release-policy.mjs';
 import { mergePullRequest } from './merge-policy.mjs';
+import { documentationOnly } from './documentation-policy.mjs';
 
 export const ready = (pr) =>
   !pr.draft &&
@@ -116,6 +117,14 @@ async function main() {
       continue;
     const merged = await mergePullRequest(api, pr);
     if (!merged.merged) throw Error(`合并请求：PR #${pr.number} 未合并，请检查必需状态检查`);
+    if (
+      documentationOnly(
+        policy.files.flatMap((file) => [file.path, ...(file.previous ? [file.previous] : [])]),
+      )
+    ) {
+      console.log(`PR #${pr.number} 仅修改文档，已 squash 合并，不触发发布`);
+      return;
+    }
     // GITHUB_TOKEN merges do not trigger push deployment. Dispatch the exact merged SHA.
     try {
       await api('actions/workflows/pages.yml/dispatches', {
