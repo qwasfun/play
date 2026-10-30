@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import vm from 'node:vm';
-import { games } from '@playground/game-registry';
+import { games, leaderboardPolicy } from '@playground/game-registry';
 import { startQaServer } from './qa-server.mjs';
 import { verifyBatch } from './batch-2026-10-28-qa.js';
 import { generateMines } from '../games/mines/src/index.js';
@@ -17,16 +17,16 @@ const artifacts = 'output/playwright',
 await mkdir(artifacts, { recursive: true });
 const base = process.env.QA_BASE_SHA,
   head = process.env.QA_HEAD_SHA || 'HEAD';
-const localOnly = ['lantern', 'sail', 'balance', 'pebble', 'windmill', 'courier', 'weave', 'jugs'];
-const changed = base
-  ? [
-      ...new Set(
-        execFileSync('git', ['diff', '--name-only', base, head], { encoding: 'utf8' })
-          .split('\n')
-          .flatMap((path) => path.match(/^games\/([^/]+)\//)?.[1] ?? []),
-      ),
-    ]
-  : [];
+const localOnly = games.filter((game) => !leaderboardPolicy(game.id).normal).map((game) => game.id);
+const changed = [
+  ...new Set(
+    execFileSync('git', ['diff', '--name-only', ...(base ? [base, head] : ['HEAD'])], {
+      encoding: 'utf8',
+    })
+      .split('\n')
+      .flatMap((path) => path.match(/^games\/([^/]+)\//)?.[1] ?? []),
+  ),
+];
 const server = await startQaServer();
 const browser = await chromium.launch({
   headless: true,
@@ -191,13 +191,37 @@ async function playChanged(mobile) {
     }
   }
 }
-async function ranking(mobile) {
+async function ranking(mobile, recover = false) {
   const ctx = await context(mobile),
     page = await ctx.newPage();
   page.setDefaultTimeout(10000);
   try {
     await page.clock.install();
     await page.clock.pauseAt(new Date());
+    if (recover) {
+      let first = true;
+      await page.route('**/v1/runs/*/result', async (route) => {
+        if (!first) return route.fallback();
+        first = false;
+        await route.fulfill({
+          status: 503,
+          headers: {
+            'Access-Control-Allow-Origin': server.origin,
+            'Access-Control-Allow-Credentials': 'true',
+          },
+          contentType: 'application/json',
+          body: JSON.stringify({
+            errors: [
+              {
+                field: 'service',
+                code: 'unavailable',
+                message: '排行榜：服务暂时不可用，请稍后重试',
+              },
+            ],
+          }),
+        });
+      });
+    }
     await page.goto(server.origin + '/#/play/mines');
     const started = page.waitForResponse(
       (response) => response.url().endsWith('/v1/runs') && response.request().method() === 'POST',
@@ -205,6 +229,8 @@ async function ranking(mobile) {
     await page.locator('[data-action="start"]').click();
     const run = await (await started).json();
     await page.locator('#pause:enabled').waitFor();
+    await page.locator('[data-open-board]').click();
+    await page.locator('.leaderboard-status').filter({ hasText: '位玩家' }).waitFor();
     const mines = generateMines(run.run.seed).mines;
     const submitted = page.waitForResponse((response) =>
       response.url().endsWith(`/runs/${run.run.id}/result`),
@@ -219,16 +245,64 @@ async function ranking(mobile) {
       if (mobile) await page.touchscreen.tap(x, y);
       else await page.mouse.click(x, y);
     }
-    const response = await submitted,
-      receipt = await response.json();
+    let response = await submitted;
+    if (recover) {
+      check(`mines/${mobile}/temporary-submit-failure`, response.status() === 503);
+      await page.locator('.rank-result').filter({ hasText: '自动重试' }).waitFor();
+      await page
+        .locator('.submission-notice')
+        .filter({ hasText: '排行榜：服务暂时不可用' })
+        .waitFor();
+      check(`mines/${mobile}/specific-submit-error-visible`, true);
+      check(
+        `mines/${mobile}/pending-notice-layout`,
+        await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      );
+      await page.screenshot({
+        path: `${artifacts}/pending-${mobile ? 'touch' : 'desktop'}.png`,
+        fullPage: true,
+      });
+      check(
+        `mines/${mobile}/durable-pending-result`,
+        await page.evaluate(() =>
+          Object.keys(localStorage).some((key) =>
+            key.startsWith('tiny-break-arcade:pending-result:v1:'),
+          ),
+        ),
+      );
+      await page.reload();
+      await page.locator('[data-open-board]').click();
+      await page.locator('.leaderboard-status').filter({ hasText: '位玩家' }).waitFor();
+      const retried = page.waitForResponse(
+        (response) =>
+          response.url().endsWith(`/runs/${run.run.id}/result`) && response.status() === 200,
+      );
+      await page.clock.runFor(2500);
+      response = await retried;
+      await page.waitForFunction(
+        () =>
+          !Object.keys(localStorage).some((key) =>
+            key.startsWith('tiny-break-arcade:pending-result:v1:'),
+          ),
+      );
+      check(
+        `mines/${mobile}/pending-cleared-after-reload`,
+        await page.evaluate(
+          () =>
+            !Object.keys(localStorage).some((key) =>
+              key.startsWith('tiny-break-arcade:pending-result:v1:'),
+            ),
+        ),
+      );
+    }
+    const receipt = await response.json();
     check(
       `mines/${mobile}/real-accepted-result`,
       response.status() === 200 && !!receipt.accepted && !!receipt.eligible,
     );
-    await page.locator('.rank-result').filter({ hasText: '第 ' }).waitFor();
-    await page.locator('[data-open-board]').click();
+    if (!recover) await page.locator('.rank-result').filter({ hasText: '第 ' }).waitFor();
     await page.locator('.leaderboard-table .is-me').waitFor();
-    check(`mines/${mobile}/visible-rank`, true);
+    check(`mines/${mobile}/${recover ? 'recovered' : 'live'}-automatic-board-refresh`, true);
     const duplicate = await page.evaluate(async (id) => {
       const response = await fetch(`http://127.0.0.1:8787/v1/runs/${id}/result`, {
         method: 'POST',
@@ -259,6 +333,7 @@ try {
     await smoke(mobile);
     await playChanged(mobile);
     await ranking(mobile);
+    await ranking(mobile, true);
   }
   const ctx = await context(false, 'allow'),
     page = await ctx.newPage();

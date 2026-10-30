@@ -1,48 +1,13 @@
 import { createCampaignGame } from './campaign-engine.js';
-import { rng, roundRect, label } from '@playground/game-sdk';
+import { roundRect, label } from '@playground/game-sdk';
+import { toggledBoard, generateLights } from './model.js';
+export { toggledBoard, generateLights } from './model.js';
 
-const SIZE = 4;
 const LIMIT = 180;
 const TILE = 86;
 const GAP = 10;
 const BOARD_X = 113;
 const BOARD_Y = 48;
-
-export function toggledBoard(board, index) {
-  const next = [...board];
-  if (!Number.isInteger(index) || index < 0 || index >= 16) return next;
-  const row = Math.floor(index / SIZE);
-  const col = index % SIZE;
-  for (const [dr, dc] of [
-    [0, 0],
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1],
-  ]) {
-    const r = row + dr;
-    const c = col + dc;
-    if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) next[r * SIZE + c] ^= 1;
-  }
-  return next;
-}
-
-export function generateLights(seed) {
-  const random = rng(seed);
-  const positions = Array.from({ length: 16 }, (_, i) => i);
-  for (let i = 15; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [positions[i], positions[j]] = [positions[j], positions[i]];
-  }
-  const solution = positions.slice(0, 5 + Math.floor(random() * 5));
-  let board = Array(16).fill(0);
-  for (const index of solution) board = toggledBoard(board, index);
-  if (board.every((value) => value === 0)) {
-    solution.push(positions[solution.length]);
-    board = toggledBoard(board, solution[solution.length - 1]);
-  }
-  return { board, solution };
-}
 
 function tileAt(x, y) {
   const col = Math.floor((x - BOARD_X + GAP / 2) / (TILE + GAP));
@@ -61,11 +26,16 @@ export function createGame({ level, seed, onFinish = () => {}, sound = () => {} 
   let finished = false;
   let won = false;
   const history = [];
+  let proof = '';
+  const appendProof = (action) => {
+    // An oversized run remains playable locally but cannot claim verified ranking.
+    if (proof !== null) proof = proof.length < 100000 ? proof + action : null;
+  };
 
   function finish(reason) {
     if (finished) return;
     finished = true;
-    onFinish({ score: steps, steps, elapsed, won, reason });
+    onFinish({ score: steps, steps, elapsed, won, reason, proof });
   }
 
   function toggle(index) {
@@ -74,6 +44,7 @@ export function createGame({ level, seed, onFinish = () => {}, sound = () => {} 
     board = toggledBoard(board, index);
     selected = index;
     steps++;
+    appendProof(index.toString(16));
     sound('tap');
     if (board.every((value) => value === 0)) {
       won = true;
@@ -99,6 +70,7 @@ export function createGame({ level, seed, onFinish = () => {}, sound = () => {} 
       if (type === 'primary-cancel') pressed = -1;
       if (type === 'undo' && history.length) {
         board = history.pop();
+        appendProof('u');
         pressed = -1;
         sound('tap');
       }

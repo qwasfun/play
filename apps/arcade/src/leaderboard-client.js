@@ -15,7 +15,8 @@ export function createLeaderboardClient({
   timeout = 2500,
 } = {}) {
   const base = baseUrl.replace(/\/$/, '');
-  let identityRequest = null;
+  let identityRequest = null,
+    identity = null;
   async function request(path, { method = 'GET', body } = {}) {
     if (!base) throw new LeaderboardError('休闲榜尚未开放，成绩继续保存在本机');
     if (!online())
@@ -36,6 +37,7 @@ export function createLeaderboardClient({
         throw new LeaderboardError('排行榜：服务响应异常，请稍后重试');
       }
       if (!response.ok) {
+        if (response.status === 401) identity = null;
         const errors = Array.isArray(data.errors)
           ? data.errors.filter((x) => typeof x?.message === 'string')
           : [];
@@ -55,9 +57,10 @@ export function createLeaderboardClient({
     }
   }
   function ensureGuest() {
+    if (identity) return Promise.resolve(identity);
     if (!identityRequest)
       identityRequest = request('/v1/guests', { method: 'POST', body: {} })
-        .then((x) => x.player)
+        .then((x) => (identity = x.player))
         .finally(() => {
           identityRequest = null;
         });
@@ -82,7 +85,6 @@ export function createLeaderboardClient({
     },
     submit: (run, result) => request(`/v1/runs/${run.id}/result`, { method: 'POST', body: result }),
     async board({ gameId, mode, date = '' }) {
-      await ensureGuest();
       return request(
         '/v1/leaderboards?' +
           new URLSearchParams({ gameId, mode, date, ruleVersion: RULE_VERSION }),

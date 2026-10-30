@@ -3356,3 +3356,14 @@ body.has-fullscreen-game .pwa-update {
     align-self: flex-end;
   }
 }
+
+.submission-notice {
+  margin: 12px auto;
+  padding: 12px 20px;
+  max-width: 1100px;
+  background: #fff2d6;
+  border-radius: 12px;
+}
+.submission-notice .button {
+  margin: 8px;
+}

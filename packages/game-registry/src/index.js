@@ -88,6 +88,9 @@ export const games = [
   orchardSort,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
+export function leaderboardPolicy(id) {
+  return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
+}
 export const gameRules = {
   'orchard-sort': orchardSortRules,
   star: starRules,

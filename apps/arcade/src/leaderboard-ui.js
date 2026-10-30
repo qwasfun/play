@@ -1,6 +1,6 @@
-import { byId } from '@playground/game-registry';
+import { byId, leaderboardPolicy } from '@playground/game-registry';
 import { beijingDate, dailyGame, resultText, RULE_VERSION } from '@playground/game-registry/core';
-import { nicknameError, cleanResult } from '@playground/game-registry/rules';
+import { nicknameError } from '@playground/game-registry/rules';
 
 const el = (tag, text, className) => {
   const node = document.createElement(tag);
@@ -16,7 +16,7 @@ const facts = (gameId, date) => ({
 
 export function mountLeaderboard(
   container,
-  { client, gameId, date = '', track = () => {}, signal },
+  { client, gameId, date = '', track = () => {}, signal, submissions },
 ) {
   const card = el('section', undefined, 'side-card leaderboard-card');
   card.setAttribute('aria-label', '休闲排行榜');
@@ -26,7 +26,21 @@ export function mountLeaderboard(
   const button = card.querySelector('[data-open-board]'),
     panel = card.querySelector('.leaderboard-panel');
   let opened = false,
-    revision = 0;
+    revision = 0,
+    activeLoad,
+    selection;
+  const unsubscribe = submissions?.subscribe((event) => {
+    if (
+      event.type === 'accepted' &&
+      event.receipt.eligible &&
+      opened &&
+      event.run.gameId === selection?.gameId &&
+      event.run.mode === selection.mode &&
+      event.run.date === selection.date
+    )
+      void activeLoad?.();
+  });
+  signal.addEventListener('abort', () => unsubscribe?.(), { once: true });
   button.addEventListener(
     'click',
     async () => {
@@ -49,7 +63,8 @@ export function mountLeaderboard(
     const modeLabel = el('label', '榜单');
     const mode = el('select');
     mode.setAttribute('aria-label', '榜单类型');
-    mode.append(new Option('普通模式历史榜', 'normal'), new Option('每日挑战榜', 'daily'));
+    mode.append(new Option('普通模式历史榜', 'normal'));
+    if (leaderboardPolicy(gameId).daily) mode.append(new Option('每日挑战榜', 'daily'));
     mode.value = date ? 'daily' : 'normal';
     modeLabel.append(mode);
     const dayLabel = el('label', '挑战日期');
@@ -95,13 +110,18 @@ export function mountLeaderboard(
         if (mode.value === 'daily' && day.value > beijingDate())
           throw Error('挑战日期：请选择今天或过去的日期');
         const id = mode.value === 'daily' ? dailyGame(day.value) : gameId;
-        const data = await client.board({
-          gameId: id,
-          mode: mode.value,
-          date: mode.value === 'daily' ? day.value : '',
-        });
+        selection = { gameId: id, mode: mode.value, date: mode.value === 'daily' ? day.value : '' };
+        const data = await client.board(selection);
         if (signal.aborted || current !== revision || query !== queryRevision) return;
         status.textContent = `${byId[id].title} · ${data.total} 位玩家${data.me ? ` · 我的名次：第 ${data.me.rank} 名` : ''}`;
+        if (data.me)
+          content.append(
+            el(
+              'p',
+              `我的最佳：${resultText(id, data.me.result)} · 第 ${data.me.rank} 名`,
+              'leaderboard-personal-best',
+            ),
+          );
         if (!data.entries.length) content.append(el('p', '还没有成绩，来留下第一份小纪录吧。'));
         else {
           const table = el('table', undefined, 'leaderboard-table');
@@ -141,7 +161,7 @@ export function mountLeaderboard(
     async function profile() {
       try {
         const player = await client.me();
-        if (signal.aborted || current !== revision) return;
+        if (signal.aborted || current !== revision || identity.childNodes.length) return;
         const form = el('form');
         form.noValidate = true;
         const label = el('label', '我的昵称');
@@ -192,11 +212,12 @@ export function mountLeaderboard(
         /* A board remains readable if the profile request fails. */
       }
     }
+    activeLoad = load;
     await load();
   }
 }
 
-export function mountSubmission(container, { client, run, gameId, result, reason, signal }) {
+export function mountSubmission(container, { run, gameId, result, reason, signal, submissions }) {
   const box = el('div', undefined, 'rank-result');
   const status = el('p');
   status.setAttribute('role', 'status');
@@ -209,27 +230,52 @@ export function mountSubmission(container, { client, run, gameId, result, reason
     status.textContent = reason || '本局为本机游玩，成绩已保存在当前浏览器。';
     return;
   }
-  let submitting = false;
-  async function submit() {
-    if (submitting) return;
-    submitting = true;
+  function update(event) {
+    if (signal.aborted || event.run?.id !== run.id) return;
     retry.hidden = true;
-    status.textContent = '正在提交休闲榜…';
-    try {
-      const receipt = await client.submit(run, cleanResult(result, gameId));
-      if (signal.aborted) return;
+    if (event.type === 'accepted') {
+      const receipt = event.receipt;
       status.textContent = !receipt.eligible
         ? `本机成绩已保存，${byId[gameId].rankingHint || '通关后即可上榜。'}`
         : `${receipt.improved ? '✦ 刷新休闲榜最佳纪录' : '成绩已收好'} · 提交时最佳第 ${receipt.rank} 名`;
-    } catch (error) {
-      if (signal.aborted) return;
-      status.textContent = error.message;
-      retry.hidden =
-        [400, 401, 403, 404, 410].includes(error.status) || Date.now() >= run.expiresAt;
-    } finally {
-      submitting = false;
-    }
+    } else if (event.type === 'failed') {
+      status.textContent =
+        event.message + (event.retryable ? '；已保留待提交成绩，将在有效期内自动重试。' : '');
+      retry.hidden = !event.retryable;
+    } else status.textContent = '正在提交休闲榜…';
   }
-  retry.addEventListener('click', submit, { signal });
-  submit();
+  const unsubscribe = submissions.subscribe(update);
+  signal.addEventListener('abort', unsubscribe, { once: true });
+  retry.addEventListener(
+    'click',
+    () => {
+      void submissions.retry();
+    },
+    { signal },
+  );
+  void submissions.add(run, result);
+  const state = submissions.state(run.id);
+  if (state) update(state);
+}
+
+export function mountPendingSubmissions(anchor, submissions) {
+  const box = el('div', undefined, 'submission-notice');
+  box.setAttribute('role', 'status');
+  const message = el('span');
+  const retry = el('button', '重试待提交成绩', 'button secondary');
+  retry.type = 'button';
+  box.append(message, retry);
+  anchor.after(box);
+  function update(event) {
+    box.hidden = !submissions.count && event?.type !== 'failed';
+    retry.hidden = !submissions.count;
+    message.textContent = submissions.count
+      ? `有 ${submissions.count} 局成绩等待提交，刷新或离开游戏后仍会在有效期内自动重试。${event?.type === 'failed' ? event.message : ''}`
+      : event?.message || '';
+  }
+  retry.addEventListener('click', () => {
+    void submissions.retry();
+  });
+  submissions.subscribe(update);
+  update();
 }
