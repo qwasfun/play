@@ -1,20 +1,184 @@
-import {label,roundRect} from './index.js';
+import { label, roundRect } from './index.js';
 
 /** Shared lifecycle only. Game rules and authored content remain in each game. */
-export function levelSession({onFinish=()=>{},sound=()=>{}},initial={}){
- const state={elapsed:0,steps:0,score:0,mistakes:0,finished:false,won:false,...initial};let destroyed=false;
- return {state,get active(){return !destroyed&&!state.finished;},update(dt){if(this.active&&Number.isFinite(dt)&&dt>0)state.elapsed+=dt;},step(){if(this.active)state.steps++;},finish(won,reason=won?'complete':'target-shortfall'){if(!this.active)return;Object.assign(state,{finished:true,won,reason});sound(won?'win':'hit');onFinish({...state});},miss(reason='lives'){if(!this.active)return;state.mistakes++;if(Number.isInteger(state.lives)&&--state.lives<=0)this.finish(false,reason);else sound('hit');},destroy(){destroyed=true;}};
+export function levelSession({ onFinish = () => {}, sound = () => {} }, initial = {}) {
+  const state = {
+    elapsed: 0,
+    steps: 0,
+    score: 0,
+    mistakes: 0,
+    finished: false,
+    won: false,
+    ...initial,
+  };
+  let destroyed = false;
+  return {
+    state,
+    get active() {
+      return !destroyed && !state.finished;
+    },
+    update(dt) {
+      if (this.active && Number.isFinite(dt) && dt > 0) state.elapsed += dt;
+    },
+    step() {
+      if (this.active) state.steps++;
+    },
+    finish(won, reason = won ? 'complete' : 'target-shortfall') {
+      if (!this.active) return;
+      Object.assign(state, { finished: true, won, reason });
+      sound(won ? 'win' : 'hit');
+      onFinish({ ...state });
+    },
+    miss(reason = 'lives') {
+      if (!this.active) return;
+      state.mistakes++;
+      if (Number.isInteger(state.lives) && --state.lives <= 0) this.finish(false, reason);
+      else sound('hit');
+    },
+    destroy() {
+      destroyed = true;
+    },
+  };
 }
-export function boardCell(p,cols,rows=cols,{x=20,y=20,width=560,height=560}={}){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return -1;const c=Math.floor((p.x-x)/width*cols),r=Math.floor((p.y-y)/height*rows);return c>=0&&c<cols&&r>=0&&r<rows?r*cols+c:-1;}
-export function boardPoint(i,cols,rows=cols,{x=20,y=20,width=560,height=560}={}){return{x:x+(i%cols+.5)*width/cols,y:y+(Math.floor(i/cols)+.5)*height/rows};}
-export function drawCells(ctx,values,cols,rows=cols,{bounds={x:20,y:20,width:560,height:560},selected=-1,background='#edf1df',colors=['#f2c77b','#9fc4ad','#e9a68e','#b7acd3','#9bbdd0'],text=v=>v??'',fill=(v)=>v==null?'#e1e6d8':colors[Math.abs(Number(v)||0)%colors.length]}={}){
- ctx.fillStyle=background;ctx.fillRect(0,0,600,600);const w=bounds.width/cols,h=bounds.height/rows;
- values.forEach((v,i)=>{const p=boardPoint(i,cols,rows,bounds);roundRect(ctx,p.x-w/2+3,p.y-h/2+3,w-6,h-6,12,fill(v,i));if(i===selected){ctx.strokeStyle='#315f55';ctx.lineWidth=3;ctx.strokeRect(p.x-w/2+5,p.y-h/2+5,w-10,h-10);}label(ctx,String(text(v,i)),p.x,p.y,Math.min(30,w*.34),'#315f55');});
+export function boardCell(
+  p,
+  cols,
+  rows = cols,
+  { x = 20, y = 20, width = 560, height = 560 } = {},
+) {
+  if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return -1;
+  const c = Math.floor(((p.x - x) / width) * cols),
+    r = Math.floor(((p.y - y) / height) * rows);
+  return c >= 0 && c < cols && r >= 0 && r < rows ? r * cols + c : -1;
+}
+export function boardPoint(
+  i,
+  cols,
+  rows = cols,
+  { x = 20, y = 20, width = 560, height = 560 } = {},
+) {
+  return {
+    x: x + (((i % cols) + 0.5) * width) / cols,
+    y: y + ((Math.floor(i / cols) + 0.5) * height) / rows,
+  };
+}
+export function drawCells(
+  ctx,
+  values,
+  cols,
+  rows = cols,
+  {
+    bounds = { x: 20, y: 20, width: 560, height: 560 },
+    selected = -1,
+    background = '#edf1df',
+    colors = ['#f2c77b', '#9fc4ad', '#e9a68e', '#b7acd3', '#9bbdd0'],
+    text = (v) => v ?? '',
+    fill = (v) => (v == null ? '#e1e6d8' : colors[Math.abs(Number(v) || 0) % colors.length]),
+  } = {},
+) {
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, 600, 600);
+  const w = bounds.width / cols,
+    h = bounds.height / rows;
+  values.forEach((v, i) => {
+    const p = boardPoint(i, cols, rows, bounds);
+    roundRect(ctx, p.x - w / 2 + 3, p.y - h / 2 + 3, w - 6, h - 6, 12, fill(v, i));
+    if (i === selected) {
+      ctx.strokeStyle = '#315f55';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(p.x - w / 2 + 5, p.y - h / 2 + 5, w - 10, h - 10);
+    }
+    label(ctx, String(text(v, i)), p.x, p.y, Math.min(30, w * 0.34), '#315f55');
+  });
 }
 /** Activation on release supports cancellation, touch dragging and keyboard focus. */
-export function boardInput({cols,rows=cols,bounds,activate,extra=()=>false}){let selected=0,pressed=-1;return{get selected(){return selected;},input(type,p={}){if(extra(type,p))return;if(type==='primary-cancel'){pressed=-1;return;}if(type==='primary-down'){pressed=boardCell(p,cols,rows,bounds);if(pressed>=0)selected=pressed;}if(type==='primary-up'){const i=boardCell(p,cols,rows,bounds);if(i>=0&&i===pressed)activate(i);pressed=-1;}if(type!=='key-down'||p.repeat)return;const k=String(p.key).toLowerCase(),x=selected%cols,y=Math.floor(selected/cols);if(['arrowleft','a'].includes(k))selected=y*cols+(x+cols-1)%cols;else if(['arrowright','d'].includes(k))selected=y*cols+(x+1)%cols;else if(['arrowup','w'].includes(k))selected=(y+rows-1)%rows*cols+x;else if(['arrowdown','s'].includes(k))selected=(y+1)%rows*cols+x;else if(k===' '||k==='enter')activate(selected);}};}
-export function recordPolicy(id,meta={}){return meta.recordPolicy||(id==='mines'?'elapsed':'steps');}
-export function cleanLevelResult(result,policy){if(result?.won!==true||!Number.isFinite(result.elapsed)||result.elapsed<0)return null;const out={won:true,elapsed:result.elapsed};if(policy==='action'){if(!Number.isSafeInteger(result.mistakes)||result.mistakes<0||!Number.isFinite(result.score)||result.score<0)return null;out.mistakes=result.mistakes;out.score=result.score;}else if(policy==='steps'){if(!Number.isSafeInteger(result.steps)||result.steps<0)return null;out.steps=result.steps;}else if(Number.isSafeInteger(result.steps)&&result.steps>=0)out.steps=result.steps;return out;}
-export function betterLevelResult(next,previous,policy){if(!previous)return true;if(policy==='elapsed')return next.elapsed<previous.elapsed;if(policy==='action')return next.mistakes<previous.mistakes||next.mistakes===previous.mistakes&&(next.score>previous.score||next.score===previous.score&&next.elapsed<previous.elapsed);return next.steps<previous.steps||next.steps===previous.steps&&next.elapsed<previous.elapsed;}
-export function levelResultText(result,policy){if(!result)return '还没有通关纪录';const seconds=Number.isFinite(result.elapsed)?result.elapsed.toFixed(2):'0.00';return `${policy==='action'?`${result.mistakes??0} 次失误 · ${result.score??0} 分 · `:policy==='steps'?`${result.steps??0} 步 · `:''}${seconds} 秒`;}
-export function campaignView(game,level){const policy=recordPolicy(game.id,game.campaign);return{...game,limit:null,canvas:{width:600,height:600},scoreLabel:game.id==='mines'?'已翻安全格':policy==='steps'?'步数':'得分',scoreField:game.id==='mines'?'opened':policy==='steps'?'steps':'score',extraLabel:'本关进度',targetText:game.id==='mines'?`0 / ${level.size*level.size-level.mineCount}`:undefined,...game.campaign?.presentation};}
+export function boardInput({ cols, rows = cols, bounds, activate, extra = () => false }) {
+  let selected = 0,
+    pressed = -1;
+  return {
+    get selected() {
+      return selected;
+    },
+    input(type, p = {}) {
+      if (extra(type, p)) return;
+      if (type === 'primary-cancel') {
+        pressed = -1;
+        return;
+      }
+      if (type === 'primary-down') {
+        pressed = boardCell(p, cols, rows, bounds);
+        if (pressed >= 0) selected = pressed;
+      }
+      if (type === 'primary-up') {
+        const i = boardCell(p, cols, rows, bounds);
+        if (i >= 0 && i === pressed) activate(i);
+        pressed = -1;
+      }
+      if (type !== 'key-down' || p.repeat) return;
+      const k = String(p.key).toLowerCase(),
+        x = selected % cols,
+        y = Math.floor(selected / cols);
+      if (['arrowleft', 'a'].includes(k)) selected = y * cols + ((x + cols - 1) % cols);
+      else if (['arrowright', 'd'].includes(k)) selected = y * cols + ((x + 1) % cols);
+      else if (['arrowup', 'w'].includes(k)) selected = ((y + rows - 1) % rows) * cols + x;
+      else if (['arrowdown', 's'].includes(k)) selected = ((y + 1) % rows) * cols + x;
+      else if (k === ' ' || k === 'enter') activate(selected);
+    },
+  };
+}
+export function recordPolicy(id, meta = {}) {
+  return meta.recordPolicy || (id === 'mines' ? 'elapsed' : 'steps');
+}
+export function cleanLevelResult(result, policy) {
+  if (result?.won !== true || !Number.isFinite(result.elapsed) || result.elapsed < 0) return null;
+  const out = { won: true, elapsed: result.elapsed };
+  if (policy === 'action') {
+    if (
+      !Number.isSafeInteger(result.mistakes) ||
+      result.mistakes < 0 ||
+      !Number.isFinite(result.score) ||
+      result.score < 0
+    )
+      return null;
+    out.mistakes = result.mistakes;
+    out.score = result.score;
+  } else if (policy === 'steps') {
+    if (!Number.isSafeInteger(result.steps) || result.steps < 0) return null;
+    out.steps = result.steps;
+  } else if (Number.isSafeInteger(result.steps) && result.steps >= 0) out.steps = result.steps;
+  return out;
+}
+export function betterLevelResult(next, previous, policy) {
+  if (!previous) return true;
+  if (policy === 'elapsed') return next.elapsed < previous.elapsed;
+  if (policy === 'action')
+    return (
+      next.mistakes < previous.mistakes ||
+      (next.mistakes === previous.mistakes &&
+        (next.score > previous.score ||
+          (next.score === previous.score && next.elapsed < previous.elapsed)))
+    );
+  return (
+    next.steps < previous.steps ||
+    (next.steps === previous.steps && next.elapsed < previous.elapsed)
+  );
+}
+export function levelResultText(result, policy) {
+  if (!result) return '还没有通关纪录';
+  const seconds = Number.isFinite(result.elapsed) ? result.elapsed.toFixed(2) : '0.00';
+  return `${policy === 'action' ? `${result.mistakes ?? 0} 次失误 · ${result.score ?? 0} 分 · ` : policy === 'steps' ? `${result.steps ?? 0} 步 · ` : ''}${seconds} 秒`;
+}
+export function campaignView(game, level) {
+  const policy = recordPolicy(game.id, game.campaign);
+  return {
+    ...game,
+    limit: null,
+    canvas: { width: 600, height: 600 },
+    scoreLabel: game.id === 'mines' ? '已翻安全格' : policy === 'steps' ? '步数' : '得分',
+    scoreField: game.id === 'mines' ? 'opened' : policy === 'steps' ? 'steps' : 'score',
+    extraLabel: '本关进度',
+    targetText:
+      game.id === 'mines' ? `0 / ${level.size * level.size - level.mineCount}` : undefined,
+    ...game.campaign?.presentation,
+  };
+}

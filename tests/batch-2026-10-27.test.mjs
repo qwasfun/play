@@ -1,3 +1,60 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {GAME_IDS,dailyGame,parseRoute,dailySeed} from '@playground/game-registry/core';import {createStore} from '../apps/arcade/src/storage.js';
-test('batch adds exactly four games and preserves old calendar through Jan 10',()=>{assert.ok(GAME_IDS.length>=24);assert.deepEqual(GAME_IDS.slice(20,24),['lantern','sail','balance','pebble']);const old=['constellation','tower','rain','mines','jump','bubbles','slide','rhythm','rings','snake','boxes','pipes','catch','bounce','pairs','merge','star','bridge','lights','echo'];for(let i=0;i<40;i++){const d=new Date(Date.UTC(2026,11,2+i)).toISOString().slice(0,10);assert.equal(dailyGame(d),old[i%20]);}for(let i=0;i<24;i++){const d=new Date(Date.UTC(2027,0,11+i)).toISOString().slice(0,10),id=dailyGame(d);assert.equal(parseRoute(`#/play/${id}?date=${d}&v=1`,'2027-03-01').type,'play');assert.equal(dailySeed(d,id),dailySeed(d,id));}assert.equal(dailyGame('2027-01-11'),'lantern');});
-test('new favorites, recent and results persist without touching old data',()=>{const data=new Map(),storage={getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};const s=createStore(storage);s.record('star',{score:25,elapsed:40,won:false});for(const id of GAME_IDS.slice(-4)){s.toggleFavorite(id);s.recent(id);s.record(id,{score:0,elapsed:180,won:false});}const again=createStore(storage);assert.deepEqual(again.data.favorites,GAME_IDS.slice(-4));assert.equal(again.data.best.star.score,25);assert.equal(again.data.recent.length,4);});
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { GAME_IDS, dailyGame, parseRoute, dailySeed } from '@playground/game-registry/core';
+import { createStore } from '../apps/arcade/src/storage.js';
+test('batch adds exactly four games and preserves old calendar through Jan 10', () => {
+  assert.ok(GAME_IDS.length >= 24);
+  assert.deepEqual(GAME_IDS.slice(20, 24), ['lantern', 'sail', 'balance', 'pebble']);
+  const old = [
+    'constellation',
+    'tower',
+    'rain',
+    'mines',
+    'jump',
+    'bubbles',
+    'slide',
+    'rhythm',
+    'rings',
+    'snake',
+    'boxes',
+    'pipes',
+    'catch',
+    'bounce',
+    'pairs',
+    'merge',
+    'star',
+    'bridge',
+    'lights',
+    'echo',
+  ];
+  for (let i = 0; i < 40; i++) {
+    const d = new Date(Date.UTC(2026, 11, 2 + i)).toISOString().slice(0, 10);
+    assert.equal(dailyGame(d), old[i % 20]);
+  }
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(Date.UTC(2027, 0, 11 + i)).toISOString().slice(0, 10),
+      id = dailyGame(d);
+    assert.equal(parseRoute(`#/play/${id}?date=${d}&v=1`, '2027-03-01').type, 'play');
+    assert.equal(dailySeed(d, id), dailySeed(d, id));
+  }
+  assert.equal(dailyGame('2027-01-11'), 'lantern');
+});
+test('new favorites, recent and results persist without touching old data', () => {
+  const data = new Map(),
+    storage = {
+      getItem: (k) => data.get(k),
+      setItem: (k, v) => data.set(k, v),
+      removeItem: (k) => data.delete(k),
+    };
+  const s = createStore(storage);
+  s.record('star', { score: 25, elapsed: 40, won: false });
+  for (const id of GAME_IDS.slice(-4)) {
+    s.toggleFavorite(id);
+    s.recent(id);
+    s.record(id, { score: 0, elapsed: 180, won: false });
+  }
+  const again = createStore(storage);
+  assert.deepEqual(again.data.favorites, GAME_IDS.slice(-4));
+  assert.equal(again.data.best.star.score, 25);
+  assert.equal(again.data.recent.length, 4);
+});

@@ -1,5 +1,96 @@
-async(page)=>{
- const checks=[],key='tiny-break-arcade:dev:jugs:campaign:v1:20',check=(name,value)=>{checks.push({name,passed:!!value});if(!value)throw Error(name);};page.setDefaultTimeout(10000);await page.setViewportSize({width:900,height:1200});await page.goto('http://127.0.0.1:5173');await page.locator('#preview-level').waitFor();check('all twenty levels and casual preview',await page.locator('#preview-level option').count()===21);await page.evaluate(()=>{localStorage.setItem('tiny-break-arcade:v1','{"keep":"ordinary"}');localStorage.setItem('tiny-break-arcade:campaign:v1','{"keep":"campaign"}');});await page.locator('#preview-level').selectOption('20');await page.locator('[data-action="start"]').click();await page.locator('#game-overlay').waitFor({state:'hidden'});check('campaign canvas and elapsed time',await page.locator('canvas').getAttribute('height')==='600'&&await page.locator('.game-toolbar').innerText().then(t=>t.includes('已用时间')));
- const queue=[[0,0,[]]],seen=new Set();let solution;while(queue.length){const[a,b,path]=queue.shift();if(a===5||b===5){solution=path;break;}const k=`${a},${b}`;if(seen.has(k))continue;seen.add(k);const x=Math.min(a,13-b),y=Math.min(b,3-a);[[3,b],[a,13],[0,b],[a,0],[a-x,b+x],[a+y,b-y]].forEach(([u,v],i)=>queue.push([u,v,[...path,i]]));}
- for(const i of solution){const b=await page.locator('canvas').boundingBox();await page.mouse.click(b.x+(20+(i%3+.5)*560/3)/600*b.width,b.y+(330+(Math.floor(i/3)+.5)*120)/600*b.height);}await page.locator('.result-card').waitFor();check('preview level twenty actual win',await page.locator('.result-card').innerText().then(t=>t.includes('完成了')));const saved=await page.evaluate(key=>({debug:JSON.parse(localStorage.getItem(key)),ordinary:localStorage.getItem('tiny-break-arcade:v1'),campaign:localStorage.getItem('tiny-break-arcade:campaign:v1')}),key);check('independent debug storage',saved.debug.won&&saved.debug.steps===14&&saved.ordinary==='{"keep":"ordinary"}'&&saved.campaign==='{"keep":"campaign"}');await page.locator('#preview-level').selectOption('0');check('ordinary preview dimensions',await page.locator('canvas').getAttribute('height')==='480');check('no service worker in preview',await page.evaluate(async()=>(await navigator.serviceWorker.getRegistrations()).length===0));return{passed:checks.length,checks};
-}
+async (page) => {
+  const checks = [],
+    key = 'tiny-break-arcade:dev:jugs:campaign:v1:20',
+    check = (name, value) => {
+      checks.push({ name, passed: !!value });
+      if (!value) throw Error(name);
+    };
+  page.setDefaultTimeout(10000);
+  await page.setViewportSize({ width: 900, height: 1200 });
+  await page.goto('http://127.0.0.1:5173');
+  await page.locator('#preview-level').waitFor();
+  check(
+    'all twenty levels and casual preview',
+    (await page.locator('#preview-level option').count()) === 21,
+  );
+  await page.evaluate(() => {
+    localStorage.setItem('tiny-break-arcade:v1', '{"keep":"ordinary"}');
+    localStorage.setItem('tiny-break-arcade:campaign:v1', '{"keep":"campaign"}');
+  });
+  await page.locator('#preview-level').selectOption('20');
+  await page.locator('[data-action="start"]').click();
+  await page.locator('#game-overlay').waitFor({ state: 'hidden' });
+  check(
+    'campaign canvas and elapsed time',
+    (await page.locator('canvas').getAttribute('height')) === '600' &&
+      (await page
+        .locator('.game-toolbar')
+        .innerText()
+        .then((t) => t.includes('已用时间'))),
+  );
+  const queue = [[0, 0, []]],
+    seen = new Set();
+  let solution;
+  while (queue.length) {
+    const [a, b, path] = queue.shift();
+    if (a === 5 || b === 5) {
+      solution = path;
+      break;
+    }
+    const k = `${a},${b}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const x = Math.min(a, 13 - b),
+      y = Math.min(b, 3 - a);
+    [
+      [3, b],
+      [a, 13],
+      [0, b],
+      [a, 0],
+      [a - x, b + x],
+      [a + y, b - y],
+    ].forEach(([u, v], i) => queue.push([u, v, [...path, i]]));
+  }
+  for (const i of solution) {
+    const b = await page.locator('canvas').boundingBox();
+    await page.mouse.click(
+      b.x + ((20 + (((i % 3) + 0.5) * 560) / 3) / 600) * b.width,
+      b.y + ((330 + (Math.floor(i / 3) + 0.5) * 120) / 600) * b.height,
+    );
+  }
+  await page.locator('.result-card').waitFor();
+  check(
+    'preview level twenty actual win',
+    await page
+      .locator('.result-card')
+      .innerText()
+      .then((t) => t.includes('完成了')),
+  );
+  const saved = await page.evaluate(
+    (key) => ({
+      debug: JSON.parse(localStorage.getItem(key)),
+      ordinary: localStorage.getItem('tiny-break-arcade:v1'),
+      campaign: localStorage.getItem('tiny-break-arcade:campaign:v1'),
+    }),
+    key,
+  );
+  check(
+    'independent debug storage',
+    saved.debug.won &&
+      saved.debug.steps === 14 &&
+      saved.ordinary === '{"keep":"ordinary"}' &&
+      saved.campaign === '{"keep":"campaign"}',
+  );
+  await page.locator('#preview-level').selectOption('0');
+  check(
+    'ordinary preview dimensions',
+    (await page.locator('canvas').getAttribute('height')) === '480',
+  );
+  check(
+    'no service worker in preview',
+    await page.evaluate(
+      async () => (await navigator.serviceWorker.getRegistrations()).length === 0,
+    ),
+  );
+  return { passed: checks.length, checks };
+};

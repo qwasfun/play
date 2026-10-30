@@ -6,28 +6,52 @@
  */
 export function hash(value) {
   let h = 2166136261;
-  for (const char of String(value)) { h ^= char.charCodeAt(0); h = Math.imul(h, 16777619); }
+  for (const char of String(value)) {
+    h ^= char.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
   return h >>> 0;
 }
 export function rng(seed) {
   let state = typeof seed === 'number' ? seed >>> 0 : hash(seed);
   return () => {
     state += 0x6d2b79f5;
-    let t = Math.imul(state ^ state >>> 15, 1 | state);
-    t ^= t + Math.imul(t ^ t >>> 7, 61 | t);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 export function roundRect(ctx, x, y, w, h, r, fill, stroke) {
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
-  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
-  if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  if (fill) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.stroke();
+  }
 }
-export function label(ctx, value, x, y, size = 16, color = '#233c39', align = 'center', weight = 600) {
-  ctx.font = `${weight} ${size}px system-ui, sans-serif`; ctx.fillStyle = color;
-  ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(String(value), x, y);
+export function label(
+  ctx,
+  value,
+  x,
+  y,
+  size = 16,
+  color = '#233c39',
+  align = 'center',
+  weight = 600,
+) {
+  ctx.font = `${weight} ${size}px system-ui, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(value), x, y);
 }
-export function beijingDate(now = Date.now()) { return new Date(Number(now) + 8 * 3600000).toISOString().slice(0, 10); }
+export function beijingDate(now = Date.now()) {
+  return new Date(Number(now) + 8 * 3600000).toISOString().slice(0, 10);
+}
 export function validDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
   const time = Date.parse(`${value}T00:00:00Z`);

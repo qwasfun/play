@@ -1,4 +1,4 @@
-import {createCampaignGame} from './campaign-engine.js';
+import { createCampaignGame } from './campaign-engine.js';
 import { rng, roundRect, label } from '@playground/game-sdk';
 
 const LIMIT = 120;
@@ -38,7 +38,7 @@ function flower(ctx, kind, x, y) {
   ctx.stroke();
   ctx.fillStyle = '#90b48a';
   ctx.beginPath();
-  ctx.ellipse(x - 8, y + 17, 9, 4, .55, 0, Math.PI * 2);
+  ctx.ellipse(x - 8, y + 17, 9, 4, 0.55, 0, Math.PI * 2);
   ctx.fill();
   if (kind === 1) {
     ctx.fillStyle = color;
@@ -53,7 +53,12 @@ function flower(ctx, kind, x, y) {
     ctx.fill();
   } else if (kind === 2) {
     ctx.fillStyle = color;
-    for (const [dx, dy] of [[-9, -9], [9, -9], [-9, 8], [9, 8]]) {
+    for (const [dx, dy] of [
+      [-9, -9],
+      [9, -9],
+      [-9, 8],
+      [9, 8],
+    ]) {
       ctx.beginPath();
       ctx.arc(x + dx, y + dy, 11, 0, Math.PI * 2);
       ctx.fill();
@@ -72,10 +77,18 @@ function flower(ctx, kind, x, y) {
   } else {
     const count = kind === 0 ? 7 : kind === 4 ? 5 : 6;
     for (let i = 0; i < count; i++) {
-      const angle = i * Math.PI * 2 / count - Math.PI / 2;
+      const angle = (i * Math.PI * 2) / count - Math.PI / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.ellipse(x + Math.cos(angle) * 12, y + Math.sin(angle) * 12, kind === 4 ? 12 : 9, 12, angle + Math.PI / 2, 0, Math.PI * 2);
+      ctx.ellipse(
+        x + Math.cos(angle) * 12,
+        y + Math.sin(angle) * 12,
+        kind === 4 ? 12 : 9,
+        12,
+        angle + Math.PI / 2,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
     }
     ctx.fillStyle = kind === 5 ? '#fff3c0' : '#f5d076';
@@ -85,8 +98,8 @@ function flower(ctx, kind, x, y) {
   }
 }
 
-export function createGame({level:campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
-  if(campaignLevel)return createCampaignGame({level:campaignLevel,onFinish,sound});
+export function createGame({ level: campaignLevel, seed, onFinish = () => {}, sound = () => {} }) {
+  if (campaignLevel) return createCampaignGame({ level: campaignLevel, onFinish, sound });
   const board = generatePairs(seed);
   const matched = Array(12).fill(false);
   let faceUp = [];
@@ -109,7 +122,8 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
   }
 
   function flip(index) {
-    if (finished || mismatchTime > 0 || index < 0 || matched[index] || faceUp.includes(index)) return;
+    if (finished || mismatchTime > 0 || index < 0 || matched[index] || faceUp.includes(index))
+      return;
     selected = index;
     faceUp.push(index);
     steps++;
@@ -121,7 +135,7 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
       faceUp = [];
       pairs++;
       score += 100;
-      matchFlash = .45;
+      matchFlash = 0.45;
       sound('collect');
       if (pairs === 6) {
         won = true;
@@ -130,7 +144,7 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
         finish('complete');
       }
     } else {
-      mismatchTime = .7;
+      mismatchTime = 0.7;
     }
   }
 
@@ -146,7 +160,10 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
       if (elapsed >= LIMIT) finish('time');
     },
     input(type, payload = {}) {
-      if (type === 'primary-cancel') { pressed = -1; return; }
+      if (type === 'primary-cancel') {
+        pressed = -1;
+        return;
+      }
       if (finished) return;
       if (type === 'primary-down') pressed = mismatchTime > 0 ? -1 : cardAt(payload.x, payload.y);
       if (type === 'primary-up') {
@@ -168,10 +185,25 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
     },
     getState() {
       return {
-        score, elapsed, steps, pairs, selected, finished, won,
-        board: [...board], faceUp: [...faceUp], matched: [...matched], locked: mismatchTime > 0,
-        extra: `${pairs} / 6`, progress: `${pairs} / 6 对`,
-        hint: mismatchTime > 0 ? '记住这两朵花，等它们轻轻合上' : matchFlash > 0 ? '找到一对！小花园多了一点颜色' : '找出相同的花朵 · 每次有效翻牌计一步',
+        score,
+        elapsed,
+        steps,
+        pairs,
+        selected,
+        finished,
+        won,
+        board: [...board],
+        faceUp: [...faceUp],
+        matched: [...matched],
+        locked: mismatchTime > 0,
+        extra: `${pairs} / 6`,
+        progress: `${pairs} / 6 对`,
+        hint:
+          mismatchTime > 0
+            ? '记住这两朵花，等它们轻轻合上'
+            : matchFlash > 0
+              ? '找到一对！小花园多了一点颜色'
+              : '找出相同的花朵 · 每次有效翻牌计一步',
       };
     },
     draw(ctx) {
@@ -180,7 +212,7 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
       for (let i = 0; i < 10; i++) {
         ctx.fillStyle = i % 2 ? '#dce7d0' : '#e2ead7';
         ctx.beginPath();
-        ctx.ellipse(35 + i * 60, 25 + (i * 53) % 420, 11, 4, i * .7, 0, Math.PI * 2);
+        ctx.ellipse(35 + i * 60, 25 + ((i * 53) % 420), 11, 4, i * 0.7, 0, Math.PI * 2);
         ctx.fill();
       }
       label(ctx, '把相同的小花，种在一起。', 300, 28, 17, '#66816a', 'center', 600);
@@ -190,7 +222,15 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
         const y = Y + Math.floor(i / COLS) * (CARD_H + GAP);
         const open = matched[i] || faceUp.includes(i);
         roundRect(ctx, x, y + 4, CARD_W, CARD_H, 16, open ? '#c9d6bd' : '#739480');
-        roundRect(ctx, x, y, CARD_W, CARD_H, 16, open ? matched[i] ? '#f3f4dc' : '#fff9e9' : '#93b29a');
+        roundRect(
+          ctx,
+          x,
+          y,
+          CARD_W,
+          CARD_H,
+          16,
+          open ? (matched[i] ? '#f3f4dc' : '#fff9e9') : '#93b29a',
+        );
         if (open) {
           flower(ctx, board[i], x + CARD_W / 2, y + 43);
           if (matched[i]) {
@@ -208,10 +248,19 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
           ctx.stroke();
           ctx.fillStyle = '#d8e6c8';
           ctx.beginPath();
-          ctx.ellipse(x + 35, y + 43, 11, 6, .45, 0, Math.PI * 2);
-          ctx.ellipse(x + 52, y + 35, 11, 6, -.6, 0, Math.PI * 2);
+          ctx.ellipse(x + 35, y + 43, 11, 6, 0.45, 0, Math.PI * 2);
+          ctx.ellipse(x + 52, y + 35, 11, 6, -0.6, 0, Math.PI * 2);
           ctx.fill();
-          label(ctx, String(i + 1).padStart(2, '0'), x + CARD_W / 2, y + 88, 10, '#e5eddc', 'center', 600);
+          label(
+            ctx,
+            String(i + 1).padStart(2, '0'),
+            x + CARD_W / 2,
+            y + 88,
+            10,
+            '#e5eddc',
+            'center',
+            600,
+          );
         }
         if (selected === i) {
           ctx.save();
@@ -223,11 +272,14 @@ export function createGame({level:campaignLevel, seed, onFinish = () => {}, soun
           ctx.stroke();
           ctx.restore();
         }
-        if (mismatchTime > 0 && faceUp.includes(i)) roundRect(ctx, x, y, CARD_W, CARD_H, 16, null, '#dba78d');
+        if (mismatchTime > 0 && faceUp.includes(i))
+          roundRect(ctx, x, y, CARD_W, CARD_H, 16, null, '#dba78d');
       }
       label(ctx, `已翻 ${steps} 次 · 找到 ${pairs} / 6 对`, 300, 440, 15, '#66816a', 'center', 600);
       label(ctx, '点击翻牌 · 方向键选择，空格确认', 300, 465, 13, '#8a9b7c', 'center', 500);
     },
-    destroy() { pressed = -1; },
+    destroy() {
+      pressed = -1;
+    },
   };
 }

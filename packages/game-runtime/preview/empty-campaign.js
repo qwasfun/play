@@ -1,1 +1,1 @@
-export const campaign=null;
+export const campaign = null;

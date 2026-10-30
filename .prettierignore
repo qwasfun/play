@@ -1,0 +1,19 @@
+# Dependencies, build output and local tools.
+**/node_modules/
+**/dist/
+**/.wrangler/
+**/.idea/
+artifacts/
+output/
+.openai/local/
+.playwright-cli/
+.env
+.env.*
+.dev.vars*
+
+# npm owns the lockfile's formatting.
+package-lock.json
+
+# Generated content: preserve reproducibility and published level hashes.
+games/*/src/campaign-data.js
+tests/fixtures/new-campaign-solutions.json
