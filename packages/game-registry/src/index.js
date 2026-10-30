@@ -1,3 +1,5 @@
+import {manifest as kite} from '@playground/game-kite/manifest';
+import {rules as kiteRules} from '@playground/game-kite/rules';
 import {manifest as orchardSort} from '@playground/game-orchard-sort/manifest';
 import {rules as orchardSortRules} from '@playground/game-orchard-sort/rules';
 import {manifest as jugs} from '@playground/game-jugs/manifest';
@@ -56,6 +58,6 @@ import {manifest as rain} from '@playground/game-rain/manifest';
 import {rules as rainRules} from '@playground/game-rain/rules';
 import {manifest as mines} from '@playground/game-mines/manifest';
 import {rules as minesRules} from '@playground/game-mines/rules';
-export const games=[star,bridge,lights,echo,catchGame,bounce,pairs,merge,rings,snake,boxes,pipes,jump,bubbles,slide,rhythm,constellation,tower,rain,mines,lantern,sail,balance,pebble,windmill,courier,weave,jugs,orchardSort];
+export const games=[star,bridge,lights,echo,catchGame,bounce,pairs,merge,rings,snake,boxes,pipes,jump,bubbles,slide,rhythm,constellation,tower,rain,mines,lantern,sail,balance,pebble,windmill,courier,weave,jugs,orchardSort,kite];
 export const byId=Object.fromEntries(games.map(game=>[game.id,game]));
-export const gameRules={'orchard-sort':orchardSortRules,star:starRules,bridge:bridgeRules,lights:lightsRules,echo:echoRules,catch:catchRules,bounce:bounceRules,pairs:pairsRules,merge:mergeRules,rings:ringsRules,snake:snakeRules,boxes:boxesRules,pipes:pipesRules,jump:jumpRules,bubbles:bubblesRules,slide:slideRules,rhythm:rhythmRules,constellation:constellationRules,tower:towerRules,rain:rainRules,mines:minesRules,lantern:lanternRules,sail:sailRules,balance:balanceRules,pebble:pebbleRules,windmill:windmillRules,courier:courierRules,weave:weaveRules,jugs:jugsRules};
+export const gameRules={kite:kiteRules,'orchard-sort':orchardSortRules,star:starRules,bridge:bridgeRules,lights:lightsRules,echo:echoRules,catch:catchRules,bounce:bounceRules,pairs:pairsRules,merge:mergeRules,rings:ringsRules,snake:snakeRules,boxes:boxesRules,pipes:pipesRules,jump:jumpRules,bubbles:bubblesRules,slide:slideRules,rhythm:rhythmRules,constellation:constellationRules,tower:towerRules,rain:rainRules,mines:minesRules,lantern:lanternRules,sail:sailRules,balance:balanceRules,pebble:pebbleRules,windmill:windmillRules,courier:courierRules,weave:weaveRules,jugs:jugsRules};
