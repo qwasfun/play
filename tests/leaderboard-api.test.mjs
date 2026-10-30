@@ -285,17 +285,38 @@ test('forged lights wins, missing proofs and changed counters cannot consume a r
   assert.equal((await s.submit(v, run, good)).status, 200);
 });
 
-test('game capabilities reject local-only starts but preserve historical board reads', async () => {
-  const s = setup(),
-    v = await guest(s);
-  for (const game of games.filter((game) => !leaderboardPolicy(game.id).normal)) {
-    const response = await v.call('/v1/runs', {
+test('the eight formerly local games accept normal results without opening daily boards or changing calendar mappings', async () => {
+  const calendar = {
+    lantern: '2027-01-11',
+    sail: '2027-01-12',
+    balance: '2027-01-13',
+    pebble: '2027-01-14',
+    windmill: '2027-02-08',
+    courier: '2027-02-09',
+    weave: '2027-02-10',
+    jugs: '2027-02-11',
+  };
+  for (const [id, date] of Object.entries(calendar)) {
+    assert.equal(dailyGame(date), id, 'existing calendar mapping: ' + date);
+    const s = setup(date + 'T12:00:00+08:00'),
+      v = await guest(s);
+    const result = { elapsed: 10, won: false, ...samples[id] };
+    const accepted = await s.submit(v, await s.start(v, id), result);
+    assert.equal(accepted.status, 200, id);
+    assert.equal(accepted.data.eligible, 1, id);
+    assert.equal((await s.board(v, id)).data.me.rank, 1, id);
+    assert.equal((await s.board(v, id)).data.total, 1, id);
+    const disabled = await v.call('/v1/runs', {
       method: 'POST',
-      body: { gameId: game.id, mode: 'normal' },
+      body: { gameId: id, mode: 'daily', date },
     });
-    assert.equal(response.status, 400);
-    assert.equal(response.data.errors[0].code, 'ranking_disabled');
-    assert.equal((await s.board(v, game.id)).status, 200);
+    assert.equal(disabled.status, 400, id);
+    assert.equal(disabled.data.errors[0].field, 'mode');
+    assert.equal(disabled.data.errors[0].code, 'ranking_disabled');
+    assert.equal(
+      (await v.call(`/v1/leaderboards?gameId=${id}&mode=daily&date=${date}`)).status,
+      200,
+    );
   }
 });
 

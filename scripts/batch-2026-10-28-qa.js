@@ -1,6 +1,6 @@
 import { createGame as windmill } from '../games/windmill/src/index.js';
 import { createGame as weave } from '../games/weave/src/index.js';
-import { games } from '@playground/game-registry';
+import { games, leaderboardPolicy } from '@playground/game-registry';
 export function solveWeave(s) {
   const groups = (a) => {
     const out = [];
@@ -246,6 +246,14 @@ export async function verifyBatch(
     if (online) {
       await page.locator('.rank-result').filter({ hasText: '第 ' }).waitFor();
       check(id + ' ranked', true);
+      await btn('[data-open-board]');
+      await page.locator('.leaderboard-table .is-me').waitFor();
+      check(id + ' visible rank', true);
+      check(
+        id + ' board mode options',
+        (await page.getByLabel('榜单类型').locator('option').count()) ===
+          (leaderboardPolicy(id).daily ? 2 : 1),
+      );
     }
     check(
       id + ' saved',
@@ -256,6 +264,11 @@ export async function verifyBatch(
     );
     await page.reload();
     await page.locator('[data-action="start"]').waitFor();
+    if (online) {
+      await btn('[data-open-board]');
+      await page.locator('.leaderboard-table .is-me').waitFor();
+      check(id + ' rank persists after reload', true);
+    }
     check(
       id + ' saved after reload',
       !(await page.locator('#best-record').innerText()).includes('等待'),

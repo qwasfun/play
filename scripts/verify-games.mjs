@@ -106,6 +106,7 @@ async function playChanged(mobile) {
         base: server.origin,
         artifacts,
         ids: changed.length ? legacy : undefined,
+        online: true,
       });
       report.checks.push(`complete legacy playthroughs/${mobile}`);
     } catch (error) {
@@ -170,14 +171,28 @@ async function playChanged(mobile) {
         });
       }
       await page.locator('.result-card').waitFor();
-      if (!localOnly.includes(id))
+      if (!localOnly.includes(id)) {
         await page.locator('.rank-result').filter({ hasText: '第 ' }).waitFor();
+        await page.locator('[data-open-board]').click();
+        await page.locator('.leaderboard-table .is-me').waitFor();
+        check(`${id}/${mobile}/visible-rank`, true);
+        check(
+          `${id}/${mobile}/board-mode-options`,
+          (await page.getByLabel('榜单类型').locator('option').count()) ===
+            (leaderboardPolicy(id).daily ? 2 : 1),
+        );
+      }
       check(`${id}/${mobile}/completed${localOnly.includes(id) ? '-local' : '-and-ranked'}`, true);
       await page.screenshot({
         path: `${artifacts}/${id}-${mobile ? 'touch' : 'desktop'}-ranked.png`,
       });
       await page.reload();
       await page.locator('[data-action="start"]').waitFor();
+      if (!localOnly.includes(id)) {
+        await page.locator('[data-open-board]').click();
+        await page.locator('.leaderboard-table .is-me').waitFor();
+        check(`${id}/${mobile}/rank-persists-after-refresh`, true);
+      }
       check(
         `${id}/${mobile}/saved`,
         await page.evaluate(

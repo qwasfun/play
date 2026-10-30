@@ -1,9 +1,5 @@
 export const manifest = {
-  leaderboard: {
-    normal: false,
-    daily: false,
-    reason: '排行榜模式：本游戏暂为本机游玩，请在当前浏览器查看成绩。',
-  },
+  leaderboard: { normal: true, daily: false },
   id: 'pebble',
   campaign: {
     version: 1,
