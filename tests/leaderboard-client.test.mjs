@@ -16,6 +16,8 @@ test('all games explicitly declare shared ranking capabilities', () => {
     if (!policy.normal) assert.ok(policy.reason, game.id);
   }
   assert.equal(leaderboardPolicy('orchard-sort').daily, false);
+  assert.equal(leaderboardPolicy('kite').normal, true);
+  assert.equal(leaderboardPolicy('kite').daily, false);
   assert.equal(leaderboardPolicy('missing-game').normal, false);
 });
 

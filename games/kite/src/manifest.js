@@ -1,4 +1,5 @@
 export const manifest = {
+  leaderboard: { normal: true, daily: false },
   id: 'kite',
   title: '纸鸢乘风',
   english: 'KITE IN BLOOM',
