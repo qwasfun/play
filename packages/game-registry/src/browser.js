@@ -1,3 +1,4 @@
+import { art as kiteArt } from '@playground/game-kite/art';
 import { art as orchardSortArt } from '@playground/game-orchard-sort/art';
 import { art as jugsArt } from '@playground/game-jugs/art';
 import { art as weaveArt } from '@playground/game-weave/art';
@@ -59,6 +60,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const illustrations = {
+  kite: kiteArt,
   'orchard-sort': orchardSortArt,
   star: starArt,
   bridge: bridgeArt,
@@ -90,6 +92,7 @@ export const illustrations = {
   jugs: jugsArt,
 };
 export const loaders = {
+  kite: () => import('@playground/game-kite'),
   'orchard-sort': () => import('@playground/game-orchard-sort'),
   windmill: () => import('@playground/game-windmill'),
   courier: () => import('@playground/game-courier'),
