@@ -6,6 +6,56 @@ import { dailyGame, dailySeed } from '@playground/game-registry/core';
 import { games, leaderboardPolicy } from '@playground/game-registry';
 import { generateLights, toggledBoard, createGame as createLights } from '@playground/game-lights';
 import { validateResult } from '@playground/game-registry/rules';
+import { recordLevel } from '@playground/game-sdk/level-proof';
+import { verifiedLevelResult } from '@playground/game-registry/campaign-ranking';
+import { playLevel } from '../scripts/campaigns/replay.mjs';
+import { readFileSync } from 'node:fs';
+
+const campaignSolutions = JSON.parse(
+  readFileSync(new URL('./fixtures/new-campaign-solutions.json', import.meta.url)),
+);
+async function levelResult(id, number) {
+  const [{ createGame }, { campaign }] = await Promise.all([
+    import(`../games/${id}/src/index.js`),
+    import(`../games/${id}/src/campaign.js`),
+  ]);
+  const level = campaign.levels[number - 1];
+  let result;
+  const engine = recordLevel(createGame, {
+    level,
+    seed: 0,
+    onFinish: (r) => {
+      result = r;
+    },
+  });
+  const tap = (cell) => {
+    const p = {
+      x: 20 + (((cell % level.size) + 0.5) * 560) / level.size,
+      y: 20 + ((Math.floor(cell / level.size) + 0.5) * 560) / level.size,
+    };
+    engine.input('primary-down', p);
+    engine.input('primary-up', p);
+  };
+  if (id === 'boxes')
+    for (const dir of level.solution)
+      engine.input('key-down', {
+        key: { U: 'ArrowUp', D: 'ArrowDown', L: 'ArrowLeft', R: 'ArrowRight' }[dir],
+      });
+  else if (['lights', 'slide'].includes(id)) for (const cell of level.solution) tap(cell);
+  else if (id === 'pipes')
+    level.solution.forEach((turns, cell) => {
+      for (let i = 0; i < turns; i++) tap(cell);
+    });
+  else if (id === 'mines')
+    for (const { cell, kind } of level.solution) {
+      if (kind === 'flag') continue;
+      tap(cell);
+    }
+  else playLevel(id, level, engine, campaignSolutions[id]?.[number - 1]);
+  engine.destroy();
+  assert.equal(result?.won, true, `${id}/${number}`);
+  return result;
+}
 
 function setup(iso = '2026-10-26T12:00:00+08:00') {
   const db = createD1(),
@@ -710,4 +760,106 @@ test('background retention failure does not fail the user request', async () => 
       .n,
     0,
   );
+});
+
+test('total board combines historical normal/daily personal best, ranks ties, and excludes campaigns', async () => {
+  const s = setup('2026-10-31T12:00:00+08:00'),
+    a = await guest(s),
+    b = await guest(s),
+    id = dailyGame('2026-10-31');
+  assert.equal(id, 'star');
+  await s.submit(a, await s.start(a, id), { score: 100, elapsed: 10, won: false, lives: 0 });
+  const daily = await s.start(a, id, { mode: 'daily', date: '2026-10-31' });
+  const receipt = await s.submit(a, daily, { score: 200, elapsed: 10, won: false, lives: 0 });
+  assert.equal(receipt.data.totalRank, 1);
+  await s.submit(b, await s.start(b, id), { score: 200, elapsed: 10, won: false, lives: 0 });
+  const total = await a.call('/v1/leaderboards?gameId=star&mode=total');
+  assert.equal(total.status, 200);
+  assert.equal(total.data.total, 2);
+  assert.deepEqual(
+    total.data.entries.map((x) => x.rank),
+    [1, 1],
+  );
+  assert.equal(total.data.me.result.score, 200);
+  assert.equal((await s.board(a)).data.me.result.score, 100);
+  const day = await a.call('/v1/leaderboards?gameId=star&mode=daily&date=2026-10-31');
+  assert.equal(day.data.total, 1);
+  assert.equal(
+    (await a.call('/v1/runs', { method: 'POST', body: { gameId: id, mode: 'total' } })).status,
+    400,
+  );
+});
+
+for (const game of games.filter((g) => g.campaign))
+  test(
+    game.id +
+      ': all twenty level proofs verify; per-level best ranks and persists without entering total',
+    async () => {
+      const s = setup(),
+        v = await guest(s);
+      for (let n = 1; n <= 20; n++) {
+        const result = await levelResult(game.id, n);
+        const verified = await verifiedLevelResult(
+          game.id,
+          { campaignVersion: 1, level: n },
+          result,
+        );
+        assert.equal(verified.won, true);
+        if (![1, 20].includes(n)) continue;
+        const run = await s.start(v, game.id, { mode: 'campaign', level: n, campaignVersion: 1 });
+        assert.equal(run.mode, 'campaign');
+        assert.equal(run.level, n);
+        const r = await s.submit(v, run, result);
+        assert.equal(r.status, 200, JSON.stringify(r.data));
+        assert.equal(r.data.rank, 1);
+        const duplicate = await s.submit(v, run, { won: false });
+        assert.deepEqual(duplicate.data, r.data);
+        const board = await v.call(
+          '/v1/leaderboards?gameId=' + game.id + '&mode=campaign&level=' + n + '&campaignVersion=1',
+        );
+        assert.equal(board.data.total, 1);
+        assert.equal(board.data.me.rank, 1);
+        assert.equal(
+          (await v.call('/v1/leaderboards?gameId=' + game.id + '&mode=total')).data.total,
+          0,
+        );
+        assert.equal((await s.board(v, game.id)).data.total, 0);
+      }
+      s.db.db.close();
+    },
+  );
+
+test('campaign rejects missing/tampered replay, wrong level/version and normal restart references to levels', async () => {
+  const s = setup(),
+    v = await guest(s),
+    result = await levelResult('lights', 1);
+  for (const extra of [
+    { level: 0, campaignVersion: 1 },
+    { level: 1, campaignVersion: 2 },
+  ]) {
+    const r = await v.call('/v1/runs', {
+      method: 'POST',
+      body: { gameId: 'lights', mode: 'campaign', ...extra },
+    });
+    assert.equal(r.status, 400);
+    assert.ok(r.data.errors[0].field);
+  }
+  const run = await s.start(v, 'lights', { mode: 'campaign', level: 1, campaignVersion: 1 });
+  for (const value of [
+    { ...result, levelProof: null },
+    { ...result, steps: result.steps + 1 },
+    { ...result, levelProof: { ticks: 0, events: [] } },
+  ])
+    assert.equal((await s.submit(v, run, value)).status, 400);
+  assert.equal(
+    (
+      await v.call('/v1/runs', {
+        method: 'POST',
+        body: { gameId: 'lights', mode: 'normal', restartOf: run.id },
+      })
+    ).status,
+    400,
+  );
+  const wrong = await s.start(v, 'lights', { mode: 'campaign', level: 20, campaignVersion: 1 });
+  assert.equal((await s.submit(v, wrong, result)).status, 400);
 });

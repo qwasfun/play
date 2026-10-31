@@ -7,6 +7,12 @@ import {
   validDate,
 } from '@playground/game-registry/core';
 import { nicknameError, validateResult, cleanResult } from '@playground/game-registry/rules';
+import {
+  levelScope,
+  parseLevelScope,
+  verifiedLevelResult,
+  levelSort,
+} from '@playground/game-registry/campaign-ranking';
 
 const MINUTE = 60000,
   SESSION_AGE = 365 * 86400000,
@@ -14,6 +20,12 @@ const MINUTE = 60000,
 const boardWhere = 'game_id=? AND mode=? AND challenge_date=? AND rule_version=?';
 const better =
   '(c.sort_score < b.sort_score OR (c.sort_score=b.sort_score AND c.elapsed_ms < b.elapsed_ms))';
+// Keep legacy normal/daily partitions. Deduplicate each player's best across them.
+const totalCte = `WITH candidates AS (SELECT b.*,p.nickname,
+  ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY sort_score,elapsed_ms,achieved_at,run_id) AS choice
+  FROM best_entries b JOIN players p ON p.id=b.player_id
+  WHERE game_id=? AND rule_version=? AND ((mode='normal' AND challenge_date='') OR mode='daily')),
+  ranked AS (SELECT *,RANK() OVER (ORDER BY sort_score,elapsed_ms) AS rank FROM candidates WHERE choice=1) `;
 class ApiError extends Error {
   constructor(status, field, message, code = 'invalid_field', retryAfter) {
     super(message);
@@ -78,7 +90,26 @@ function board(input, now, { starting = false } = {}) {
     mode = input.mode,
     version = Number(input.ruleVersion ?? RULE_VERSION);
   if (!Object.hasOwn(byId, gameId)) fail(400, 'gameId', '游戏：请选择已开放的游戏');
-  if (!['normal', 'daily'].includes(mode)) fail(400, 'mode', '模式：请选择普通模式或每日挑战');
+  if (!['normal', 'daily', 'total', 'campaign'].includes(mode) || (starting && mode === 'total'))
+    fail(400, 'mode', '模式：请选择普通模式、每日挑战或固定关卡对局');
+  if (mode === 'campaign') {
+    const meta = byId[gameId].campaign,
+      level = Number(input.level),
+      campaignVersion = Number(input.campaignVersion);
+    if (!meta) fail(400, 'gameId', '关卡游戏：该游戏尚无固定关卡，请选择随心一局');
+    if (!Number.isInteger(level) || level < 1 || level > meta.total)
+      fail(400, 'level', `关卡编号：请选择 1–${meta.total} 关`);
+    if (campaignVersion !== meta.version)
+      fail(400, 'campaignVersion', '关卡版本：请刷新网站后从选关页重新进入');
+    if ((input.date ?? '') !== '') fail(400, 'date', '挑战日期：固定关卡不能指定每日挑战日期');
+    if (version !== RULE_VERSION) fail(400, 'ruleVersion', '规则版本：请更新网站后重新开始游戏');
+    return {
+      game_id: gameId,
+      mode: 'normal',
+      challenge_date: levelScope(campaignVersion, level),
+      rule_version: version,
+    };
+  }
   if (starting && !leaderboardPolicy(gameId)[mode])
     fail(
       400,
@@ -94,7 +125,8 @@ function board(input, now, { starting = false } = {}) {
   )
     fail(400, 'ruleVersion', '规则版本：请更新网站后重新开始游戏');
   const date = input.date ?? '';
-  if (mode === 'normal' && date !== '') fail(400, 'date', '挑战日期：普通模式不能指定日期');
+  if (['normal', 'total'].includes(mode) && date !== '')
+    fail(400, 'date', '挑战日期：普通模式和总榜不能指定日期');
   if (mode === 'daily') {
     if (!validDate(date) || date > beijingDate(now))
       fail(400, 'date', '挑战日期：请选择今天或过去的有效日期');
@@ -149,23 +181,33 @@ function entry(row) {
   const result = { score: row.score, elapsed: row.elapsed_ms / 1000, won: !!row.won };
   if (row.steps !== null) result.steps = row.steps;
   if (row.rounds !== null) result.rounds = row.rounds;
+  const scope = parseLevelScope(row.challenge_date);
+  if (scope && row.rounds !== null) {
+    result.mistakes = row.rounds;
+    delete result.rounds;
+  }
   return {
     playerId: row.player_id,
     nickname: row.nickname,
     rank: row.rank,
     result,
     achievedAt: row.achieved_at,
+    source: scope ? 'campaign' : row.mode,
+    date: scope ? '' : row.challenge_date,
   };
 }
 async function leaderboard(env, selection, player) {
-  const args = keys(selection);
-  const cte = `WITH ranked AS (SELECT b.*,p.nickname,RANK() OVER (ORDER BY sort_score,elapsed_ms) AS rank FROM best_entries b JOIN players p ON p.id=b.player_id WHERE ${boardWhere}) `;
+  const total = selection.mode === 'total';
+  const args = total ? [selection.game_id, selection.rule_version] : keys(selection);
+  const cte = total
+    ? totalCte
+    : `WITH ranked AS (SELECT b.*,p.nickname,RANK() OVER (ORDER BY sort_score,elapsed_ms) AS rank FROM best_entries b JOIN players p ON p.id=b.player_id WHERE ${boardWhere}) `;
   const results = await env.DB.batch([
     env.DB.prepare(
       cte + 'SELECT * FROM ranked ORDER BY sort_score,elapsed_ms,achieved_at,player_id LIMIT 100',
     ).bind(...args),
     env.DB.prepare(cte + 'SELECT * FROM ranked WHERE player_id=?').bind(...args, player?.id || ''),
-    env.DB.prepare(`SELECT COUNT(*) AS total FROM best_entries WHERE ${boardWhere}`).bind(...args),
+    env.DB.prepare(cte + 'SELECT COUNT(*) AS total FROM ranked').bind(...args),
   ]);
   return {
     entries: results[0].results.map(entry),
@@ -175,9 +217,14 @@ async function leaderboard(env, selection, player) {
 }
 
 async function record(env, run, value, now) {
-  const result = cleanResult(value, run.game_id),
+  const campaign = parseLevelScope(run.challenge_date);
+  const result = campaign
+      ? { ...value, rounds: value.mistakes ?? null, sortKey: levelSort(run.game_id, value) }
+      : cleanResult(value, run.game_id),
     ms = Math.round(result.elapsed * 1000),
-    policy = gameRules[run.game_id].ranking,
+    policy = campaign
+      ? { requiresWin: true, sign: 1, field: 'sortKey' }
+      : gameRules[run.game_id].ranking,
     sort = policy.sign * result[policy.field];
   const eligible = !policy.requiresWin || result.won;
   // Every statement uses the persisted first submission, never a later retry's payload.
@@ -220,10 +267,15 @@ async function record(env, run, value, now) {
         FROM best_entries b WHERE ${boardWhere} AND player_id=?
       ) ELSE NULL END) WHERE id=? AND json_type(receipt_json,'$.rank') IS NULL`,
     ).bind(...keys(run), run.player_id, run.id),
+    env.DB.prepare(
+      campaign
+        ? 'SELECT receipt_json FROM runs WHERE id=?'
+        : `UPDATE runs SET receipt_json=json_set(receipt_json,'$.totalRank',(${totalCte} SELECT rank FROM ranked WHERE player_id=?)) WHERE id=? AND json_type(receipt_json,'$.totalRank') IS NULL`,
+    ).bind(...(campaign ? [run.id] : [run.game_id, run.rule_version, run.player_id, run.id])),
     env.DB.prepare('SELECT receipt_json FROM runs WHERE id=?').bind(run.id),
   ]);
   return {
-    receipt: JSON.parse(updates[3].results[0].receipt_json),
+    receipt: JSON.parse(updates[4].results[0].receipt_json),
     first: updates[0].meta.changes === 1,
   };
 }
@@ -365,15 +417,17 @@ export function createHandler({ now = () => Date.now(), sendEvent = reportScore 
           await limit(env, 'start:' + player.id, 10, time);
           const input = await body(request),
             selection = board(input, time, { starting: true });
-          let seed =
-            selection.mode === 'daily'
+          const campaign = parseLevelScope(selection.challenge_date);
+          let seed = campaign
+            ? 0
+            : selection.mode === 'daily'
               ? dailySeed(selection.challenge_date, selection.game_id)
               : crypto.getRandomValues(new Uint32Array(1))[0];
-          if (input.restartOf && selection.mode === 'normal') {
+          if (input.restartOf && selection.mode === 'normal' && !campaign) {
             const previous =
               typeof input.restartOf === 'string' && input.restartOf.length === 36
                 ? await env.DB.prepare(
-                    'SELECT seed FROM runs WHERE id=? AND player_id=? AND game_id=? AND mode=? AND rule_version=?',
+                    "SELECT seed FROM runs WHERE id=? AND player_id=? AND game_id=? AND mode=? AND rule_version=? AND challenge_date=''",
                   )
                     .bind(
                       input.restartOf,
@@ -403,8 +457,9 @@ export function createHandler({ now = () => Date.now(), sendEvent = reportScore 
               run: {
                 id,
                 gameId: selection.game_id,
-                mode: selection.mode,
-                date: selection.challenge_date,
+                mode: campaign ? 'campaign' : selection.mode,
+                date: campaign ? '' : selection.challenge_date,
+                ...(campaign || {}),
                 ruleVersion: selection.rule_version,
                 seed,
                 expiresAt,
@@ -430,14 +485,27 @@ export function createHandler({ now = () => Date.now(), sendEvent = reportScore 
                 '对局：提交期限已过，成绩已保存在本机，请开始新对局',
                 'run_expired',
               );
-            const value = await body(request, gameRules[run.game_id].maxBodyBytes),
-              errors = validateResult(run.game_id, value, { seed: run.seed });
+            const campaign = parseLevelScope(run.challenge_date);
+            let value = await body(
+              request,
+              campaign ? 512 * 1024 : gameRules[run.game_id].maxBodyBytes,
+            );
+            if (campaign) {
+              try {
+                value = await verifiedLevelResult(run.game_id, campaign, value);
+              } catch (error) {
+                fail(400, error.field || 'levelProof', error.message);
+              }
+            }
+            const errors = campaign ? [] : validateResult(run.game_id, value, { seed: run.seed });
             if (errors.length) {
               const error = new ApiError(400, 'score', '');
               error.errors = errors;
               throw error;
             }
-            const maxScore = gameRules[run.game_id].seedCap?.(run.seed) ?? Infinity;
+            const maxScore = campaign
+              ? Infinity
+              : (gameRules[run.game_id].seedCap?.(run.seed) ?? Infinity);
             if (value.score > maxScore)
               fail(400, 'score', '得分：超过本局可获得的最高分，请重新游玩后提交');
             if (value.elapsed * 1000 > time - run.started_at + 1000)
@@ -446,7 +514,9 @@ export function createHandler({ now = () => Date.now(), sendEvent = reportScore 
             if (first)
               ctx.waitUntil(
                 Promise.resolve()
-                  .then(() => sendEvent(env, run, cleanResult(value, run.game_id), origin))
+                  .then(() =>
+                    sendEvent(env, run, campaign ? value : cleanResult(value, run.game_id), origin),
+                  )
                   .catch(() => console.warn('Score analytics unavailable')),
               );
             response = json(receipt);
@@ -457,8 +527,9 @@ export function createHandler({ now = () => Date.now(), sendEvent = reportScore 
           response = json({
             ...(await leaderboard(env, selection, player)),
             gameId: selection.game_id,
-            mode: selection.mode,
-            date: selection.challenge_date,
+            mode: parseLevelScope(selection.challenge_date) ? 'campaign' : selection.mode,
+            date: parseLevelScope(selection.challenge_date) ? '' : selection.challenge_date,
+            ...(parseLevelScope(selection.challenge_date) || {}),
             ruleVersion: selection.rule_version,
           });
         } else fail(404, 'endpoint', '接口：不存在，请更新网站后重试');

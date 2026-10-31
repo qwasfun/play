@@ -8,7 +8,8 @@
     "./art": "./src/art.js",
     "./rules": "./src/rules.js",
     "./campaign": "./src/campaign.js",
-    "./level": "./src/level.js"
+    "./level": "./src/level.js",
+    "./level-proof": "./src/level-proof.js"
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs"

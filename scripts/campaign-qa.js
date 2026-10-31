@@ -188,7 +188,7 @@ async (page) => {
     'legacy_best_and_favorites_preserved',
     legacy.best.lights.steps === 5 && legacy.favorites.includes('lights'),
   );
-  check('campaigns_never_request_leaderboards', api.length === 0, { requests: api });
+  check('campaigns_attempt_online_ranking', api.length > 0, { requests: api });
   const mobileContext = await page
     .context()
     .browser()

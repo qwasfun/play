@@ -314,15 +314,24 @@ async function render() {
   if (route.type === 'levels' || route.type === 'campaign')
     document.title = `${byId[route.id].title} · ${route.level ? '第 ' + route.level + ' 关' : '选关'} — 玩呀`;
   if (route.type === 'play') await gamePage(route, token);
-  else if (route.type === 'levels')
-    await renderLevels(app, route, { store: campaignStore, isCurrent: () => token === routeToken });
-  else if (route.type === 'campaign') {
+  else if (route.type === 'levels') {
+    const session = await renderLevels(app, route, {
+      store: campaignStore,
+      isCurrent: () => token === routeToken,
+      client: leaderboard,
+      submissions,
+    });
+    if (token === routeToken) active = session;
+    else session?.destroy();
+  } else if (route.type === 'campaign') {
     const session = await renderCampaign(app, route, {
       store: campaignStore,
       isCurrent: () => token === routeToken,
       sound,
       onToast: toast,
       onRecent: (id) => store.recent(id),
+      client: leaderboard,
+      submissions,
     });
     if (token === routeToken) active = session;
     else session?.destroy();

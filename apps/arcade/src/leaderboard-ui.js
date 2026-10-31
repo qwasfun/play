@@ -1,6 +1,7 @@
 import { byId, leaderboardPolicy } from '@playground/game-registry';
 import { beijingDate, dailyGame, resultText, RULE_VERSION } from '@playground/game-registry/core';
 import { nicknameError } from '@playground/game-registry/rules';
+import { campaignResultText } from './campaign-storage.js';
 
 const el = (tag, text, className) => {
   const node = document.createElement(tag);
@@ -16,7 +17,7 @@ const facts = (gameId, date) => ({
 
 export function mountLeaderboard(
   container,
-  { client, gameId, date = '', track = () => {}, signal, submissions },
+  { client, gameId, date = '', level, track = () => {}, signal, submissions },
 ) {
   const card = el('section', undefined, 'side-card leaderboard-card');
   card.setAttribute('aria-label', '休闲排行榜');
@@ -28,23 +29,44 @@ export function mountLeaderboard(
   let opened = false,
     revision = 0,
     activeLoad,
-    selection;
+    selection,
+    requestController;
   const unsubscribe = submissions?.subscribe((event) => {
     if (
       event.type === 'accepted' &&
       event.receipt.eligible &&
       opened &&
       event.run.gameId === selection?.gameId &&
-      event.run.mode === selection.mode &&
-      event.run.date === selection.date
+      (selection.mode === 'total'
+        ? ['normal', 'daily'].includes(event.run.mode)
+        : event.run.mode === selection.mode) &&
+      (selection.mode === 'total' || event.run.date === selection.date) &&
+      (selection.mode !== 'campaign' ||
+        (event.run.level === selection.level &&
+          event.run.campaignVersion === selection.campaignVersion))
     )
       void activeLoad?.();
   });
-  signal.addEventListener('abort', () => unsubscribe?.(), { once: true });
+  signal.addEventListener(
+    'abort',
+    () => {
+      unsubscribe?.();
+      requestController?.abort();
+    },
+    { once: true },
+  );
+  const refreshVisible = () => {
+    if (opened && globalThis.document?.visibilityState !== 'hidden') void activeLoad?.();
+  };
+  globalThis.addEventListener?.('online', refreshVisible, { signal });
+  globalThis.document?.addEventListener('visibilitychange', refreshVisible, { signal });
+  const timer = setInterval(refreshVisible, 30000);
+  signal.addEventListener('abort', () => clearInterval(timer), { once: true });
   button.addEventListener(
     'click',
     async () => {
       opened = !opened;
+      requestController?.abort();
       panel.hidden = !opened;
       button.setAttribute('aria-expanded', String(opened));
       button.textContent = opened ? '收起排行榜 ↑' : '查看排行榜 ↗';
@@ -63,9 +85,10 @@ export function mountLeaderboard(
     const modeLabel = el('label', '榜单');
     const mode = el('select');
     mode.setAttribute('aria-label', '榜单类型');
-    mode.append(new Option('普通模式历史榜', 'normal'));
+    mode.append(new Option('总榜 · 普通与每日最佳', 'total'));
     if (leaderboardPolicy(gameId).daily) mode.append(new Option('每日挑战榜', 'daily'));
-    mode.value = date ? 'daily' : 'normal';
+    if (byId[gameId].campaign) mode.append(new Option('逐关排行榜', 'campaign'));
+    mode.value = level ? 'campaign' : 'total';
     modeLabel.append(mode);
     const dayLabel = el('label', '挑战日期');
     const day = el('input');
@@ -75,9 +98,17 @@ export function mountLeaderboard(
     day.setAttribute('aria-label', '榜单挑战日期');
     dayLabel.append(day);
     dayLabel.hidden = mode.value !== 'daily';
+    const levelLabel = el('label', '关卡');
+    const levelSelect = el('select');
+    levelSelect.setAttribute('aria-label', '榜单关卡');
+    for (let n = 1; n <= (byId[gameId].campaign?.total || 0); n++)
+      levelSelect.append(new Option(`第 ${n} 关`, String(n)));
+    levelSelect.value = String(level || 1);
+    levelLabel.append(levelSelect);
+    levelLabel.hidden = mode.value !== 'campaign';
     const refresh = el('button', '查看榜单', 'button secondary');
     refresh.type = 'submit';
-    filters.append(modeLabel, dayLabel, refresh);
+    filters.append(modeLabel, dayLabel, levelLabel, refresh);
     const status = el('p', '正在连接休闲榜…', 'leaderboard-status');
     status.setAttribute('role', 'status');
     const content = el('div');
@@ -87,10 +118,13 @@ export function mountLeaderboard(
       'change',
       () => {
         dayLabel.hidden = mode.value !== 'daily';
+        levelLabel.hidden = mode.value !== 'campaign';
         load();
       },
       { signal },
     );
+    levelSelect.addEventListener('change', () => void load(), { signal });
+    day.addEventListener('change', () => void load(), { signal });
     filters.addEventListener(
       'submit',
       (event) => {
@@ -102,6 +136,8 @@ export function mountLeaderboard(
     let queryRevision = 0;
     async function load() {
       const query = ++queryRevision;
+      requestController?.abort();
+      requestController = new AbortController();
       status.textContent = '正在读取榜单…';
       content.replaceChildren();
       refresh.disabled = true;
@@ -110,15 +146,23 @@ export function mountLeaderboard(
         if (mode.value === 'daily' && day.value > beijingDate())
           throw Error('挑战日期：请选择今天或过去的日期');
         const id = mode.value === 'daily' ? dailyGame(day.value) : gameId;
-        selection = { gameId: id, mode: mode.value, date: mode.value === 'daily' ? day.value : '' };
-        const data = await client.board(selection);
+        selection = {
+          gameId: id,
+          mode: mode.value,
+          date: mode.value === 'daily' ? day.value : '',
+          ...(mode.value === 'campaign'
+            ? { level: Number(levelSelect.value), campaignVersion: byId[id].campaign.version }
+            : {}),
+        };
+        const data = await client.board({ ...selection, signal: requestController.signal });
         if (signal.aborted || current !== revision || query !== queryRevision) return;
-        status.textContent = `${byId[id].title} · ${data.total} 位玩家${data.me ? ` · 我的名次：第 ${data.me.rank} 名` : ''}`;
+        const format = selection.mode === 'campaign' ? campaignResultText : resultText;
+        status.textContent = `${byId[id].title}${selection.mode === 'campaign' ? ` · 第 ${selection.level} 关` : selection.mode === 'total' ? ' · 总榜' : ` · ${selection.date}`} · ${data.total} 位玩家${data.me ? ` · 我的名次：第 ${data.me.rank} 名` : ''}`;
         if (data.me)
           content.append(
             el(
               'p',
-              `我的最佳：${resultText(id, data.me.result)} · 第 ${data.me.rank} 名`,
+              `我的最佳：${format(id, data.me.result)} · 第 ${data.me.rank} 名`,
               'leaderboard-personal-best',
             ),
           );
@@ -141,9 +185,13 @@ export function mountLeaderboard(
             if (row.playerId === data.me?.playerId) tr.className = 'is-me';
             const score = el('td');
             score.append(
-              el('strong', resultText(id, row.result)),
+              el('strong', format(id, row.result)),
               el('small', `${row.result.elapsed.toFixed(2)} 秒`),
             );
+            if (selection.mode === 'total')
+              score.append(
+                el('small', row.source === 'daily' ? `${row.date} 每日挑战` : '随心一局'),
+              );
             tr.append(el('td', String(row.rank)), el('td', row.nickname), score);
             rows.append(tr);
           }
@@ -152,7 +200,12 @@ export function mountLeaderboard(
         }
         if (!identity.childNodes.length) await profile();
       } catch (error) {
-        if (!signal.aborted && current === revision && query === queryRevision)
+        if (
+          !signal.aborted &&
+          !requestController.signal.aborted &&
+          current === revision &&
+          query === queryRevision
+        )
           status.textContent = error.message;
       } finally {
         if (query === queryRevision) refresh.disabled = false;
@@ -235,9 +288,15 @@ export function mountSubmission(container, { run, gameId, result, reason, signal
     retry.hidden = true;
     if (event.type === 'accepted') {
       const receipt = event.receipt;
+      const rankText =
+        run.mode === 'campaign'
+          ? `本关第 ${receipt.rank} 名`
+          : receipt.totalRank != null
+            ? `总榜第 ${receipt.totalRank} 名${run.mode === 'daily' ? ` · 当日第 ${receipt.rank} 名` : ''}`
+            : `${run.mode === 'daily' ? '当日' : '普通模式'}第 ${receipt.rank} 名`;
       status.textContent = !receipt.eligible
         ? `本机成绩已保存，${byId[gameId].rankingHint || '通关后即可上榜。'}`
-        : `${receipt.improved ? '✦ 刷新休闲榜最佳纪录' : '成绩已收好'} · 提交时最佳第 ${receipt.rank} 名`;
+        : `${receipt.improved ? '✦ 刷新本模式最佳纪录' : '成绩已收好'} · ${rankText}`;
     } else if (event.type === 'failed') {
       status.textContent =
         event.message + (event.retryable ? '；已保留待提交成绩，将在有效期内自动重试。' : '');
@@ -249,7 +308,7 @@ export function mountSubmission(container, { run, gameId, result, reason, signal
   retry.addEventListener(
     'click',
     () => {
-      void submissions.retry();
+      void submissions.retry(run.id);
     },
     { signal },
   );

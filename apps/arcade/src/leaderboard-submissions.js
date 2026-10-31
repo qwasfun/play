@@ -1,5 +1,6 @@
 import { cleanResult } from '@playground/game-registry/rules';
 import { byId } from '@playground/game-registry';
+import { cleanLevelResult, recordPolicy } from '@playground/game-sdk/level';
 
 const PREFIX = 'tiny-break-arcade:pending-result:v1:';
 const terminal = new Set([400, 401, 403, 404, 410, 413, 415, 422]);
@@ -119,6 +120,7 @@ export function createSubmissionQueue({
                 1000 * (error.retryAfter || 0),
                 Math.min(60000, 2000 * 2 ** Math.min(item.attempts - 1, 5)),
               );
+            item.blockedUntil = now() + 1000 * (error.retryAfter || 0);
             persist(item);
           } else remove(item);
           emit({ type: 'failed', run: item.run, retryable, message: error.message });
@@ -150,7 +152,13 @@ export function createSubmissionQueue({
         const item = {
           version: 1,
           run,
-          result: cleanResult(result, run.gameId),
+          result:
+            run.mode === 'campaign'
+              ? {
+                  ...cleanLevelResult(result, recordPolicy(run.gameId, byId[run.gameId].campaign)),
+                  levelProof: result.levelProof,
+                }
+              : cleanResult(result, run.gameId),
           attempts: 0,
           nextAttempt: now(),
         };
@@ -163,7 +171,16 @@ export function createSubmissionQueue({
         if (pending.get(run.id)?.nextAttempt <= now()) return flush();
       });
     },
-    retry: flush,
+    retry(id) {
+      for (const item of pending.values())
+        if (!id || item.run.id === id) {
+          item.nextAttempt = Math.max(now(), item.blockedUntil || 0);
+          persist(item);
+        }
+      return flush().then(() => {
+        if ([...pending.values()].some((item) => item.nextAttempt <= now())) return flush();
+      });
+    },
     destroy() {
       stopped = true;
       scope.clearTimeout(timer);

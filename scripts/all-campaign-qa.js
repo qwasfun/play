@@ -236,7 +236,7 @@ async (page) => {
     );
     await page.locator('#fullscreen-toggle').click();
   }
-  check('campaign never acquires online runs', api.length === 0, api);
+  check('campaign attempts online ranking', api.length > 0, api);
   check('no runtime errors', errors.length === 0, errors);
   await page.clock.resume();
   return { passed: checks.length, ids, checks };
