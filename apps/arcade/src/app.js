@@ -321,6 +321,10 @@ async function render() {
       : '玩呀 · 给快乐留点时间';
   if (route.type === 'levels' || route.type === 'campaign')
     document.title = `${byId[route.id].title} · ${route.level ? '第 ' + route.level + ' 关' : '选关'} — 玩呀`;
+  // Set navigation focus once, before the async view yields. A resource response
+  // must not steal focus/scroll from someone already reading the early board.
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  app.focus({ preventScroll: true });
   if (route.type === 'play') await gamePage(route, token, routeController.signal);
   else if (route.type === 'levels') {
     const session = await renderLevels(app, route, {
@@ -348,10 +352,6 @@ async function render() {
   } else if (route.type === 'error')
     app.innerHTML = `<div class="page-container error-page" id="main-content"><h1>这个入口迷路了</h1><p>${escape(route.message)}</p><a class="button primary" href="#/">回到游乐场</a></div>`;
   else home(route.type === 'favorites');
-  if (token === routeToken) {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    app.focus({ preventScroll: true });
-  }
   pwa.sync();
 }
 document.querySelector('.skip-link').addEventListener('click', (event) => {

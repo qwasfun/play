@@ -119,47 +119,60 @@ export async function verifyModuleRecovery({ browser, server, check, mobile }) {
         report.requests = requests;
       },
     );
-    await scenario('hung-module-navigation', engine, async ({ page, report, target, pending }) => {
-      let release;
-      const gate = new Promise((resolve) => {
-        release = resolve;
-      });
-      await page.route('**/' + target, async (r) => {
-        await gate;
-        await r.continue().catch(() => {});
-      });
-      try {
-        await page.clock.install();
-        await page.clock.pauseAt(new Date());
-        await page.goto(server.origin + '/#/play/star');
-        await page.locator('[data-open-board]').waitFor();
-        await page.clock.runFor(12100);
-        await page.getByRole('alert').filter({ hasText: '加载超时' }).waitFor();
-        check(`module/${mobile}/hung-import-timeout`, true);
-        report.pendingResources = [...pending.values()];
-        check(
-          `module/${mobile}/hung-resource-path-recorded`,
-          report.pendingResources.some((path) => path.endsWith(target)),
-        );
-        await page.goto(server.origin + '/#/play/lights');
-        await page.locator('[data-action="start"]').waitFor();
-        release();
-        await page.clock.runFor(500);
-        check(
-          `module/${mobile}/late-import-cannot-replace-new-route`,
-          (await page.locator('h1').innerText()).includes('灯塔方阵'),
-        );
-        await page.goto(server.origin + '/#/play/star');
-        await page.locator('[data-action="start"]').waitFor();
-        check(
-          `module/${mobile}/late-import-reusable-on-reentry`,
-          (await page.locator('[data-open-board]').count()) === 1,
-        );
-        report.boundedMilliseconds = 12000;
-      } finally {
-        release();
-      }
-    });
+    await scenario(
+      'hung-module-navigation',
+      engine,
+      async ({ page, tap, report, target, pending }) => {
+        let release;
+        const gate = new Promise((resolve) => {
+          release = resolve;
+        });
+        await page.route('**/' + target, async (r) => {
+          await gate;
+          await r.continue().catch(() => {});
+        });
+        try {
+          await page.clock.install();
+          await page.clock.pauseAt(new Date());
+          await page.goto(server.origin + '/#/play/star');
+          await page.locator('[data-open-board]').waitFor();
+          await tap('[data-open-board]');
+          await page.locator('.leaderboard-status').filter({ hasText: '位玩家' }).waitFor();
+          await page.getByLabel('榜单类型').focus();
+          await page.clock.runFor(12100);
+          await page.getByRole('alert').filter({ hasText: '加载超时' }).waitFor();
+          check(`module/${mobile}/hung-import-timeout`, true);
+          check(
+            `module/${mobile}/resource-completion-preserves-board-focus`,
+            await page.evaluate(
+              () => document.activeElement?.getAttribute('aria-label') === '榜单类型',
+            ),
+          );
+          report.pendingResources = [...pending.values()];
+          check(
+            `module/${mobile}/hung-resource-path-recorded`,
+            report.pendingResources.some((path) => path.endsWith(target)),
+          );
+          await page.goto(server.origin + '/#/play/lights');
+          await page.locator('[data-action="start"]').waitFor();
+          release();
+          await page.clock.runFor(500);
+          check(
+            `module/${mobile}/late-import-cannot-replace-new-route`,
+            (await page.locator('h1').innerText()).includes('灯塔方阵'),
+          );
+          await page.goto(server.origin + '/#/play/star');
+          await page.locator('[data-action="start"]').waitFor();
+          check(
+            `module/${mobile}/late-import-reusable-on-reentry`,
+            (await page.locator('[data-open-board]').count()) === 1,
+          );
+          report.boundedMilliseconds = 12000;
+        } finally {
+          release();
+        }
+      },
+    );
     for (const type of ['levels', 'campaign'])
       await scenario(
         type + '-resource-retry',
