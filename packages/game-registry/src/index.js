@@ -1,3 +1,5 @@
+import { manifest as teaGrid } from '@playground/game-tea-grid/manifest';
+import { rules as teaGridRules } from '@playground/game-tea-grid/rules';
 import { manifest as kite } from '@playground/game-kite/manifest';
 import { rules as kiteRules } from '@playground/game-kite/rules';
 import { manifest as orchardSort } from '@playground/game-orchard-sort/manifest';
@@ -89,12 +91,14 @@ export const games = [
   jugs,
   orchardSort,
   kite,
+  teaGrid,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'tea-grid': teaGridRules,
   kite: kiteRules,
   'orchard-sort': orchardSortRules,
   star: starRules,
