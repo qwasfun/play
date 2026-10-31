@@ -22,7 +22,7 @@
 
 ### 游戏与操作说明
 
-各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮和纸鸢乘风目前仅提供普通模式，其余游戏还提供递进关卡。
+各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风和茶席四方目前仅提供普通模式，其余游戏还提供递进关卡。
 
 | 游戏                                 | 游戏                                      | 游戏                                 |
 | ------------------------------------ | ----------------------------------------- | ------------------------------------ |
@@ -36,6 +36,7 @@
 | [风帆过峡](games/sail/README.md)     | [果篮天平](games/balance/README.md)       | [茶点跳跳棋](games/pebble/README.md) |
 | [风车采蜜](games/windmill/README.md) | [花径送信](games/courier/README.md)       | [花窗数织](games/weave/README.md)    |
 | [量水茶坊](games/jugs/README.md)     | [果园分篮](games/orchard-sort/README.md)  | [纸鸢乘风](games/kite/README.md)     |
+| [茶席四方](games/tea-grid/README.md) |                                           |                                      |
 
 ## 本地运行
 
