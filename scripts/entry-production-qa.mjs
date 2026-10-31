@@ -47,8 +47,14 @@ async function scenario(name, mobile, action) {
   const page = await ctx.newPage();
   page.setDefaultTimeout(30000);
   const record = { name, mobile, resources: [], errors: [] };
+  const pending = new Map();
   report.cases.push(record);
+  page.on('request', (r) => {
+    if (new URL(r.url()).pathname.endsWith('.js')) pending.set(r, new URL(r.url()).pathname);
+  });
+  page.on('requestfinished', (r) => pending.delete(r));
   page.on('requestfailed', (r) => {
+    pending.delete(r);
     if (new URL(r.url()).pathname.endsWith('.js'))
       record.resources.push({ path: new URL(r.url()).pathname, error: r.failure()?.errorText });
   });
@@ -95,6 +101,7 @@ async function scenario(name, mobile, action) {
     record.passed = true;
   } catch (error) {
     record.failure = error.message;
+    record.pendingResources = [...pending.values()];
     record.url = page.url();
     record.overlay = await page
       .locator('#game-overlay')

@@ -20,8 +20,14 @@ export async function verifyModuleRecovery({ browser, server, check, mobile }) {
     const page = await ctx.newPage();
     page.setDefaultTimeout(15000);
     const report = { name, mobile, resources: [], errors: [] };
+    const pending = new Map();
     reports.push(report);
+    page.on('request', (r) => {
+      if (new URL(r.url()).pathname.endsWith('.js')) pending.set(r, new URL(r.url()).pathname);
+    });
+    page.on('requestfinished', (r) => pending.delete(r));
     page.on('requestfailed', (r) => {
+      pending.delete(r);
       if (new URL(r.url()).pathname.endsWith('.js'))
         report.resources.push({ path: new URL(r.url()).pathname, error: r.failure()?.errorText });
     });
@@ -39,11 +45,12 @@ export async function verifyModuleRecovery({ browser, server, check, mobile }) {
     };
     try {
       await page.goto(server.origin);
-      await action({ page, ctx, tap, report, target });
+      await action({ page, ctx, tap, report, target, pending });
       check(`module/${mobile}/${name}/no-runtime-errors`, report.errors.length === 0);
       report.passed = true;
     } catch (error) {
       report.failure = error.message;
+      report.pendingResources = [...pending.values()];
       report.url = page.url();
       report.overlay = await page
         .locator('#game-overlay')
@@ -112,7 +119,7 @@ export async function verifyModuleRecovery({ browser, server, check, mobile }) {
         report.requests = requests;
       },
     );
-    await scenario('hung-module-navigation', engine, async ({ page, report, target }) => {
+    await scenario('hung-module-navigation', engine, async ({ page, report, target, pending }) => {
       let release;
       const gate = new Promise((resolve) => {
         release = resolve;
@@ -129,6 +136,11 @@ export async function verifyModuleRecovery({ browser, server, check, mobile }) {
         await page.clock.runFor(12100);
         await page.getByRole('alert').filter({ hasText: '加载超时' }).waitFor();
         check(`module/${mobile}/hung-import-timeout`, true);
+        report.pendingResources = [...pending.values()];
+        check(
+          `module/${mobile}/hung-resource-path-recorded`,
+          report.pendingResources.some((path) => path.endsWith(target)),
+        );
         await page.goto(server.origin + '/#/play/lights');
         await page.locator('[data-action="start"]').waitFor();
         release();
