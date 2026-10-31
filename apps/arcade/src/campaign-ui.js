@@ -6,6 +6,7 @@ import { mountGame, gameSurface } from '@playground/game-runtime';
 import { campaignResultText } from './campaign-storage.js';
 import { mountLeaderboard, mountSubmission } from './leaderboard-ui.js';
 import { recordLevel } from '@playground/game-sdk/level-proof';
+import { loadRouteModule } from './module-loader.js';
 const stages = ['初见 · 从简单开始', '熟练 · 找到诀窍', '进阶 · 多想一步', '挑战 · 认真解一题'];
 const escape = (value) =>
   String(value).replace(
@@ -18,18 +19,25 @@ export function campaignEntryLink(game) {
 function message(root, text, href, label = '返回选关') {
   root.innerHTML = `<div class="page-container campaign-message" id="main-content"><h1>暂时无法进入关卡</h1><p role="alert">${escape(text)}</p><a class="button primary" href="${href}">${label}</a></div>`;
 }
+function loadFailure(root, text, href) {
+  message(root, text, href);
+  const actions = document.createElement('div');
+  actions.className = 'campaign-actions';
+  actions.innerHTML =
+    '<button class="button primary" data-retry-module>重试加载</button><button class="button secondary" data-reload-module>刷新页面</button>';
+  root.querySelector('.campaign-message').append(actions);
+}
 function loading(root) {
   root.innerHTML =
     '<div class="page-container campaign-message" id="main-content"><p role="status">正在打开关卡…</p></div>';
 }
-export async function renderLevels(root, route, { store, isCurrent, client, submissions }) {
+export async function renderLevels(root, route, { store, isCurrent, client, submissions, signal }) {
   loading(root);
   let campaign;
   try {
-    ({ campaign } = await campaignLoaders[route.id]());
-  } catch {
-    if (isCurrent())
-      message(root, '关卡资源：暂时无法加载，请联网后刷新重试。', campaignLink(route.id));
+    ({ campaign } = await loadRouteModule(campaignLoaders[route.id], { signal }));
+  } catch (error) {
+    if (isCurrent() && !signal?.aborted) loadFailure(root, error.message, campaignLink(route.id));
     return;
   }
   if (!isCurrent()) return;
@@ -64,7 +72,7 @@ export async function renderLevels(root, route, { store, isCurrent, client, subm
 export async function renderCampaign(
   root,
   route,
-  { store, isCurrent, sound, onToast, onRecent, client, submissions },
+  { store, isCurrent, sound, onToast, onRecent, client, submissions, signal },
 ) {
   const game = byId[route.id],
     progress = store.progress(route.id);
@@ -79,13 +87,12 @@ export async function renderCampaign(
   loading(root);
   let campaign, createGame;
   try {
-    [{ campaign }, { createGame }] = await Promise.all([
-      campaignLoaders[game.id](),
-      loaders[game.id](),
-    ]);
-  } catch {
-    if (isCurrent())
-      message(root, '关卡资源：暂时无法加载，请联网后刷新重试。', campaignLink(game.id));
+    [{ campaign }, { createGame }] = await loadRouteModule(
+      () => Promise.all([campaignLoaders[game.id](), loaders[game.id]()]),
+      { signal },
+    );
+  } catch (error) {
+    if (isCurrent() && !signal?.aborted) loadFailure(root, error.message, campaignLink(game.id));
     return;
   }
   if (!isCurrent()) return;

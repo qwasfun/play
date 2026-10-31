@@ -10,6 +10,7 @@ import { verifyBatch } from './batch-2026-10-28-qa.js';
 import { generateMines } from '../games/mines/src/index.js';
 import { legacyScenarioIds, playLegacy } from './legacy-playthroughs.mjs';
 import { verifyLeaderboardFlows } from './leaderboard-qa.mjs';
+import { verifyModuleRecovery } from './module-recovery-qa.mjs';
 
 const require = createRequire(import.meta.url),
   { chromium } = require('playwright');
@@ -348,6 +349,7 @@ async function ranking(mobile, recover = false) {
 }
 try {
   for (const mobile of [false, true]) {
+    await verifyModuleRecovery({ browser, server, check, mobile });
     await smoke(mobile);
     await playChanged(mobile);
     await ranking(mobile);
