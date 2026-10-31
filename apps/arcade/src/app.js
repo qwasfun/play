@@ -20,8 +20,13 @@ import { createLeaderboardClient } from './leaderboard-client.js';
 import { mountLeaderboard, mountSubmission, mountPendingSubmissions } from './leaderboard-ui.js';
 import { createSubmissionQueue } from './leaderboard-submissions.js';
 import { createAnalytics } from './analytics.js';
+import { loadRouteModule } from './module-loader.js';
 
 const app = document.querySelector('#app');
+app.addEventListener('click', (event) => {
+  if (event.target.closest('[data-retry-module]')) void render();
+  if (event.target.closest('[data-reload-module]')) location.reload();
+});
 bindTouchActivation(document);
 const pwa = setupPwa();
 const leaderboard = createLeaderboardClient();
@@ -48,6 +53,7 @@ const submissions = createSubmissionQueue({
 });
 mountPendingSubmissions(notice, submissions);
 let active = null,
+  routeController,
   routeToken = 0,
   homeFilter = '全部',
   today = beijingDate(),
@@ -158,7 +164,7 @@ app.addEventListener('click', (event) => {
   }
 });
 
-async function gamePage(route, token) {
+async function gamePage(route, token, signal) {
   const game = byId[route.id],
     date = route.date,
     historic = date && date !== beijingDate();
@@ -166,19 +172,28 @@ async function gamePage(route, token) {
   app.innerHTML = `<div class="page-container game-page" id="main-content"><div class="game-topline"><a class="back-link" href="#/">← 返回游乐场</a><span class="daily-tag">${date ? `${historic ? '历史' : '每日'}挑战 · ${dateLabel(date)}` : '随心游玩'}</span></div><div class="game-heading"><p class="eyebrow">${game.english}</p><h1>${game.title}<span class="accent-dot">.</span></h1><p>${game.description}</p></div><div class="play-layout">${gameSurface(game)}<aside class="game-sidebar"><div class="side-card"><p class="eyebrow">HOW TO PLAY</p><h3>一点提示，马上出发</h3><ol class="rule-list">${game.rules.map((rule) => `<li>${rule}</li>`).join('')}</ol></div><div class="side-card best-card"><p class="eyebrow">${date ? 'DAILY BEST' : 'PERSONAL BEST'}</p><h3>${date ? '当日最佳' : '我的最佳'}</h3><p id="best-record">${resultText(game.id, record)}</p><small>记录保存在当前浏览器。</small></div>${date ? `<div class="side-card challenge-note"><span class="badge">${historic ? '历史挑战' : '每日挑战'}</span><p>同一天，相同的起点。<br>可以反复挑战，刷新自己的纪录。</p><small>规则版本 ${RULE_VERSION} · 北京时间</small></div>` : ''}<div class="side-card next-game-card"><p class="eyebrow">NEXT LITTLE ADVENTURE</p><h3>${games[(games.indexOf(game) + 1) % games.length].title}</h3><a class="text-button" href="${playLink(games[(games.indexOf(game) + 1) % games.length].id)}">换个心情 ↗</a></div></aside></div></div>`;
   const overlay = document.querySelector('#game-overlay');
   overlay.innerHTML = '<div class="overlay-card"><p>正在打开小世界…</p></div>';
+  const policy = leaderboardPolicy(game.id);
+  const localOnly = !policy[date ? 'daily' : 'normal'];
+  // Public rankings do not depend on the playable game's lazy-loaded engine.
+  if (!localOnly)
+    mountLeaderboard(app.querySelector('.game-sidebar'), {
+      client: leaderboard,
+      gameId: game.id,
+      date,
+      track,
+      signal,
+      submissions,
+    });
   let module;
   try {
-    module = await loaders[game.id]();
-  } catch {
-    if (token === routeToken)
-      overlay.innerHTML =
-        '<div class="overlay-card"><h2>游戏资源暂时未能加载</h2><p>请刷新页面后重试。</p><a class="button primary" href="#/">返回首页</a></div>';
+    module = await loadRouteModule(loaders[game.id], { signal });
+  } catch (error) {
+    if (token === routeToken && !signal.aborted)
+      overlay.innerHTML = `<div class="overlay-card"><h2>游戏暂时未能打开</h2><p role="alert">${escape(error.message)}</p><button class="button primary" data-retry-module>重试加载</button><button class="button secondary" data-reload-module>刷新页面</button><a class="text-button" href="#/">返回首页</a></div>`;
     return;
   }
   if (token !== routeToken) return;
   let seed = date ? dailySeed(date, game.id) : crypto.getRandomValues(new Uint32Array(1))[0];
-  const policy = leaderboardPolicy(game.id);
-  const localOnly = !policy[date ? 'daily' : 'normal'];
   let rankedRun = null,
     lastOnlineRun = null,
     localReason = '',
@@ -193,15 +208,6 @@ async function gamePage(route, token) {
     readyHtml: `<div class="overlay-card"><div class="overlay-icon" aria-hidden="true">${game.icon || '✳'}</div><p class="eyebrow">${date ? `${dateLabel(date)} · ${historic ? '历史' : '每日'}挑战` : 'YOUR LITTLE BREAK STARTS HERE'}</p><h2>${game.title}</h2><p>${game.rules[0]}</p><button class="button primary" data-action="start">${game.cta} ↗</button><small class="ready-note">${game.controls}</small></div>`,
     onMount(signal) {
       signal.addEventListener('abort', () => submissionController?.abort(), { once: true });
-      if (!localOnly)
-        mountLeaderboard(app.querySelector('.game-sidebar'), {
-          client: leaderboard,
-          gameId: game.id,
-          date,
-          track,
-          signal,
-          submissions,
-        });
     },
     async onBeforeStart({ overlay }) {
       submissionController?.abort();
@@ -293,6 +299,8 @@ async function gamePage(route, token) {
 }
 async function render() {
   const token = ++routeToken;
+  routeController?.abort();
+  routeController = new AbortController();
   active?.destroy();
   active = null;
   const route = parseRoute(location.hash, today);
@@ -313,13 +321,14 @@ async function render() {
       : '玩呀 · 给快乐留点时间';
   if (route.type === 'levels' || route.type === 'campaign')
     document.title = `${byId[route.id].title} · ${route.level ? '第 ' + route.level + ' 关' : '选关'} — 玩呀`;
-  if (route.type === 'play') await gamePage(route, token);
+  if (route.type === 'play') await gamePage(route, token, routeController.signal);
   else if (route.type === 'levels') {
     const session = await renderLevels(app, route, {
       store: campaignStore,
       isCurrent: () => token === routeToken,
       client: leaderboard,
       submissions,
+      signal: routeController.signal,
     });
     if (token === routeToken) active = session;
     else session?.destroy();
@@ -332,6 +341,7 @@ async function render() {
       onRecent: (id) => store.recent(id),
       client: leaderboard,
       submissions,
+      signal: routeController.signal,
     });
     if (token === routeToken) active = session;
     else session?.destroy();
