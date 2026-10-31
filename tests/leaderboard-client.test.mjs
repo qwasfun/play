@@ -150,3 +150,59 @@ test('early analytics events flush only when the configured script loads', () =>
   scripts[0].onload();
   assert.deepEqual(events, [{ name: 'game_start', data: { game_id: 'star' } }]);
 });
+
+test('board retries transient failures, honors Retry-After, and sends no guest writes', async () => {
+  const waits = [],
+    calls = [];
+  const client = createLeaderboardClient({
+    baseUrl: 'https://api.test',
+    sleep: async (ms) => waits.push(ms),
+    fetcher: async (url, options) => {
+      calls.push({ url, options });
+      if (calls.length === 1)
+        return Response.json(
+          { errors: [{ message: '服务暂不可用' }] },
+          { status: 503, headers: { 'Retry-After': '2' } },
+        );
+      if (calls.length === 2) throw new DOMException('timeout', 'TimeoutError');
+      return Response.json({ entries: [], total: 0 });
+    },
+  });
+  await client.board({ gameId: 'lights', mode: 'total' });
+  assert.equal(calls.length, 3);
+  assert.deepEqual(waits, [2000, 1000]);
+  assert.ok(calls.every((x) => x.options.method === 'GET'));
+});
+test('read timeout has a specific message; aborted and field failures never retry', async () => {
+  let calls = 0;
+  const client = createLeaderboardClient({
+    baseUrl: 'https://api.test',
+    sleep: async () => {},
+    fetcher: async () => {
+      calls++;
+      throw new DOMException('timeout', 'TimeoutError');
+    },
+  });
+  await assert.rejects(
+    client.board({ gameId: 'lights', mode: 'total' }),
+    (e) => e.code === 'timeout' && /超时/.test(e.message),
+  );
+  assert.equal(calls, 3);
+  const controller = new AbortController();
+  controller.abort();
+  calls = 0;
+  await assert.rejects(
+    client.board({ gameId: 'lights', mode: 'total', signal: controller.signal }),
+  );
+  assert.equal(calls, 1);
+  let writes = 0;
+  const writeClient = createLeaderboardClient({
+    baseUrl: 'https://api.test',
+    fetcher: async () => {
+      writes++;
+      throw Error('network');
+    },
+  });
+  await assert.rejects(writeClient.ensureGuest());
+  assert.equal(writes, 1);
+});

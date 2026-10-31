@@ -24,7 +24,10 @@ export async function startQaServer({ root = resolve('dist') } = {}) {
         for await (const chunk of req) chunks.push(chunk);
         const bytes = Buffer.concat(chunks),
           path = url.pathname.slice('/__api'.length) + url.search;
-        clock += 1000;
+        // Many accelerated scenarios restart back-to-back. Space starts on the
+        // fixture clock so minute-boundary placement cannot trip start throttling.
+        // The production limiter is exercised with a controlled clock in API tests.
+        clock += path === '/v1/runs' && req.method === 'POST' ? 6500 : 1000;
         const runId = path.match(/^\/v1\/runs\/([a-f0-9-]+)\/result$/)?.[1];
         if (runId && bytes.length) {
           const value = JSON.parse(bytes),

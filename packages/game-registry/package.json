@@ -7,7 +7,8 @@
     ".": "./src/index.js",
     "./browser": "./src/browser.js",
     "./core": "./src/core.js",
-    "./rules": "./src/rules.js"
+    "./rules": "./src/rules.js",
+    "./campaign-ranking": "./src/campaign-ranking.js"
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",

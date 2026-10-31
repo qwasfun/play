@@ -9,6 +9,7 @@ import { startQaServer } from './qa-server.mjs';
 import { verifyBatch } from './batch-2026-10-28-qa.js';
 import { generateMines } from '../games/mines/src/index.js';
 import { legacyScenarioIds, playLegacy } from './legacy-playthroughs.mjs';
+import { verifyLeaderboardFlows } from './leaderboard-qa.mjs';
 
 const require = createRequire(import.meta.url),
   { chromium } = require('playwright');
@@ -179,7 +180,9 @@ async function playChanged(mobile) {
         check(
           `${id}/${mobile}/board-mode-options`,
           (await page.getByLabel('榜单类型').locator('option').count()) ===
-            (leaderboardPolicy(id).daily ? 2 : 1),
+            1 +
+              Number(leaderboardPolicy(id).daily) +
+              Number(!!games.find((game) => game.id === id)?.campaign),
         );
       }
       check(`${id}/${mobile}/completed${localOnly.includes(id) ? '-local' : '-and-ranked'}`, true);
@@ -349,6 +352,7 @@ try {
     await playChanged(mobile);
     await ranking(mobile);
     await ranking(mobile, true);
+    await verifyLeaderboardFlows({ browser, server, check, mobile });
   }
   const ctx = await context(false, 'allow'),
     page = await ctx.newPage();

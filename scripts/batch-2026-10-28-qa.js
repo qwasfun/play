@@ -252,7 +252,9 @@ export async function verifyBatch(
       check(
         id + ' board mode options',
         (await page.getByLabel('榜单类型').locator('option').count()) ===
-          (leaderboardPolicy(id).daily ? 2 : 1),
+          1 +
+            Number(leaderboardPolicy(id).daily) +
+            Number(!!games.find((game) => game.id === id)?.campaign),
       );
     }
     check(

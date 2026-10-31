@@ -4,6 +4,8 @@ import { campaignLoaders, loaders } from '@playground/game-registry/browser';
 import { campaignLink, playLink } from '@playground/game-registry/core';
 import { mountGame, gameSurface } from '@playground/game-runtime';
 import { campaignResultText } from './campaign-storage.js';
+import { mountLeaderboard, mountSubmission } from './leaderboard-ui.js';
+import { recordLevel } from '@playground/game-sdk/level-proof';
 const stages = ['初见 · 从简单开始', '熟练 · 找到诀窍', '进阶 · 多想一步', '挑战 · 认真解一题'];
 const escape = (value) =>
   String(value).replace(
@@ -20,7 +22,7 @@ function loading(root) {
   root.innerHTML =
     '<div class="page-container campaign-message" id="main-content"><p role="status">正在打开关卡…</p></div>';
 }
-export async function renderLevels(root, route, { store, isCurrent }) {
+export async function renderLevels(root, route, { store, isCurrent, client, submissions }) {
   loading(root);
   let campaign;
   try {
@@ -49,8 +51,21 @@ export async function renderLevels(root, route, { store, isCurrent }) {
           .join('')}</div></section>`,
     )
     .join('')}</div>`;
+  const controller = new AbortController();
+  mountLeaderboard(root.querySelector('.levels-page'), {
+    client,
+    gameId: game.id,
+    level: 1,
+    signal: controller.signal,
+    submissions,
+  });
+  return { destroy: () => controller.abort() };
 }
-export async function renderCampaign(root, route, { store, isCurrent, sound, onToast, onRecent }) {
+export async function renderCampaign(
+  root,
+  route,
+  { store, isCurrent, sound, onToast, onRecent, client, submissions },
+) {
   const game = byId[route.id],
     progress = store.progress(route.id);
   if (route.level > progress.unlocked) {
@@ -80,15 +95,43 @@ export async function renderCampaign(root, route, { store, isCurrent, sound, onT
     return;
   }
   const sessionGame = campaignView(game, level);
-  root.innerHTML = `<div class="page-container game-page campaign-page" id="main-content"><div class="game-topline"><a class="back-link" href="${campaignLink(game.id)}">← 返回选关</a><span class="daily-tag">闯关 · 第 ${level.number} / 20 关</span></div><div class="game-heading"><p class="eyebrow">${game.english} / ${level.title}</p><h1>${game.title} · 第 ${level.number} 关</h1><p>${level.objective}</p></div><div class="play-layout">${gameSurface(sessionGame, { backHref: campaignLink(game.id), backLabel: '← 选关' })}<aside class="game-sidebar"><div class="side-card"><p class="eyebrow">THIS LITTLE CHALLENGE</p><h3>本关目标</h3><p>${level.objective}</p><p>${sessionGame.controls}</p><small>不限时，暂停期间不计时。${game.undo ? '撤销会保留累计步数。' : ''}</small></div><div class="side-card"><p class="eyebrow">LEVEL BEST</p><h3>本关个人最佳</h3><p id="campaign-best">${campaignResultText(game.id, progress.best[level.number])}</p><small>仅保存在当前浏览器，不参加休闲榜。</small></div><div class="side-card"><a class="text-button" href="${campaignLink(game.id)}">查看全部 20 关 →</a><br><a class="text-button" href="${playLink(game.id)}">随心一局 →</a></div></aside></div></div>`;
+  root.innerHTML = `<div class="page-container game-page campaign-page" id="main-content"><div class="game-topline"><a class="back-link" href="${campaignLink(game.id)}">← 返回选关</a><span class="daily-tag">闯关 · 第 ${level.number} / 20 关</span></div><div class="game-heading"><p class="eyebrow">${game.english} / ${level.title}</p><h1>${game.title} · 第 ${level.number} 关</h1><p>${level.objective}</p></div><div class="play-layout">${gameSurface(sessionGame, { backHref: campaignLink(game.id), backLabel: '← 选关' })}<aside class="game-sidebar"><div class="side-card"><p class="eyebrow">THIS LITTLE CHALLENGE</p><h3>本关目标</h3><p>${level.objective}</p><p>${sessionGame.controls}</p><small>不限时，暂停期间不计时。${game.undo ? '撤销会保留累计步数。' : ''}</small></div><div class="side-card"><p class="eyebrow">LEVEL BEST</p><h3>本关个人最佳</h3><p id="campaign-best">${campaignResultText(game.id, progress.best[level.number])}</p><small>通关后参加本关排行榜；本机进度仍自动保存。</small></div><div class="side-card"><a class="text-button" href="${campaignLink(game.id)}">查看全部 20 关 →</a><br><a class="text-button" href="${playLink(game.id)}">随心一局 →</a></div></aside></div></div>`;
+  let rankedRun, reason, submissionController;
   return mountGame({
     root,
     game: sessionGame,
-    createGame,
+    createGame: (options) => recordLevel(createGame, options),
     seed: 0,
     level,
     sound,
     onToast,
+    onMount(signal) {
+      signal.addEventListener('abort', () => submissionController?.abort(), { once: true });
+      mountLeaderboard(root.querySelector('.game-sidebar'), {
+        client,
+        gameId: game.id,
+        level: level.number,
+        signal,
+        submissions,
+      });
+    },
+    async onBeforeStart({ overlay }) {
+      rankedRun = null;
+      submissionController?.abort();
+      overlay.innerHTML =
+        '<div class="overlay-card"><p role="status">正在连接本关排行榜…</p><small>连接不可用时会自动进入本机闯关。</small></div>';
+      try {
+        rankedRun = await client.start({
+          gameId: game.id,
+          level: level.number,
+          campaignVersion: campaign.version,
+        });
+        reason = '';
+      } catch (error) {
+        reason = error.message;
+      }
+      return 0;
+    },
     readyHtml: `<div class="overlay-card"><p class="eyebrow">第 ${level.number} / 20 关 · ${level.title}</p><h2>准备好挑战了吗？</h2><p>${level.objective}</p><button class="button primary" data-action="start">开始这一关 ↗</button><small class="ready-note">不限时 · ${sessionGame.controls}</small></div>`,
     onStarted() {
       onRecent(game.id);
@@ -101,6 +144,15 @@ export async function renderCampaign(root, route, { store, isCurrent, sound, onT
       );
       overlay.hidden = false;
       overlay.innerHTML = `<div class="overlay-card result-card"><p class="result-kicker">第 ${level.number} / 20 关</p><h2>${result.won ? (level.number === 20 ? '漂亮，20 关全部完成！' : '这一关，完成了！') : '这次未完成，再试一次。'}</h2><div class="campaign-result">${campaignResultText(game.id, result)}</div><p>${result.won ? (improved ? '本关个人最佳已更新。' : '这一关已完成，可以继续向前。') : `失败原因：${{ mine: '翻到了地雷，请结合周围数字重新推理。', lives: '机会已用完，请留意障碍与落点。', wall: '碰到了边界或石块，请提前转弯。', self: '碰到了自己的身体，请安排绕行路线。', 'wrong-sequence': '回应顺序与微光序列不同，请重新观察。', 'no-moves': '棋盘已没有可以移动的方向，请调整合并顺序。', 'no-groups': '剩余气泡无法成组，请换一种消除顺序。', 'target-shortfall': '本轮序列已结束，完成数量未达到目标。' }[result.reason] || '本关目标尚未完成，请重试当前关。'}`}</p><div class="overlay-actions">${result.won && level.number < 20 ? `<a class="button primary" href="${campaignLink(game.id, level.number + 1)}">下一关 →</a>` : ''}<button class="button ${result.won && level.number < 20 ? 'secondary' : 'primary'}" data-action="again">重试本关 ↻</button><a class="button secondary" href="${campaignLink(game.id)}">返回选关</a></div><button class="text-button" data-action="share">分享这一关 ↗</button><div class="share-fallback" hidden></div></div>`;
+      submissionController = new AbortController();
+      mountSubmission(overlay.querySelector('.result-card'), {
+        run: result.won ? rankedRun : null,
+        gameId: game.id,
+        result,
+        reason: result.won ? reason : '本关尚未通关，进度已保存在本机；通关后即可参加逐关榜。',
+        signal: submissionController.signal,
+        submissions,
+      });
     },
     async onShare(result, overlay) {
       const url = new URL(location.href);

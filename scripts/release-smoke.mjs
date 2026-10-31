@@ -1,5 +1,5 @@
 import { games } from '@playground/game-registry';
-import { RULE_VERSION } from '@playground/game-registry/core';
+import { RULE_VERSION, beijingDate, dailyGame } from '@playground/game-registry/core';
 const phase = process.argv[2] || 'frontend',
   api = process.env.RELEASE_API_URL || 'https://play-api.185036.xyz',
   site = process.env.RELEASE_SITE_URL || 'https://play.185036.xyz/';
@@ -18,16 +18,42 @@ async function get(url) {
   }
   throw Error(`发布验收：${new URL(url).pathname} 不可用，${last.message}`);
 }
-for (const game of games) {
+let boards = 0;
+const queries = games.flatMap((game) => [
+  { game, mode: 'normal' },
+  { game, mode: 'total' },
+  ...(game.campaign
+    ? [1, game.campaign.total].map((level) => ({
+        game,
+        mode: 'campaign',
+        level,
+        campaignVersion: game.campaign.version,
+      }))
+    : []),
+]);
+queries.push({
+  game: games.find((game) => game.id === dailyGame(beijingDate())),
+  mode: 'daily',
+  date: beijingDate(),
+});
+for (const { game, mode, ...scope } of queries) {
   const url = new URL('/v1/leaderboards', api);
   url.search = new URLSearchParams({
     gameId: game.id,
-    mode: 'normal',
+    mode,
+    ...scope,
     ruleVersion: String(RULE_VERSION),
   });
   const board = await (await get(url)).json();
-  if (board.gameId !== game.id || !Array.isArray(board.entries))
+  if (
+    board.gameId !== game.id ||
+    board.mode !== mode ||
+    !Array.isArray(board.entries) ||
+    (mode === 'campaign' &&
+      (board.level !== scope.level || board.campaignVersion !== scope.campaignVersion))
+  )
     throw Error(`排行榜 ${game.title}：后端尚未支持此游戏，请先更新后端`);
+  boards++;
 }
 if (phase === 'frontend') {
   await get(site);
@@ -41,5 +67,5 @@ if (phase === 'frontend') {
   if (release.sha !== process.env.RELEASE_SHA) throw Error('网页版本：线上尚未更新到本次发布提交');
 }
 console.log(
-  `发布验收通过：${phase}，${games.length} 款游戏的正式榜单均可读取；没有写入生产测试成绩`,
+  `发布验收通过：${phase}，${games.length} 款游戏、${boards} 个普通/总榜/每日/逐关查询均可读取；没有写入生产测试成绩`,
 );

@@ -149,3 +149,57 @@ test('unavailable storage retains in-memory retry and reports the limitation', a
   assert.equal(queue.count, 1);
   queue.destroy();
 });
+
+test('manual retry bypasses local backoff but preserves server Retry-After', async () => {
+  const f = fixture();
+  let calls = 0;
+  const queue = createSubmissionQueue({
+    ...f.options,
+    client: {
+      async submit() {
+        calls++;
+        if (calls === 1) throw Error('network');
+        return { eligible: 1, rank: 1 };
+      },
+    },
+  });
+  await queue.add(run, result);
+  assert.equal(calls, 1);
+  await queue.retry(run.id);
+  assert.equal(calls, 2);
+  assert.equal(queue.count, 0);
+  queue.destroy();
+});
+test('campaign proof persists unchanged across failure and reload', async () => {
+  const f = fixture(),
+    r = { ...run, mode: 'campaign', gameId: 'lights', level: 1, campaignVersion: 1 },
+    value = {
+      won: true,
+      steps: 3,
+      elapsed: 2,
+      levelProof: { ticks: 120, events: [[0, 'undo', {}]] },
+    };
+  const queue = createSubmissionQueue({
+    ...f.options,
+    client: {
+      submit: async () => {
+        throw Error('network');
+      },
+    },
+  });
+  await queue.add(r, value);
+  queue.destroy();
+  let sent;
+  const restored = createSubmissionQueue({
+    ...f.options,
+    client: {
+      submit: async (_, v) => {
+        sent = v;
+        return { eligible: 1, rank: 1 };
+      },
+    },
+  });
+  await restored.retry();
+  assert.deepEqual(sent, value);
+  restored.destroy();
+});
