@@ -1,0 +1,23 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'tea-grid',
+  title: '茶席四方',
+  english: 'TEA TABLE FOUR',
+  category: '逻辑益智',
+  tag: '动脑',
+  duration: '约 1–3 分钟',
+  isNew: true,
+  extraLabel: '完成进度',
+  targetText: '摆好三张茶席',
+  icon: '▦',
+  undo: true,
+  description: '把四种茶点摆进四方茶席，让每行、每列和每个小席都各不重复。',
+  controls: '点格循环茶点 / 方向键选择 / 空格或回车填写 / Z 撤销',
+  limit: 180,
+  cta: '铺开第一张茶席',
+  rules: [
+    '每张茶席是 4×4 方格；固定茶点不能改动，空格可依次切换青茶、花糕、梅果和月饼。',
+    '每一行、每一列，以及四个 2×2 小席，都要恰好包含四种不同茶点。',
+    '180 秒内完成三张茶席通关，每张 100 分；Z、退格键或“撤销”按钮可回退填写，步数和时间保留。',
+  ],
+};

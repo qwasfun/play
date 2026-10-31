@@ -1,3 +1,4 @@
+import { art as teaGridArt } from '@playground/game-tea-grid/art';
 import { art as kiteArt } from '@playground/game-kite/art';
 import { art as orchardSortArt } from '@playground/game-orchard-sort/art';
 import { art as jugsArt } from '@playground/game-jugs/art';
@@ -60,6 +61,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const illustrations = {
+  'tea-grid': teaGridArt,
   kite: kiteArt,
   'orchard-sort': orchardSortArt,
   star: starArt,
@@ -92,6 +94,7 @@ export const illustrations = {
   jugs: jugsArt,
 };
 export const loaders = {
+  'tea-grid': () => import('@playground/game-tea-grid'),
   kite: () => import('@playground/game-kite'),
   'orchard-sort': () => import('@playground/game-orchard-sort'),
   windmill: () => import('@playground/game-windmill'),
