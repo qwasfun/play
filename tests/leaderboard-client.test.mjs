@@ -113,7 +113,8 @@ test('analytics only sends approved game fields and swallows asynchronous reject
     config: { websiteId: 'test' },
     scope: {
       umami: {
-        track: (name, data) => {
+        track: (build) => {
+          const { name, data } = build({});
           events.push({ name, data });
           return Promise.reject(Error());
         },
@@ -146,7 +147,12 @@ test('early analytics events flush only when the configured script loads', () =>
   track('game_start', { game_id: 'star', session: 'secret' });
   assert.equal(events.length, 0);
   assert.equal(scripts.length, 1);
-  scope.umami = { track: (name, data) => events.push({ name, data }) };
+  scope.umami = {
+    track: (build) => {
+      const { name, data } = build({});
+      events.push({ name, data });
+    },
+  };
   scripts[0].onload();
   assert.deepEqual(events, [{ name: 'game_start', data: { game_id: 'star' } }]);
 });

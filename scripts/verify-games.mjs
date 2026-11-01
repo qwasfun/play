@@ -11,6 +11,7 @@ import { generateMines } from '../games/mines/src/index.js';
 import { legacyScenarioIds, playLegacy } from './legacy-playthroughs.mjs';
 import { verifyLeaderboardFlows } from './leaderboard-qa.mjs';
 import { verifyModuleRecovery } from './module-recovery-qa.mjs';
+import { verifyAnalytics } from './analytics-qa.mjs';
 
 const require = createRequire(import.meta.url),
   { chromium } = require('playwright');
@@ -349,6 +350,7 @@ async function ranking(mobile, recover = false) {
 }
 try {
   for (const mobile of [false, true]) {
+    await verifyAnalytics({ browser, server, check, mobile });
     await verifyModuleRecovery({ browser, server, check, mobile });
     await smoke(mobile);
     await playChanged(mobile);

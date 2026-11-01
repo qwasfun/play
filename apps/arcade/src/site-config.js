@@ -5,5 +5,9 @@ export const siteConfig = Object.freeze({
   leaderboardApi: local
     ? `${location.protocol}//${location.hostname}:8787`
     : 'https://play-api.185036.xyz',
-  umami: { scriptUrl: 'https://cloud.umami.is/script.js', websiteId: '' },
+  umami: {
+    enabled: globalThis.location?.hostname === 'play.185036.xyz',
+    scriptUrl: 'https://um.185036.xyz/script.js',
+    websiteId: 'bb63e651-8401-482f-84dc-3beff0aac59e',
+  },
 });

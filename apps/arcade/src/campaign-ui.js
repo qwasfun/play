@@ -1,7 +1,7 @@
 import { campaignView } from '@playground/game-sdk/level';
 import { byId } from '@playground/game-registry';
 import { campaignLoaders, loaders } from '@playground/game-registry/browser';
-import { campaignLink, playLink } from '@playground/game-registry/core';
+import { campaignLink, playLink, RULE_VERSION } from '@playground/game-registry/core';
 import { mountGame, gameSurface } from '@playground/game-runtime';
 import { campaignResultText } from './campaign-storage.js';
 import { mountLeaderboard, mountSubmission } from './leaderboard-ui.js';
@@ -72,7 +72,7 @@ export async function renderLevels(root, route, { store, isCurrent, client, subm
 export async function renderCampaign(
   root,
   route,
-  { store, isCurrent, sound, onToast, onRecent, client, submissions, signal },
+  { store, isCurrent, sound, onToast, onRecent, client, submissions, signal, track = () => {} },
 ) {
   const game = byId[route.id],
     progress = store.progress(route.id);
@@ -142,8 +142,25 @@ export async function renderCampaign(
     readyHtml: `<div class="overlay-card"><p class="eyebrow">第 ${level.number} / 20 关 · ${level.title}</p><h2>准备好挑战了吗？</h2><p>${level.objective}</p><button class="button primary" data-action="start">开始这一关 ↗</button><small class="ready-note">不限时 · ${sessionGame.controls}</small></div>`,
     onStarted() {
       onRecent(game.id);
+      track('game_start', {
+        game_id: game.id,
+        mode: 'campaign',
+        rules_version: RULE_VERSION,
+        level: level.number,
+        campaign_version: campaign.version,
+      });
     },
     onFinish(result, { overlay }) {
+      track('game_finish', {
+        game_id: game.id,
+        mode: 'campaign',
+        rules_version: RULE_VERSION,
+        level: level.number,
+        campaign_version: campaign.version,
+        score: result.score,
+        elapsed: result.elapsed,
+        won: result.won,
+      });
       const improved = result.won && store.record(game.id, campaign.version, level.number, result);
       root.querySelector('#campaign-best').textContent = campaignResultText(
         game.id,

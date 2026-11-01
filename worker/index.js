@@ -5,6 +5,8 @@ import {
   dailyGame,
   dailySeed,
   validDate,
+  playLink,
+  campaignLink,
 } from '@playground/game-registry/core';
 import { nicknameError, validateResult, cleanResult } from '@playground/game-registry/rules';
 import {
@@ -283,7 +285,8 @@ async function record(env, run, value, now) {
 export async function reportScore(env, run, result, origin) {
   if (!env.UMAMI_WEBSITE_ID) return;
   try {
-    const response = await fetch(env.UMAMI_SEND_URL || 'https://gateway.umami.is/api/send', {
+    const campaign = parseLevelScope(run.challenge_date);
+    const response = await fetch(env.UMAMI_SEND_URL || 'https://um.185036.xyz/api/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'User-Agent': 'ThreeMinutePlayground/1.0' },
       signal: AbortSignal.timeout(3000),
@@ -292,12 +295,19 @@ export async function reportScore(env, run, result, origin) {
         payload: {
           website: env.UMAMI_WEBSITE_ID,
           hostname: new URL(origin).hostname,
-          url: `/games/${run.game_id}`,
+          url:
+            '/' +
+            (campaign
+              ? campaignLink(run.game_id, campaign.level)
+              : playLink(run.game_id, run.mode === 'daily' ? run.challenge_date : '')),
           name: 'score_accepted',
           data: {
             game_id: run.game_id,
-            mode: run.mode,
+            mode: campaign ? 'campaign' : run.mode,
             rules_version: run.rule_version,
+            ...(campaign
+              ? { level: campaign.level, campaign_version: campaign.campaignVersion }
+              : {}),
             score: result.score,
             elapsed: result.elapsed,
             won: result.won,

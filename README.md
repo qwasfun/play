@@ -97,7 +97,11 @@ npm run verify:games
 
 ## 发布与配置
 
-生产网页由 GitHub Pages 托管，排行榜 API 为 `https://play-api.185036.xyz`。公开配置位于 `apps/arcade/src/site-config.js`；Umami 的 `websiteId` 当前为空，未启用统计采集。
+生产网页由 GitHub Pages 托管，排行榜 API 为 `https://play-api.185036.xyz`。公开配置位于 `apps/arcade/src/site-config.js`；自建 Umami 使用 `https://um.185036.xyz/script.js` 和 Website ID `bb63e651-8401-482f-84dc-3beff0aac59e`，仅在正式域名 `play.185036.xyz` 启用，本地及预览默认关闭。
+
+页面访问由应用在路由和标题更新后主动上报，包含首页、收藏、每日、选关和闯关；重复渲染、加载重试和页内锚点不会重复计数。普通、每日和闯关模式上报 `game_start`、`game_finish`；数据限于游戏、模式、规则版本、得分、用时、胜负，闯关增加 `level` 和 `campaign_version`。脚本加载前最多暂存 50 个事件，加载或上报失败不影响游玩，不持久化重传。
+
+Worker 在成绩首次成功入榜后异步向 `https://um.185036.xyz/api/send` 上报 `score_accepted`，重复提交不重复上报；三秒超时或采集失败不影响榜单。事件不包含昵称、玩家凭证或操作记录，服务端事件用于统计入榜次数，不与浏览器访客身份关联。Worker 本地配置保持关闭，自动验收使用模拟采集端，避免向正式统计发送测试事件。
 
 [发布工作流](.github/workflows/pages.yml) 在推送 `main` 或手动触发时，依次执行构建、测试、静态检查和 Worker 打包检查，保存网页产物与回滚副本，再部署向后兼容的 Worker、验证各游戏榜单接口，最后发布同一提交的网页并核对线上版本和资源。流程使用仓库 Secret `CLOUDFLARE_API_TOKEN`，**不会自动执行生产数据库迁移**。
 
