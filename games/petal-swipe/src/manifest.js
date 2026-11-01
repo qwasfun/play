@@ -1,0 +1,23 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: "petal-swipe",
+  title: "花笺逐风",
+  english: "PETAL SWIPE",
+  category: "手势反应",
+  tag: "动手",
+  duration: "约 1 分钟",
+  isNew: true,
+  extraLabel: "划对进度",
+  targetText: "顺风划过二十张花笺",
+  icon: "↗",
+  lives: 4,
+  description: "看清花笺上的风向，在它飘走前轻轻一划，让花瓣顺风启程。",
+  controls: "触屏或鼠标按箭头方向划动 / 方向键或 WASD",
+  limit: 60,
+  cta: "接住第一缕风",
+  rules: [
+    "花笺中央会出现上、下、左、右四种风向；在倒计时结束前，沿相同方向划过画布。",
+    "手机用手指划动，电脑可按住鼠标拖划；也可使用方向键或 WASD。短划不会提交，错误方向或超时会失去一次机会。",
+    "共有二十张花笺，每张划对得 100 分；四次机会用完或 60 秒结束，划完整叠花笺即可通关。",
+  ],
+};

@@ -1,0 +1,6 @@
+import { svg, cloud } from "@playground/game-sdk/art";
+
+export const art = () =>
+  svg(
+    `<rect width="600" height="360" fill="#f1ead9"/><circle cx="502" cy="62" r="34" fill="#f1d292"/>${cloud(42, 58, 0.75)}${cloud(378, 122, 0.62)}<path d="M0 290Q145 235 290 292T600 269V360H0Z" fill="#d9e3cf"/><g transform="translate(300 182) rotate(-7)"><rect x="-145" y="-113" width="290" height="226" rx="27" fill="#fff9ec" stroke="#b99b72" stroke-width="5"/><g fill="#d98e81"><ellipse cx="-107" cy="-77" rx="15" ry="8" transform="rotate(20 -107 -77)"/><ellipse cx="-88" cy="-91" rx="15" ry="8" transform="rotate(-48 -88 -91)"/></g><g fill="#d5ad5e"><ellipse cx="109" cy="-78" rx="15" ry="8" transform="rotate(-24 109 -78)"/><ellipse cx="88" cy="-92" rx="15" ry="8" transform="rotate(48 88 -92)"/></g><path d="M-70 0H63" stroke="#668071" stroke-width="15" stroke-linecap="round"/><path d="m80 0-39-32v64Z" fill="#668071"/><text x="0" y="72" fill="#668071" font-family="system-ui,sans-serif" font-size="23" text-anchor="middle">顺风一划</text></g><path d="M93 250q35-44 70-2M461 244q28-38 58-5" fill="none" stroke="#d68c79" stroke-width="6" stroke-linecap="round"/><path d="m153 235 17 10-19 6m359-23 15 11-19 5" fill="#d68c79"/>`,
+  );
