@@ -692,8 +692,9 @@ test('scheduled retention keeps best records while removing old receipts and exp
 });
 test('Umami payload excludes identity and failures are swallowed', async () => {
   const original = globalThis.fetch;
-  let payload, headers;
-  globalThis.fetch = async (_url, options) => {
+  let payload, headers, target;
+  globalThis.fetch = async (url, options) => {
+    target = url;
     payload = JSON.parse(options.body);
     headers = options.headers;
     return Response.json({});
@@ -706,8 +707,30 @@ test('Umami payload excludes identity and failures are swallowed', async () => {
       'https://play.example.test',
     );
     assert.equal(payload.payload.name, 'score_accepted');
+    assert.equal(target, 'https://um.185036.xyz/api/send');
+    assert.equal(payload.payload.url, '/#/play/star');
     assert.ok(headers['User-Agent']);
     assert.ok(!JSON.stringify(payload).includes('private'));
+    await reportScore(
+      { UMAMI_WEBSITE_ID: 'test-site', UMAMI_SEND_URL: 'https://stats.example.test/api/send' },
+      { game_id: 'lights', mode: 'normal', rule_version: 1, challenge_date: 'level:1:2' },
+      { score: 3, elapsed: 10, won: true, nickname: 'private', levelProof: { events: [] } },
+      'https://play.example.test',
+    );
+    assert.equal(target, 'https://stats.example.test/api/send');
+    assert.equal(payload.payload.url, '/#/levels/lights/2?cv=1');
+    assert.deepEqual(payload.payload.data, {
+      game_id: 'lights',
+      mode: 'campaign',
+      rules_version: 1,
+      level: 2,
+      campaign_version: 1,
+      score: 3,
+      elapsed: 10,
+      won: true,
+    });
+    assert.ok(!JSON.stringify(payload).includes('private'));
+    assert.ok(!JSON.stringify(payload).includes('levelProof'));
     globalThis.fetch = async () => {
       throw Error('provider unavailable');
     };

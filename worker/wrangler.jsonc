@@ -11,8 +11,8 @@
     "ENVIRONMENT": "production",
     "REQUEST_CLEANUP": "true",
     "ALLOWED_ORIGINS": "https://play.185036.xyz",
-    "UMAMI_WEBSITE_ID": "",
-    "UMAMI_SEND_URL": "https://gateway.umami.is/api/send",
+    "UMAMI_WEBSITE_ID": "bb63e651-8401-482f-84dc-3beff0aac59e",
+    "UMAMI_SEND_URL": "https://um.185036.xyz/api/send",
   },
   "d1_databases": [
     {
@@ -31,7 +31,7 @@
         "REQUEST_CLEANUP": "true",
         "ALLOWED_ORIGINS": "http://127.0.0.1:4174,http://localhost:4174,http://127.0.0.1:4175,http://localhost:4175",
         "UMAMI_WEBSITE_ID": "",
-        "UMAMI_SEND_URL": "https://gateway.umami.is/api/send",
+        "UMAMI_SEND_URL": "https://um.185036.xyz/api/send",
       },
       "d1_databases": [
         {

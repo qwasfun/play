@@ -8,6 +8,7 @@ import {
   dailyGame,
   dailySeed,
   playLink,
+  campaignLink,
   parseRoute,
   resultText,
   RULE_VERSION,
@@ -321,6 +322,17 @@ async function render() {
       : '玩呀 · 给快乐留点时间';
   if (route.type === 'levels' || route.type === 'campaign')
     document.title = `${byId[route.id].title} · ${route.level ? '第 ' + route.level + ' 关' : '选关'} — 玩呀`;
+  track.pageview(
+    route.type === 'play'
+      ? playLink(route.id, route.date)
+      : route.type === 'levels' || route.type === 'campaign'
+        ? campaignLink(route.id, route.level)
+        : route.type === 'favorites'
+          ? '#/favorites'
+          : route.type === 'error'
+            ? '#/error'
+            : '#/',
+  );
   // Set navigation focus once, before the async view yields. A resource response
   // must not steal focus/scroll from someone already reading the early board.
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -343,6 +355,7 @@ async function render() {
       sound,
       onToast: toast,
       onRecent: (id) => store.recent(id),
+      track,
       client: leaderboard,
       submissions,
       signal: routeController.signal,
