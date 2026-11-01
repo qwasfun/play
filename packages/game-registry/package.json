@@ -42,6 +42,7 @@
     "@playground/game-jugs": "1.0.0",
     "@playground/game-orchard-sort": "1.0.0",
     "@playground/game-kite": "1.0.0",
-    "@playground/game-tea-grid": "1.0.0"
+    "@playground/game-tea-grid": "1.0.0",
+    "@playground/game-petal-swipe": "1.0.0"
   }
 }
