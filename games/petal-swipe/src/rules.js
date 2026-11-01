@@ -1,13 +1,13 @@
-import { createResultRules } from "@playground/game-sdk/rules";
-import { manifest } from "./manifest.js";
-import { SWIPE } from "./deck.js";
+import { createResultRules } from '@playground/game-sdk/rules';
+import { manifest } from './manifest.js';
+import { SWIPE } from './deck.js';
 
 export const rules = createResultRules({
   manifest,
   cap: 2000,
   increment: 100,
   counters: { correct: SWIPE.total, handled: SWIPE.total, lives: SWIPE.lives },
-  labels: { correct: "划对花笺数", handled: "处理花笺数" },
+  labels: { correct: '划对花笺数', handled: '处理花笺数' },
   check: (result) =>
     result.score === result.correct * 100 &&
     result.correct <= result.handled &&

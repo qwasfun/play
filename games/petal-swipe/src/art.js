@@ -1,4 +1,4 @@
-import { svg, cloud } from "@playground/game-sdk/art";
+import { svg, cloud } from '@playground/game-sdk/art';
 
 export const art = () =>
   svg(

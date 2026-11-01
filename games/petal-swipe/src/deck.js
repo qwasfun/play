@@ -1,4 +1,4 @@
-import { rng } from "@playground/game-sdk";
+import { rng } from '@playground/game-sdk';
 
 export const SWIPE = Object.freeze({
   total: 20,
@@ -6,7 +6,7 @@ export const SWIPE = Object.freeze({
   limit: 60,
   minDistance: 38,
 });
-export const DIRECTIONS = Object.freeze(["up", "right", "down", "left"]);
+export const DIRECTIONS = Object.freeze(['up', 'right', 'down', 'left']);
 
 export function generateDeck(seed) {
   const random = rng(`${seed}:petal-swipe:v1`);
@@ -41,6 +41,6 @@ export function swipeDirection(start, end) {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   if (Math.hypot(dx, dy) < SWIPE.minDistance) return null;
-  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
-  return dy > 0 ? "down" : "up";
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'right' : 'left';
+  return dy > 0 ? 'down' : 'up';
 }
