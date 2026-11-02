@@ -1,3 +1,5 @@
+import { manifest as gardenCode } from '@playground/game-garden-code/manifest';
+import { rules as gardenCodeRules } from '@playground/game-garden-code/rules';
 import { manifest as petalSwipe } from '@playground/game-petal-swipe/manifest';
 import { rules as petalSwipeRules } from '@playground/game-petal-swipe/rules';
 import { manifest as teaGrid } from '@playground/game-tea-grid/manifest';
@@ -95,12 +97,14 @@ export const games = [
   kite,
   teaGrid,
   petalSwipe,
+  gardenCode,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'garden-code': gardenCodeRules,
   'petal-swipe': petalSwipeRules,
   'tea-grid': teaGridRules,
   kite: kiteRules,
