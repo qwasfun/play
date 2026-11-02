@@ -57,7 +57,10 @@ export async function play({ page, mobile, point, seed }) {
     }
     await point(510, 110);
   } else {
-    for (const value of secret) await page.keyboard.press(String(value));
+    for (let index = 0; index < secret.length; index++) {
+      for (let value = 0; value < secret[index]; value++) await page.keyboard.press('ArrowUp');
+      if (index < secret.length - 1) await page.keyboard.press('ArrowRight');
+    }
     await page.keyboard.press('Enter');
   }
   await page.locator('.result-card').waitFor();

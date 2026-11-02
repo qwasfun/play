@@ -128,7 +128,6 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
         if (key === 'arrowright' || key === 'd') cursor = (cursor + 1) % 4;
         if (key === 'arrowup' || key === 'w' || key === ' ') cycle(1);
         if (key === 'arrowdown' || key === 's') cycle(-1);
-        if (/^[1-5]$/.test(key)) setSymbol(Number(key));
         if (key === 'backspace' || key === 'delete') {
           draft[cursor] = 0;
           message = '已留出一个空位，重新选一枚花印';
@@ -207,7 +206,7 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
       });
       if (!history.length) label(ctx, '第一条提示会出现在这里', 300, 315, 15, '#a08f73');
       label(ctx, message, 300, 445, 15, exact === 4 ? '#52725f' : '#7a6555');
-      label(ctx, '点花印或按 1–5 填写 · 回车提交', 300, 468, 13, '#7a786b');
+      label(ctx, '点花印或用方向键填写 · 回车提交', 300, 468, 13, '#7a786b');
     },
     destroy() {
       finished = true;

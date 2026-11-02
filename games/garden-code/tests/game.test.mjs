@@ -12,9 +12,13 @@ function tap(game, point, release = point) {
 }
 
 function enter(game, values, keyboard = false) {
-  for (const value of values)
-    if (keyboard) game.input('key-down', { key: String(value) });
-    else tap(game, symbolPoint(value));
+  for (let index = 0; index < values.length; index++) {
+    if (keyboard) {
+      for (let value = 0; value < values[index]; value++)
+        game.input('key-down', { key: 'ArrowUp' });
+      if (index < values.length - 1) game.input('key-down', { key: 'ArrowRight' });
+    } else tap(game, symbolPoint(values[index]));
+  }
   if (keyboard) game.input('key-down', { key: 'Enter' });
   else tap(game, submitPoint);
 }
@@ -63,10 +67,11 @@ test('cancel, drag out, invalid points, repeats and incomplete submissions never
   assert.equal(game.getState().attempts, 0);
 });
 
-test('pointer, direct keys, cursor cycling and clearing edit the intended slots', () => {
+test('pointer, cursor keys, cycling and clearing edit the intended slots', () => {
   const game = createGame({ seed: 42 });
   tap(game, symbolPoint(2));
-  game.input('key-down', { key: '3' });
+  for (let value = 0; value < 3; value++) game.input('key-down', { key: 'ArrowUp' });
+  game.input('key-down', { key: 'ArrowRight' });
   game.input('key-down', { key: 'ArrowUp' });
   game.input('key-down', { key: 'ArrowRight' });
   game.input('key-down', { key: 'ArrowDown' });
