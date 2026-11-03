@@ -29,6 +29,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const loaders = {
+  'glow-path': () => import('@playground/game-glow-path'),
   'garden-code': () => import('@playground/game-garden-code'),
   'petal-swipe': () => import('@playground/game-petal-swipe'),
   'tea-grid': () => import('@playground/game-tea-grid'),
