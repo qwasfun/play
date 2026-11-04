@@ -12,7 +12,6 @@ export const manifest = {
   category: '敏捷动作',
   tag: '动手',
   duration: '约 1–3 分钟',
-  isNew: true,
   extraLabel: '旅途进度',
   targetText: '准备出发',
   icon: '✉',

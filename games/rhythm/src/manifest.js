@@ -13,7 +13,6 @@ export const manifest = {
   category: '节拍反应',
   duration: '1 分钟',
   tag: '动手',
-  isNew: false,
   lives: 5,
   extraLabel: '剩余机会',
   icon: '♫',

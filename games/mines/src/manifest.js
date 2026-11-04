@@ -8,7 +8,6 @@ export const manifest = {
   category: '数字推理',
   duration: '1–3 分钟',
   tag: '动脑',
-  isNew: true,
   extraLabel: '花田进度',
   targetText: '0 / 13',
   icon: '⚑',

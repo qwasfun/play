@@ -13,7 +13,6 @@ export const manifest = {
   category: '一笔连线',
   duration: '1–3 分钟',
   tag: '动脑',
-  isNew: true,
   undo: true,
   extraLabel: '已完成星图',
   targetText: '0 / 3',

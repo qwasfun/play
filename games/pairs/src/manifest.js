@@ -13,7 +13,6 @@ export const manifest = {
   category: '记忆配对',
   duration: '1–2 分钟',
   tag: '动脑',
-  isNew: false,
   extraLabel: '已配对',
   targetText: '0 / 6',
   icon: '❀',

@@ -12,7 +12,6 @@ export const manifest = {
   category: '跳子规划',
   tag: '动脑',
   duration: '1–3 分钟',
-  isNew: true,
   extraLabel: '旅途进度',
   targetText: '准备出发',
   icon: '●',

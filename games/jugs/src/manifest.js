@@ -15,7 +15,6 @@ export const manifest = {
   category: '逻辑益智',
   tag: '动脑',
   duration: '约 1–3 分钟',
-  isNew: true,
   extraLabel: '旅途进度',
   targetText: '准备出发',
   icon: '♧',

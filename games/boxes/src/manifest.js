@@ -8,7 +8,6 @@ export const manifest = {
   category: '空间解谜',
   duration: '1–3 分钟',
   tag: '动脑',
-  isNew: false,
   undo: true,
   extraLabel: '花圃归位',
   targetText: '0 / 3',

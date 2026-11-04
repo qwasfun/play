@@ -6,7 +6,6 @@ export const manifest = {
   category: '逻辑益智',
   tag: '动脑',
   duration: '约 1–3 分钟',
-  isNew: true,
   extraLabel: '完成进度',
   targetText: '摆好三张茶席',
   icon: '▦',

@@ -13,7 +13,6 @@ export const manifest = {
   category: '滑动合成',
   duration: '1–3 分钟',
   tag: '动脑',
-  isNew: false,
   extraLabel: '目标 128',
   targetText: '最大 2',
   icon: '▦',

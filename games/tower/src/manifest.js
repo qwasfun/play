@@ -13,7 +13,6 @@ export const manifest = {
   category: '对齐堆叠',
   duration: '1–2 分钟',
   tag: '动手',
-  isNew: true,
   lives: true,
   extraLabel: '剩余机会',
   icon: '▤',

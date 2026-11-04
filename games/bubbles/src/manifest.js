@@ -13,7 +13,6 @@ export const manifest = {
   category: '连块消除',
   duration: '1–2 分钟',
   tag: '动脑',
-  isNew: false,
   extraLabel: '已消除',
   targetText: '0 / 60',
   icon: '◌',
