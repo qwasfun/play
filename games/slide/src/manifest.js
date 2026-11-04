@@ -8,7 +8,6 @@ export const manifest = {
   category: '滑块拼图',
   duration: '1–3 分钟',
   tag: '动脑',
-  isNew: false,
   undo: true,
   extraLabel: '拼图进度',
   targetText: '正确 0 / 8',

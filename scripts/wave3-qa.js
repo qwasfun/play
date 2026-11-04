@@ -84,22 +84,18 @@ async (page) => {
     const { games } = await window.__qaImport('./catalog.js');
     return games;
   });
-  const latest = catalog.filter((g) => g.isNew).map((g) => g.id);
   check(
-    'catalog_cards_and_latest_badges',
+    'catalog_cards_without_new_badges',
     (await page.locator('.game-card').count()) === catalog.length &&
-      (await page.locator('.new-badge').count()) === latest.length,
+      (await page.locator('.new-badge').count()) === 0,
   );
   check(
-    'latest_games_sort_first',
+    'games_displayed_in_catalog_order',
     (
       await page
         .locator('.game-card')
-        .evaluateAll(
-          (cards, n) => cards.slice(0, n).map((card) => card.dataset.game),
-          latest.length,
-        )
-    ).join(',') === latest.join(','),
+        .evaluateAll((cards) => cards.map((card) => card.dataset.game))
+    ).join(',') === catalog.map((g) => g.id).join(','),
   );
   for (const game of catalog) {
     const button = page.getByLabel('收藏' + game.title, { exact: true });

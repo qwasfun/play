@@ -6,7 +6,6 @@ export const manifest = {
   category: '手势反应',
   tag: '动手',
   duration: '约 1 分钟',
-  isNew: true,
   extraLabel: '划对进度',
   targetText: '顺风划过二十张花笺',
   icon: '↗',

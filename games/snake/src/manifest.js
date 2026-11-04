@@ -13,7 +13,6 @@ export const manifest = {
   category: '路线反应',
   duration: '1–2 分钟',
   tag: '动手',
-  isNew: false,
   extraLabel: '收集星星',
   targetText: '0 / 10',
   icon: '✶',

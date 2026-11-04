@@ -78,23 +78,23 @@ async (page) => {
   await page.setViewportSize(portrait);
   await page.goto(origin + '/#/');
   await page.reload();
-  check(
-    'twenty_cards_and_four_badges',
-    (await page.locator('.game-card').count()) === 20 &&
-      (await page.locator('.new-badge').count()) === 4,
-  );
-  check(
-    'latest_four_games_sort_first',
-    (
-      await page
-        .locator('.game-card')
-        .evaluateAll((cards) => cards.slice(0, 4).map((card) => card.dataset.game))
-    ).join(',') === 'constellation,tower,rain,mines',
-  );
   const catalog = await page.evaluate(async () => {
     const { games } = await window.__qaImport('./catalog.js');
     return games;
   });
+  check(
+    'catalog_cards_without_new_badges',
+    (await page.locator('.game-card').count()) === catalog.length &&
+      (await page.locator('.new-badge').count()) === 0,
+  );
+  check(
+    'games_displayed_in_catalog_order',
+    (
+      await page
+        .locator('.game-card')
+        .evaluateAll((cards) => cards.map((card) => card.dataset.game))
+    ).join(',') === catalog.map((g) => g.id).join(','),
+  );
   for (const game of catalog) {
     const favorite = page.getByLabel('收藏' + game.title, { exact: true });
     if (await favorite.count()) await favorite.tap();

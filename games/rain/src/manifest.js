@@ -13,7 +13,6 @@ export const manifest = {
   category: '移动守护',
   duration: '1 分钟',
   tag: '动手',
-  isNew: true,
   lives: true,
   extraLabel: '小花活力',
   icon: '☂',

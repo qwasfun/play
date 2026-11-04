@@ -8,7 +8,6 @@ export const manifest = {
   category: '旋转连线',
   duration: '1–3 分钟',
   tag: '动脑',
-  isNew: false,
   extraLabel: '水流进度',
   targetText: '0 格连通',
   icon: '⌘',

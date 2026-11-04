@@ -2559,25 +2559,6 @@ body {
   position: relative;
   isolation: isolate;
 }
-.new-badge {
-  position: absolute;
-  z-index: 2;
-  top: 12px;
-  left: 12px;
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 9px;
-  border: 1px solid #ffffff8c;
-  border-radius: 7px;
-  background: #fff9e9;
-  color: #46634a;
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.5px;
-  line-height: 1.5;
-  box-shadow: 0 2px 5px #173f3908;
-  pointer-events: none;
-}
 
 .offline-note {
   display: flex;
@@ -2708,16 +2689,6 @@ body {
   .footer-pwa {
     align-items: center;
     gap: 5px;
-  }
-}
-@media (max-width: 520px) {
-  .new-badge {
-    top: 9px;
-    left: 9px;
-    padding: 3px 7px;
-    font-size: 9px;
-    letter-spacing: 0.2px;
-    border-radius: 6px;
   }
 }
 @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {

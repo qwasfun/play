@@ -6,7 +6,6 @@ export const manifest = {
   category: '灵巧动作',
   tag: '动手',
   duration: '约 1 分钟',
-  isNew: true,
   extraLabel: '剩余机会',
   targetText: '穿过十二道花环',
   icon: '◇',

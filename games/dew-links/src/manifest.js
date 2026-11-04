@@ -6,7 +6,6 @@ export const manifest = {
   category: '路径逻辑',
   tag: '动脑',
   duration: '约 1–3 分钟',
-  isNew: true,
   extraLabel: '花圃进度',
   targetText: '铺满三座露珠花圃',
   icon: '◌',

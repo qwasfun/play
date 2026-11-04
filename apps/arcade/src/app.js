@@ -112,7 +112,7 @@ function dateLabel(date) {
 }
 function gameCard(game) {
   const fav = store.data.favorites.includes(game.id);
-  return `<article class="game-card" data-game="${game.id}"><a class="card-art art-${game.id}" href="${campaignEntryLink(game)}" aria-label="开始${game.title}">${art(game.id)}${game.isNew ? '<span class="new-badge">新游戏</span>' : ''}</a><div class="card-body"><div class="card-topline"><span class="game-category">${game.category}</span><button class="favorite-button ${fav ? 'active' : ''}" data-favorite="${game.id}" aria-pressed="${fav}" aria-label="${fav ? '取消收藏' : '收藏'}${game.title}">${fav ? '♥' : '♡'}</button></div><h3><a href="${campaignEntryLink(game)}">${game.title}</a></h3><p class="card-description">${game.description}</p><p class="card-controls">${game.controls}</p><div class="card-bottom"><span class="game-duration">◷ ${game.campaign ? '20 关 · 不限时' : game.duration}</span><a class="play-link" href="${campaignEntryLink(game)}">${game.campaign ? '开始闯关' : '玩一局'} <span aria-hidden="true">↗</span></a></div></div></article>`;
+  return `<article class="game-card" data-game="${game.id}"><a class="card-art art-${game.id}" href="${campaignEntryLink(game)}" aria-label="开始${game.title}">${art(game.id)}</a><div class="card-body"><div class="card-topline"><span class="game-category">${game.category}</span><button class="favorite-button ${fav ? 'active' : ''}" data-favorite="${game.id}" aria-pressed="${fav}" aria-label="${fav ? '取消收藏' : '收藏'}${game.title}">${fav ? '♥' : '♡'}</button></div><h3><a href="${campaignEntryLink(game)}">${game.title}</a></h3><p class="card-description">${game.description}</p><p class="card-controls">${game.controls}</p><div class="card-bottom"><span class="game-duration">◷ ${game.campaign ? '20 关 · 不限时' : game.duration}</span><a class="play-link" href="${campaignEntryLink(game)}">${game.campaign ? '开始闯关' : '玩一局'} <span aria-hidden="true">↗</span></a></div></div></article>`;
 }
 function favoriteEmpty() {
   return `<div class="empty-state"><span aria-hidden="true">♡</span><div><strong>把喜欢的小快乐，留在这里</strong><p>点击游戏卡片上的爱心，下次就能更快找到它。</p></div></div>`;
@@ -122,9 +122,7 @@ function home(favoritesOnly = false) {
     game = byId[id],
     record = store.data.daily[today]?.[id];
   const recent = store.data.recent;
-  const selected = games
-    .filter((g) => homeFilter === '全部' || g.tag === homeFilter)
-    .sort((a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)));
+  const selected = games.filter((g) => homeFilter === '全部' || g.tag === homeFilter);
   app.innerHTML = `<div class="page-container" id="main-content">${
     favoritesOnly
       ? `<section class="favorites-section favorites-page"><div class="section-heading"><div><p class="eyebrow">YOUR LITTLE COLLECTION</p><h1>收藏的小快乐<span class="accent-dot">.</span></h1><p>喜欢的游戏，总要留个位置。</p></div><a class="text-button" href="#/">返回游乐场 ↗</a></div><div class="game-grid">${games

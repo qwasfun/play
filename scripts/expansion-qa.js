@@ -86,20 +86,16 @@ async (page) => {
   await page.goto(origin);
   await page.reload();
   check(
-    'catalog_cards_and_latest_badges',
+    'catalog_cards_without_new_badges',
     (await page.locator('.game-card').count()) === catalog.length &&
-      (await page.locator('.new-badge').count()) === catalog.filter((g) => g.isNew).length,
+      (await page.locator('.new-badge').count()) === 0,
   );
   const ordered = await page
     .locator('.game-card')
     .evaluateAll((cards) => cards.map((card) => card.dataset.game));
   check(
-    'new_games_displayed_first',
-    ordered.slice(0, catalog.filter((g) => g.isNew).length).join(',') ===
-      catalog
-        .filter((g) => g.isNew)
-        .map((g) => g.id)
-        .join(','),
+    'games_displayed_in_catalog_order',
+    ordered.join(',') === catalog.map((g) => g.id).join(','),
   );
   for (const name of catalog.map((g) => g.title)) {
     const button = page.getByLabel('收藏' + name, { exact: true });

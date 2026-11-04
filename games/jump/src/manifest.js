@@ -13,7 +13,6 @@ export const manifest = {
   category: '跳跃闯关',
   duration: '1 分钟',
   tag: '动手',
-  isNew: false,
   lives: true,
   extraLabel: '剩余机会',
   icon: '↟',
