@@ -1,3 +1,5 @@
+import { manifest as dewLinks } from '@playground/game-dew-links/manifest';
+import { rules as dewLinksRules } from '@playground/game-dew-links/rules';
 import { manifest as glowPath } from '@playground/game-glow-path/manifest';
 import { rules as glowPathRules } from '@playground/game-glow-path/rules';
 import { manifest as gardenCode } from '@playground/game-garden-code/manifest';
@@ -101,12 +103,14 @@ export const games = [
   petalSwipe,
   gardenCode,
   glowPath,
+  dewLinks,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'dew-links': dewLinksRules,
   'glow-path': glowPathRules,
   'garden-code': gardenCodeRules,
   'petal-swipe': petalSwipeRules,
