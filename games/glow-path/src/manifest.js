@@ -6,7 +6,6 @@ export const manifest = {
   category: '精准操控',
   tag: '动手',
   duration: '约 1 分钟',
-  isNew: true,
   extraLabel: '花径进度',
   targetText: '走完三段微光花径',
   icon: '✧',

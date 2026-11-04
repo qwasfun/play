@@ -6,7 +6,6 @@ export const manifest = {
   category: '逻辑推理',
   tag: '动脑',
   duration: '约 1–3 分钟',
-  isNew: true,
   extraLabel: '猜测进度',
   targetText: '破解四枚花印',
   icon: '✤',
