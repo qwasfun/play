@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-dew-links": "1.0.0",
     "@playground/game-glow-path": "1.0.0",
     "@playground/game-garden-code": "1.0.0",
     "@playground/game-star": "1.0.0",
