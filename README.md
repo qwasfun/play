@@ -22,7 +22,7 @@
 
 ### 游戏与操作说明
 
-各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径和露珠相逢目前仅提供普通模式，其余游戏还提供递进关卡。
+各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢和叶舟托露目前仅提供普通模式，其余游戏还提供递进关卡。
 
 | 游戏                                  | 游戏                                      | 游戏                                    |
 | ------------------------------------- | ----------------------------------------- | --------------------------------------- |
@@ -37,7 +37,7 @@
 | [风车采蜜](games/windmill/README.md)  | [花径送信](games/courier/README.md)       | [花窗数织](games/weave/README.md)       |
 | [量水茶坊](games/jugs/README.md)      | [果园分篮](games/orchard-sort/README.md)  | [纸鸢乘风](games/kite/README.md)        |
 | [茶席四方](games/tea-grid/README.md)  | [花笺逐风](games/petal-swipe/README.md)   | [花房暗语](games/garden-code/README.md) |
-| [微光花径](games/glow-path/README.md) | [露珠相逢](games/dew-links/README.md)     |                                         |
+| [微光花径](games/glow-path/README.md) | [露珠相逢](games/dew-links/README.md)     | [叶舟托露](games/leaf-keeper/README.md) |
 
 ## 本地运行
 
