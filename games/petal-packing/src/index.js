@@ -169,7 +169,7 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
       boardCursor = { row: placement.row, column: placement.column };
       steps++;
       message = `${pieceNames[id]}花钿已拾回，可以换个位置`;
-    } else message = `${pieceNames[id]}花钿已拿起，R 或按钮可旋转`;
+    } else message = `${pieceNames[id]}花钿已拿起，回车或按钮可旋转`;
     selected = id;
     trayCursor = index;
     zone = 'board';
@@ -439,7 +439,7 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
       );
       label(ctx, selected ? '↻ 旋转花钿' : '先选花钿', ROTATE.x + ROTATE.width / 2, 392, 16);
       label(ctx, message, 300, 440, 16, '#526f63');
-      label(ctx, '点选与放置 · R 旋转 · Z 撤销', 300, 466, 14, '#77766b');
+      label(ctx, '点选与放置 · 回车旋转 · Z 撤销', 300, 466, 14, '#77766b');
     },
     destroy() {
       finished = true;

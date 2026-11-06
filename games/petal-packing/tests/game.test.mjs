@@ -146,6 +146,38 @@ test('enter rotates only after a keyboard selection while space keeps placement 
   assert.equal(game.getState().occupied, 5);
 });
 
+test('selection and canvas hints advertise enter rotation for pointer and keyboard players', () => {
+  for (const select of [
+    (game) => click(game, trayPoint(0)),
+    (game) => game.input('key-down', { key: 'Enter' }),
+  ]) {
+    const game = createGame({ seed: 21 });
+    select(game);
+    assert.match(game.getState().hint, /^[桃青桂紫露]花钿已拿起，回车或按钮可旋转$/);
+
+    const labels = [];
+    game.draw({
+      beginPath() {},
+      roundRect() {},
+      fill() {},
+      stroke() {},
+      fillRect() {},
+      arc() {},
+      fillText(value) {
+        labels.push(value);
+      },
+    });
+    assert.ok(labels.includes(game.getState().hint));
+    assert.ok(labels.includes('点选与放置 · 回车旋转 · Z 撤销'));
+    assert.ok(labels.every((value) => !/R\s*旋转|R 或按钮/.test(value)));
+
+    const { selected, rotations } = game.getState();
+    game.input('key-down', { key: 'Enter' });
+    assert.equal(game.getState().rotations[selected], (rotations[selected] + 1) % 4);
+    assert.equal(game.getState().occupied, 0);
+  }
+});
+
 test('overlap, overflow, invalid points, cancel and key repeat never place a piece', () => {
   const game = createGame({ seed: 8 });
   click(game, { x: NaN, y: 100 });
