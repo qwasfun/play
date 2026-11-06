@@ -22,6 +22,7 @@ import { mountLeaderboard, mountSubmission, mountPendingSubmissions } from './le
 import { createSubmissionQueue } from './leaderboard-submissions.js';
 import { createAnalytics } from './analytics.js';
 import { loadRouteModule } from './module-loader.js';
+import { newestGamesFirst } from './home-games.js';
 
 const app = document.querySelector('#app');
 app.addEventListener('click', (event) => {
@@ -52,6 +53,7 @@ const submissions = createSubmissionQueue({
     notice.hidden = false;
   },
 });
+const homeGames = newestGamesFirst(games);
 mountPendingSubmissions(notice, submissions);
 let active = null,
   routeController,
@@ -122,7 +124,7 @@ function home(favoritesOnly = false) {
     game = byId[id],
     record = store.data.daily[today]?.[id];
   const recent = store.data.recent;
-  const selected = games.filter((g) => homeFilter === '全部' || g.tag === homeFilter);
+  const selected = homeGames.filter((g) => homeFilter === '全部' || g.tag === homeFilter);
   app.innerHTML = `<div class="page-container" id="main-content">${
     favoritesOnly
       ? `<section class="favorites-section favorites-page"><div class="section-heading"><div><p class="eyebrow">YOUR LITTLE COLLECTION</p><h1>收藏的小快乐<span class="accent-dot">.</span></h1><p>喜欢的游戏，总要留个位置。</p></div><a class="text-button" href="#/">返回游乐场 ↗</a></div><div class="game-grid">${games
