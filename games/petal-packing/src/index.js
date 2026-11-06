@@ -289,7 +289,7 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
       if (type === 'key-down' && !payload.repeat) {
         const key = String(payload.key).toLowerCase();
         if (key === 'z' || key === 'backspace' || key === 'delete') undo();
-        else if (key === 'r') rotateSelected();
+        else if (key === 'r' || (zone === 'board' && selected && key === 'enter')) rotateSelected();
         else if (key === 'escape') {
           zone = 'tray';
           message = '回到花钿栏，可以重新挑选';
@@ -304,7 +304,7 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
           if (key === 'arrowdown' || key === 's') moveBoard(1, 0);
           if (key === 'arrowleft' || key === 'a') moveBoard(0, -1);
           if (key === 'arrowright' || key === 'd') moveBoard(0, 1);
-          if (key === ' ' || key === 'enter') placeSelected(boardCursor);
+          if (key === ' ') placeSelected(boardCursor);
         }
       }
     },
