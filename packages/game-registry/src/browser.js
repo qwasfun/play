@@ -1,3 +1,4 @@
+import { art as petalPackingArt } from '@playground/game-petal-packing/art';
 import { art as leafKeeperArt } from '@playground/game-leaf-keeper/art';
 import { art as petalSwipeArt } from '@playground/game-petal-swipe/art';
 export { campaignLoaders, loaders } from './loaders.js';
@@ -35,6 +36,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'petal-packing': petalPackingArt,
   'leaf-keeper': leafKeeperArt,
   'petal-swipe': petalSwipeArt,
   'tea-grid': teaGridArt,
