@@ -67,9 +67,10 @@ export async function play({ page, mobile, seed }) {
   } else {
     await canvas.focus();
     await page.keyboard.press('Enter');
-    await page.keyboard.press('r');
-    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Enter');
+    ensure((await page.locator('#live-extra').innerText()).includes('1 步'), '回车未旋转花钿');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Space');
   }
   await page.locator('#restart').click();
   await page.locator('[data-action="again"]').click();

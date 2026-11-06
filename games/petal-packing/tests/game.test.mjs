@@ -49,7 +49,7 @@ function solveKeyboard(game, seed) {
       while (game.getState().trayCursor !== index) game.input('key-down', { key: 'ArrowDown' });
       const piece = puzzle.pieces[index];
       game.input('key-down', { key: 'Enter' });
-      while (game.getState().rotations[piece.id] !== 0) game.input('key-down', { key: 'r' });
+      while (game.getState().rotations[piece.id] !== 0) game.input('key-down', { key: 'Enter' });
       moveBoard(game, piece.solution);
       game.input('key-down', { key: ' ' });
     }
@@ -130,6 +130,20 @@ test('keyboard navigation, rotation and placement also complete every box', () =
   assert.equal(results[0].score, 1200);
   assert.equal(results[0].won, true);
   assert.deepEqual(rules.validate(results[0]), []);
+});
+
+test('enter rotates only after a keyboard selection while space keeps placement separate', () => {
+  const game = createGame({ seed: 21 });
+  const first = generatePuzzles(21)[0].pieces[0];
+  const before = game.getState().rotations[first.id];
+  game.input('key-down', { key: 'Enter' });
+  assert.equal(game.getState().selected, first.id);
+  game.input('key-down', { key: 'Enter' });
+  assert.equal(game.getState().rotations[first.id], (before + 1) % 4);
+  assert.equal(game.getState().occupied, 0);
+  game.input('key-down', { key: ' ' });
+  assert.equal(game.getState().selected, 0);
+  assert.equal(game.getState().occupied, 5);
 });
 
 test('overlap, overflow, invalid points, cancel and key repeat never place a piece', () => {
