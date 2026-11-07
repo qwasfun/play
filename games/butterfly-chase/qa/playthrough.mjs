@@ -67,22 +67,13 @@ export async function play({ page, mobile, point, seed }) {
     await resumeIfNeeded(page);
   }
 
-  const cdp = mobile ? await page.context().newCDPSession(page) : null;
   for (let progress = 0; progress < BUTTERFLY_CHASE.total; progress++) {
     const garden = generateGarden(seed, progress);
     const target = garden.butterflies.find((butterfly) => butterfly.id === garden.target);
-    const location = await point(target.x, target.y);
-    if (mobile) {
-      await cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [location],
-      });
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    } else await page.mouse.click(location.x, location.y);
+    await point(target.x, target.y);
     if (progress < BUTTERFLY_CHASE.total - 1)
       await page.clock.runFor((BUTTERFLY_CHASE.bloomTime + 0.03) * 1000);
   }
-  await cdp?.detach();
   await page.locator('.result-card').waitFor();
   ensure(
     (await page.locator('.result-card h2').innerText()).includes('完成'),
