@@ -60,7 +60,7 @@ export async function play({ page, mobile, point, seed }) {
     await page.keyboard.up('ArrowRight');
     await page.keyboard.press('Space');
     await page.clock.runFor(30);
-    ensure((await page.locator('#live-extra').innerText()).includes('机会 2'), '空格未触发捕捉');
+    ensure((await page.locator('#live-extra').innerText()) === '♥ 2', '空格未触发捕捉');
     await page.locator('#restart').click();
     await page.locator('[data-action="again"]').click();
     await page.locator('#pause:enabled').waitFor();
