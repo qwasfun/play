@@ -4,6 +4,11 @@ const ensure = (condition, message) => {
   if (!condition) throw Error(message);
 };
 
+async function resumeIfNeeded(page) {
+  const resume = page.locator('[data-action="resume"]');
+  if (await resume.isVisible()) await resume.click();
+}
+
 export async function play({ page, mobile, point, seed }) {
   const canvas = page.locator('#game-canvas');
   for (const [width, height] of [
@@ -18,8 +23,7 @@ export async function play({ page, mobile, point, seed }) {
   ]) {
     await page.setViewportSize({ width, height });
     await page.clock.runFor(80);
-    if (await page.locator('[data-action="resume"]').isVisible())
-      await page.locator('[data-action="resume"]').click();
+    await resumeIfNeeded(page);
     ensure(
       await canvas.evaluate((element) => {
         const rect = element.getBoundingClientRect();
@@ -30,8 +34,7 @@ export async function play({ page, mobile, point, seed }) {
   }
   await page.setViewportSize({ width: mobile ? 390 : 1280, height: mobile ? 844 : 900 });
   await page.clock.runFor(80);
-  if (await page.locator('[data-action="resume"]').isVisible())
-    await page.locator('[data-action="resume"]').click();
+  await resumeIfNeeded(page);
 
   await page.locator('#fullscreen-toggle').click();
   await page.clock.runFor(80);
@@ -48,6 +51,7 @@ export async function play({ page, mobile, point, seed }) {
   await page.locator('#restart').click();
   await page.locator('[data-action="again"]').click();
   await page.locator('#pause:enabled').waitFor();
+  await resumeIfNeeded(page);
 
   if (!mobile) {
     await canvas.focus();
@@ -60,6 +64,7 @@ export async function play({ page, mobile, point, seed }) {
     await page.locator('#restart').click();
     await page.locator('[data-action="again"]').click();
     await page.locator('#pause:enabled').waitFor();
+    await resumeIfNeeded(page);
   }
 
   const cdp = mobile ? await page.context().newCDPSession(page) : null;
