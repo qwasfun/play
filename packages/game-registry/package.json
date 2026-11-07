@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-butterfly-chase": "1.0.0",
     "@playground/game-petal-packing": "1.0.0",
     "@playground/game-leaf-keeper": "1.0.0",
     "@playground/game-dew-links": "1.0.0",
