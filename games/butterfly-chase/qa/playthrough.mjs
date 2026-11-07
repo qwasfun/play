@@ -71,8 +71,12 @@ export async function play({ page, mobile, point, seed }) {
     const garden = generateGarden(seed, progress);
     const target = garden.butterflies.find((butterfly) => butterfly.id === garden.target);
     await point(target.x, target.y);
+    ensure(
+      Number(await page.locator('#live-score').innerText()) === (progress + 1) * 100,
+      `第 ${progress + 1} 只蝶影未被真实输入捕捉`,
+    );
     if (progress < BUTTERFLY_CHASE.total - 1)
-      await page.clock.runFor((BUTTERFLY_CHASE.bloomTime + 0.03) * 1000);
+      await page.clock.runFor((BUTTERFLY_CHASE.bloomTime + 0.18) * 1000);
   }
   await page.locator('.result-card').waitFor();
   ensure(
