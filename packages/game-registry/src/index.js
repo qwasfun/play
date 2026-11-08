@@ -1,3 +1,5 @@
+import { manifest as gardenLoop } from '@playground/game-garden-loop/manifest';
+import { rules as gardenLoopRules } from '@playground/game-garden-loop/rules';
 import { manifest as butterflyChase } from '@playground/game-butterfly-chase/manifest';
 import { rules as butterflyChaseRules } from '@playground/game-butterfly-chase/rules';
 import { manifest as petalPacking } from '@playground/game-petal-packing/manifest';
@@ -113,12 +115,14 @@ export const games = [
   leafKeeper,
   petalPacking,
   butterflyChase,
+  gardenLoop,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'garden-loop': gardenLoopRules,
   'butterfly-chase': butterflyChaseRules,
   'petal-packing': petalPackingRules,
   'leaf-keeper': leafKeeperRules,
