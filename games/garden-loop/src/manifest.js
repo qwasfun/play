@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'garden-loop',
+  title: '花篱成环',
+  english: 'GARDEN LOOP',
+  category: '围栏逻辑',
+  tag: '动脑',
+  duration: '约 1–3 分钟',
+  extraLabel: '花圃进度',
+  targetText: '围好三座花圃',
+  icon: '⌑',
+  description: '照着花格里的数字搭起篱笆，让所有篱条首尾相接，围成不分叉的一整圈。',
+  controls: '点击篱边 / 方向键选择 / 空格落篱',
+  limit: 180,
+  cta: '搭起第一段花篱',
+  undo: true,
+  rules: [
+    '数字表示这个花格四周需要几段篱笆；把相邻格共用的边算作同一段。',
+    '所有篱笆必须首尾相接，围成一条不分叉、不断开、也不分成多圈的闭环；一共完成三座 4×4 花圃。',
+    '触屏或鼠标点击花格边缘；键盘用方向键或 WASD 选择篱边，空格或回车切换，Z 可撤销。180 秒内每完成一座得 400 分。',
+  ],
+};
