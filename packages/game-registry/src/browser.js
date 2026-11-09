@@ -1,3 +1,4 @@
+import { art as petalWheelArt } from '@playground/game-petal-wheel/art';
 import { art as gardenLoopArt } from '@playground/game-garden-loop/art';
 import { art as butterflyChaseArt } from '@playground/game-butterfly-chase/art';
 import { art as petalPackingArt } from '@playground/game-petal-packing/art';
@@ -38,6 +39,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'petal-wheel': petalWheelArt,
   'garden-loop': gardenLoopArt,
   'butterfly-chase': butterflyChaseArt,
   'petal-packing': petalPackingArt,
