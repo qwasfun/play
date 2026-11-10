@@ -1,3 +1,5 @@
+import { manifest as chimeOrder } from '@playground/game-chime-order/manifest';
+import { rules as chimeOrderRules } from '@playground/game-chime-order/rules';
 import { manifest as petalWheel } from '@playground/game-petal-wheel/manifest';
 import { rules as petalWheelRules } from '@playground/game-petal-wheel/rules';
 import { manifest as gardenLoop } from '@playground/game-garden-loop/manifest';
@@ -119,12 +121,14 @@ export const games = [
   butterflyChase,
   gardenLoop,
   petalWheel,
+  chimeOrder,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'chime-order': chimeOrderRules,
   'petal-wheel': petalWheelRules,
   'garden-loop': gardenLoopRules,
   'butterfly-chase': butterflyChaseRules,
