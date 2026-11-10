@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'chime-order',
+  title: '风铃排音',
+  english: 'CHIME ORDER',
+  category: '旋律排序',
+  tag: '动脑',
+  duration: '约 1–3 分钟',
+  extraLabel: '调音进度',
+  targetText: '排好三段风铃旋律',
+  icon: '♬',
+  description: '看着旋律剪影，交换六枚高低不同的风铃，让它们从左到右奏出同样的起伏。',
+  controls: '点两枚风铃交换 / 方向键选择 / 空格拿起',
+  limit: 150,
+  cta: '听听第一阵风',
+  undo: true,
+  rules: [
+    '上方六枚风铃标有 1–6 的音高；下方旋律剪影显示它们从左到右应有的高低顺序。',
+    '依次点选两枚风铃即可交换。键盘用左右方向键或 A/D 选择，空格或回车拿起与放下，Z 可撤销。',
+    '每排好一段旋律得 400 分，共三段、满分 1200。150 秒内排完即完成，交换次数不扣分。',
+  ],
+};
