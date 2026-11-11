@@ -1,3 +1,5 @@
+import { manifest as teaTiming } from '@playground/game-tea-timing/manifest';
+import { rules as teaTimingRules } from '@playground/game-tea-timing/rules';
 import { manifest as chimeOrder } from '@playground/game-chime-order/manifest';
 import { rules as chimeOrderRules } from '@playground/game-chime-order/rules';
 import { manifest as petalWheel } from '@playground/game-petal-wheel/manifest';
@@ -122,12 +124,14 @@ export const games = [
   gardenLoop,
   petalWheel,
   chimeOrder,
+  teaTiming,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'tea-timing': teaTimingRules,
   'chime-order': chimeOrderRules,
   'petal-wheel': petalWheelRules,
   'garden-loop': gardenLoopRules,

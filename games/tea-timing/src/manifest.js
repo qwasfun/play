@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'tea-timing',
+  title: '茶炉候火',
+  english: 'TEA TIMING',
+  category: '火候反应',
+  tag: '动手',
+  duration: '约 1–2 分钟',
+  extraLabel: '候茶进度',
+  targetText: '候好十二壶清茶',
+  icon: '♨',
+  description: '看准冒着蒸汽的茶壶，等火候指针进入金色适温区，再轻轻揭盖。',
+  controls: '点击茶壶 / A、S、D 选炉 / 方向键选择',
+  limit: 75,
+  cta: '守候第一壶茶',
+  lives: 3,
+  rules: [
+    '每轮三只茶壶中只有一只正在加热；观察它的火候条，指针进入金色适温区时揭盖。',
+    '手机或鼠标点击茶壶；键盘用 A、S、D 直接选择左、中、右炉，也可用左右方向键选择后按空格或回车。',
+    '候好一壶得 100 分，共十二壶、满分 1200。点错炉、过早揭盖或让茶水过火都会失去一次机会。',
+  ],
+};
