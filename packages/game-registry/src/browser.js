@@ -1,3 +1,4 @@
+import { art as teaTimingArt } from '@playground/game-tea-timing/art';
 import { art as chimeOrderArt } from '@playground/game-chime-order/art';
 import { art as petalWheelArt } from '@playground/game-petal-wheel/art';
 import { art as gardenLoopArt } from '@playground/game-garden-loop/art';
@@ -40,6 +41,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'tea-timing': teaTimingArt,
   'chime-order': chimeOrderArt,
   'petal-wheel': petalWheelArt,
   'garden-loop': gardenLoopArt,
