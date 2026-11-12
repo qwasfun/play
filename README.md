@@ -22,24 +22,25 @@
 
 ### 游戏与操作说明
 
-各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢、叶舟托露、花钿入匣、蝶影寻芳、花篱成环、花轮接露、风铃排音和茶炉候火目前仅提供普通模式，其余游戏还提供递进关卡。
+各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢、叶舟托露、花钿入匣、蝶影寻芳、花篱成环、花轮接露、风铃排音、茶炉候火和花窗点彩目前仅提供普通模式，其余游戏还提供递进关卡。
 
-| 游戏                                      | 游戏                                        | 游戏                                    |
-| ----------------------------------------- | ------------------------------------------- | --------------------------------------- |
-| [星轨邮差](games/star/README.md)          | [云岛搭桥](games/bridge/README.md)          | [灯塔方阵](games/lights/README.md)      |
-| [萤火回声](games/echo/README.md)          | [果园接接乐](games/catch/README.md)         | [弹珠打砖块](games/bounce/README.md)    |
-| [翻翻小花园](games/pairs/README.md)       | [数字合合乐](games/merge/README.md)         | [星环投投乐](games/rings/README.md)     |
-| [小蛇吃星星](games/snake/README.md)       | [花园推箱子](games/boxes/README.md)         | [水管小花园](games/pipes/README.md)     |
-| [接力跳跳](games/jump/README.md)          | [泡泡消消](games/bubbles/README.md)         | [拼图小屋](games/slide/README.md)       |
-| [节奏点点](games/rhythm/README.md)        | [一笔星图](games/constellation/README.md)   | [叠叠高塔](games/tower/README.md)       |
-| [躲雨小伞](games/rain/README.md)          | [花田扫雷](games/mines/README.md)           | [萤灯巡夜](games/lantern/README.md)     |
-| [风帆过峡](games/sail/README.md)          | [果篮天平](games/balance/README.md)         | [茶点跳跳棋](games/pebble/README.md)    |
-| [风车采蜜](games/windmill/README.md)      | [花径送信](games/courier/README.md)         | [花窗数织](games/weave/README.md)       |
-| [量水茶坊](games/jugs/README.md)          | [果园分篮](games/orchard-sort/README.md)    | [纸鸢乘风](games/kite/README.md)        |
-| [茶席四方](games/tea-grid/README.md)      | [花笺逐风](games/petal-swipe/README.md)     | [花房暗语](games/garden-code/README.md) |
-| [微光花径](games/glow-path/README.md)     | [露珠相逢](games/dew-links/README.md)       | [叶舟托露](games/leaf-keeper/README.md) |
-| [花钿入匣](games/petal-packing/README.md) | [蝶影寻芳](games/butterfly-chase/README.md) | [花篱成环](games/garden-loop/README.md) |
-| [花轮接露](games/petal-wheel/README.md)   | [风铃排音](games/chime-order/README.md)     | [茶炉候火](games/tea-timing/README.md)  |
+| 游戏                                       | 游戏                                        | 游戏                                    |
+| ------------------------------------------ | ------------------------------------------- | --------------------------------------- |
+| [星轨邮差](games/star/README.md)           | [云岛搭桥](games/bridge/README.md)          | [灯塔方阵](games/lights/README.md)      |
+| [萤火回声](games/echo/README.md)           | [果园接接乐](games/catch/README.md)         | [弹珠打砖块](games/bounce/README.md)    |
+| [翻翻小花园](games/pairs/README.md)        | [数字合合乐](games/merge/README.md)         | [星环投投乐](games/rings/README.md)     |
+| [小蛇吃星星](games/snake/README.md)        | [花园推箱子](games/boxes/README.md)         | [水管小花园](games/pipes/README.md)     |
+| [接力跳跳](games/jump/README.md)           | [泡泡消消](games/bubbles/README.md)         | [拼图小屋](games/slide/README.md)       |
+| [节奏点点](games/rhythm/README.md)         | [一笔星图](games/constellation/README.md)   | [叠叠高塔](games/tower/README.md)       |
+| [躲雨小伞](games/rain/README.md)           | [花田扫雷](games/mines/README.md)           | [萤灯巡夜](games/lantern/README.md)     |
+| [风帆过峡](games/sail/README.md)           | [果篮天平](games/balance/README.md)         | [茶点跳跳棋](games/pebble/README.md)    |
+| [风车采蜜](games/windmill/README.md)       | [花径送信](games/courier/README.md)         | [花窗数织](games/weave/README.md)       |
+| [量水茶坊](games/jugs/README.md)           | [果园分篮](games/orchard-sort/README.md)    | [纸鸢乘风](games/kite/README.md)        |
+| [茶席四方](games/tea-grid/README.md)       | [花笺逐风](games/petal-swipe/README.md)     | [花房暗语](games/garden-code/README.md) |
+| [微光花径](games/glow-path/README.md)      | [露珠相逢](games/dew-links/README.md)       | [叶舟托露](games/leaf-keeper/README.md) |
+| [花钿入匣](games/petal-packing/README.md)  | [蝶影寻芳](games/butterfly-chase/README.md) | [花篱成环](games/garden-loop/README.md) |
+| [花轮接露](games/petal-wheel/README.md)    | [风铃排音](games/chime-order/README.md)     | [茶炉候火](games/tea-timing/README.md)  |
+| [花窗点彩](games/flower-picross/README.md) |                                             |                                         |
 
 ## 本地运行
 
