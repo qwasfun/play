@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-flower-picross": "1.0.0",
     "@playground/game-tea-timing": "1.0.0",
     "@playground/game-chime-order": "1.0.0",
     "@playground/game-petal-wheel": "1.0.0",
