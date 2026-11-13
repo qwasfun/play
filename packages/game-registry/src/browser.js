@@ -1,3 +1,4 @@
+import { art as beeOrbitArt } from '@playground/game-bee-orbit/art';
 import { art as flowerPicrossArt } from '@playground/game-flower-picross/art';
 import { art as teaTimingArt } from '@playground/game-tea-timing/art';
 import { art as chimeOrderArt } from '@playground/game-chime-order/art';
@@ -42,6 +43,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'bee-orbit': beeOrbitArt,
   'flower-picross': flowerPicrossArt,
   'tea-timing': teaTimingArt,
   'chime-order': chimeOrderArt,

@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'bee-orbit',
+  title: '蜂环逐蜜',
+  english: 'BEE ORBIT',
+  category: '绕环反应',
+  tag: '动手',
+  duration: '约 1 分钟',
+  extraLabel: '采蜜进度',
+  targetText: '在花桥前切换内外环，采满十二簇花粉',
+  icon: '❉',
+  lives: 3,
+  description: '跟着小蜜蜂绕过双层花环，看准花粉落在哪一环，轻点一下换环采蜜。',
+  controls: '轻点画布 · 空格/回车或 ↑↓/W/S 换环',
+  limit: 60,
+  cta: '绕进第一圈花香',
+  rules: [
+    '蜜蜂会沿双层花环持续飞行。看清前方花桥：金色花粉在哪一环，就在抵达前切换到那一环。',
+    '手机或鼠标轻点画布换环；键盘使用空格、回车、方向键上/下或 W/S。另一环的蓝色露珠会让你失去一次机会。',
+    '每簇花粉 100 分，共十二簇、满分 1200。三次机会用完或 60 秒到时结束。',
+  ],
+};
