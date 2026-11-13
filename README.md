@@ -22,7 +22,7 @@
 
 ### 游戏与操作说明
 
-各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢、叶舟托露、花钿入匣、蝶影寻芳、花篱成环、花轮接露、风铃排音、茶炉候火和花窗点彩目前仅提供普通模式，其余游戏还提供递进关卡。
+各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢、叶舟托露、花钿入匣、蝶影寻芳、花篱成环、花轮接露、风铃排音、茶炉候火、花窗点彩和蜂环逐蜜目前仅提供普通模式，其余游戏还提供递进关卡。
 
 | 游戏                                       | 游戏                                        | 游戏                                    |
 | ------------------------------------------ | ------------------------------------------- | --------------------------------------- |
@@ -40,7 +40,7 @@
 | [微光花径](games/glow-path/README.md)      | [露珠相逢](games/dew-links/README.md)       | [叶舟托露](games/leaf-keeper/README.md) |
 | [花钿入匣](games/petal-packing/README.md)  | [蝶影寻芳](games/butterfly-chase/README.md) | [花篱成环](games/garden-loop/README.md) |
 | [花轮接露](games/petal-wheel/README.md)    | [风铃排音](games/chime-order/README.md)     | [茶炉候火](games/tea-timing/README.md)  |
-| [花窗点彩](games/flower-picross/README.md) |                                             |                                         |
+| [花窗点彩](games/flower-picross/README.md) | [蜂环逐蜜](games/bee-orbit/README.md)       |                                         |
 
 ## 本地运行
 
