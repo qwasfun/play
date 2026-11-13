@@ -1,6 +1,0 @@
-import { svg } from '@playground/game-sdk/art';
-
-export const art = () =>
-  svg(
-    `<rect width="600" height="360" fill="#f3ead8"/><circle cx="505" cy="65" r="34" fill="#f1cf86"/><path d="M0 292Q150 246 300 288T600 278V360H0Z" fill="#d9e2ce"/><rect x="88" y="48" width="424" height="264" rx="30" fill="#e4d4b8" stroke="#bda783" stroke-width="5"/><path d="M112 84h376v74H112z" fill="#fff9eb"/><g stroke="#bda783" stroke-width="4"><path d="M206 84v74M300 84v74M394 84v74"/></g><g><circle cx="159" cy="121" r="27" fill="#d98282"/><circle cx="253" cy="121" r="27" fill="#b87991"/><circle cx="347" cy="121" r="27" fill="#748f78"/><circle cx="441" cy="121" r="27" fill="#c69a55"/></g><g fill="#fff9eb" font-family="system-ui,sans-serif" font-size="20" font-weight="700" text-anchor="middle"><text x="159" y="128">桃</text><text x="253" y="128">梅</text><text x="347" y="128">兰</text><text x="441" y="128">桂</text></g><g fill="#526f63"><circle cx="170" cy="214" r="13"/><circle cx="210" cy="214" r="13"/></g><g fill="none" stroke="#526f63" stroke-width="5"><circle cx="250" cy="214" r="11"/><circle cx="290" cy="214" r="11"/></g><path d="M145 266c45-26 93-27 138 0M315 266c45-26 93-27 138 0" fill="none" stroke="#8aa07e" stroke-width="10" stroke-linecap="round"/>`,
-  );
