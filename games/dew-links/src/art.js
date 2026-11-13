@@ -1,0 +1,6 @@
+import { svg } from '@playground/game-sdk/art';
+
+export const art = () =>
+  svg(
+    `<rect width="600" height="360" fill="#f4eddd"/><path d="M0 95Q150 55 300 102T600 90V360H0Z" fill="#bfd4c2"/><g transform="translate(126 44)"><rect width="348" height="276" rx="28" fill="#fff8e7" stroke="#8fa897" stroke-width="8"/><g stroke="#d6c9aa" stroke-width="2">${Array.from({ length: 4 }, (_, i) => `<path d="M${69.6 * (i + 1)} 0V276M0 ${55.2 * (i + 1)}H348"/>`).join('')}</g><path d="M35 28H174V83H313V138H174V193H35V248H174" fill="none" stroke="#d88d82" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><path d="M313 28V83H244V138H313V248H244" fill="none" stroke="#7f9f91" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><g fill="#fff8e7" stroke="#6f887a" stroke-width="4"><circle cx="35" cy="28" r="18"/><circle cx="174" cy="193" r="18"/><circle cx="313" cy="28" r="18"/><circle cx="244" cy="248" r="18"/></g><g fill="#f1c969"><circle cx="35" cy="28" r="8"/><circle cx="174" cy="193" r="8"/></g><g fill="#9ab6ac"><path d="M305 28l8-10 8 10-8 10z"/><path d="M236 248l8-10 8 10-8 10z"/></g></g><text x="300" y="345" fill="#5e7666" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">让成对露珠，在花圃里相逢</text>`,
+  );

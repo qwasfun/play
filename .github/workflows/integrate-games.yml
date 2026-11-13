@@ -1,0 +1,35 @@
+name: Integrate verified games
+on:
+  workflow_run:
+    workflows: [Game verification, Deploy GitHub Pages]
+    types: [completed]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+concurrency:
+  group: game-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Never check out a PR or execute its code in this privileged workflow.
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - name: Integrate only verified game changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/integrate-games.mjs

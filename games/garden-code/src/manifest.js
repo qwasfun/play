@@ -1,0 +1,21 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'garden-code',
+  title: '花房暗语',
+  english: 'GARDEN CODE',
+  category: '逻辑推理',
+  tag: '动脑',
+  duration: '约 1–3 分钟',
+  extraLabel: '猜测进度',
+  targetText: '破解四枚花印',
+  icon: '✤',
+  description: '排列四枚花印，根据位置与花印提示，一步步推开花房的暗语。',
+  controls: '点选花印 / 方向键选择与切换 / 回车提交',
+  limit: 180,
+  cta: '翻开第一张花笺',
+  rules: [
+    '暗语由桃、梅、兰、桂、竹中的四枚花印组成，花印可能重复；每局至少包含三种花印。',
+    '每次提交后，实心点表示“花印与位置都正确”，空心点表示“花印正确但位置不对”；提示不对应具体格子。',
+    '180 秒内最多猜八次。猜中得 1000 分，此后每多用一次扣 100 分；点花印或用方向键填写，回车提交。',
+  ],
+};

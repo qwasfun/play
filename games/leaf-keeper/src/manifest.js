@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'leaf-keeper',
+  title: '叶舟托露',
+  english: 'LEAF KEEPER',
+  category: '平衡反应',
+  tag: '动手',
+  duration: '约 1 分钟',
+  extraLabel: '花粉光点',
+  targetText: '稳稳接住十二点花粉光',
+  icon: '◒',
+  lives: 3,
+  description: '轻轻摇动一叶小舟，托着露珠追上十二点花粉微光。',
+  controls: '按住左右半屏 / ← → 或 A D',
+  limit: 60,
+  cta: '托起第一颗露珠',
+  rules: [
+    '露珠停在叶舟中央；按住左边或右边，让它沿叶面滑向金色花粉光，接满十二点即可通关。',
+    '手机按住画布左右半边，电脑可按住鼠标，或使用 ← → / A D；松开后露珠会稳稳停住。',
+    '每点微光限时 4.5 秒；露珠滑出叶沿或超时会失去一次机会。每点 100 分，三次机会用完或 60 秒结束。',
+  ],
+};

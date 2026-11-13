@@ -1,0 +1,15 @@
+node_modules/
+/dist/
+/games/*/dist/
+artifacts/
+.env
+.env.*
+.DS_Store
+.openai/local/
+.playwright-cli/
+output/playwright/
+.wrangler/
+.dev.vars*
+output/worker/
+output/automation/
+.eslintcache

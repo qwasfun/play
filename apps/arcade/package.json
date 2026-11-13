@@ -1,0 +1,15 @@
+{
+  "name": "@playground/arcade",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@playground/game-sdk": "1.0.0",
+    "@playground/game-runtime": "1.0.0",
+    "@playground/game-registry": "1.0.0"
+  },
+  "scripts": {
+    "dev": "vite --config ../../vite.config.js",
+    "build": "node ../../scripts/build-arcade.mjs"
+  }
+}
