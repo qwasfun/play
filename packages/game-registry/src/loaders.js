@@ -29,6 +29,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const loaders = {
+  'flower-latin': () => import('@playground/game-flower-latin'),
   'bee-orbit': () => import('@playground/game-bee-orbit'),
   'flower-picross': () => import('@playground/game-flower-picross'),
   'tea-timing': () => import('@playground/game-tea-timing'),
