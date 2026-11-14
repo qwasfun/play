@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-flower-latin": "1.0.0",
     "@playground/game-bee-orbit": "1.0.0",
     "@playground/game-flower-picross": "1.0.0",
     "@playground/game-tea-timing": "1.0.0",

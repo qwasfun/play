@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'flower-latin',
+  title: '花格成序',
+  english: 'FLOWER LATIN',
+  category: '花序逻辑',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '花笺进度',
+  targetText: '整理三张四行四列的花笺',
+  icon: '❖',
+  description: '在 4×4 花格里补齐 1–4，让每行每列都不重样，把散落的花序慢慢理整齐。',
+  controls: '点格换数 / 方向键移动 / 空格换数 / Z 撤销',
+  limit: 180,
+  cta: '整理第一张花笺',
+  undo: true,
+  rules: [
+    '在空格中填入 1、2、3、4，让每一行和每一列都恰好出现一次这四个数字；木牌上的数字不能改动。',
+    '轻点或点击空格循环数字；键盘用方向键或 WASD 移动，空格或回车切换，Z、退格或 Delete 撤销。',
+    '每完成一张花笺得 400 分，共三张、满分 1200。所有题目都有唯一解，180 秒到时按完成数结算。',
+  ],
+};
