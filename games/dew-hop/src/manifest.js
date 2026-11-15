@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'dew-hop',
+  title: '露珠跳荷',
+  english: 'DEW HOP',
+  category: '方位反应',
+  tag: '动手',
+  duration: '约 1 分钟',
+  extraLabel: '跳荷进度',
+  targetText: '看清四方花蕊，连续跳过十二片荷叶',
+  icon: '✦',
+  lives: 3,
+  description: '看清哪一方荷叶亮起花蕊，在涟漪收拢前，让小露珠轻轻跳过去。',
+  controls: '轻点目标荷叶 · 方向键或 WASD 跳跃',
+  limit: 60,
+  cta: '跳上第一片荷叶',
+  rules: [
+    '小露珠停在池心；四方荷叶会有一片亮起金色花蕊。看清方向，在涟漪收拢前跳过去。',
+    '手机或鼠标轻点目标荷叶；键盘使用方向键或 WASD。点错方向或等待过久会失去一次机会。',
+    '每次正确跳跃得 100 分，共十二跳、满分 1200。三次机会用完或 60 秒到时结束。',
+  ],
+};
