@@ -55,7 +55,9 @@ export async function play({ page, mobile, point, seed }) {
 
   const targets = generateTargets(seed);
   if (!mobile) {
-    await page.clock.runFor(DEW_HOP.revealTime * 1000 + 10);
+    // The first animation frame establishes the runtime clock without advancing
+    // the engine, so leave a full fixed frame beyond the reveal interval.
+    await page.clock.runFor((DEW_HOP.revealTime + 0.05) * 1000);
     await canvas.focus();
     await page.keyboard.press(DIRECTIONS[targets[0].direction].key);
     ensure(Number(await page.locator('#live-score').innerText()) === 100, '方向键未能完成跳跃');
@@ -66,7 +68,7 @@ export async function play({ page, mobile, point, seed }) {
   }
 
   for (let progress = 0; progress < DEW_HOP.total; progress++) {
-    await page.clock.runFor(DEW_HOP.revealTime * 1000 + 10);
+    await page.clock.runFor((DEW_HOP.revealTime + 0.05) * 1000);
     const direction = DIRECTIONS[targets[progress].direction];
     if (mobile) await point(direction.x, direction.y);
     else await page.keyboard.press(direction.key);
