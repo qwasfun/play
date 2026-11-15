@@ -1,3 +1,5 @@
+import { manifest as dewHop } from '@playground/game-dew-hop/manifest';
+import { rules as dewHopRules } from '@playground/game-dew-hop/rules';
 import { manifest as flowerLatin } from '@playground/game-flower-latin/manifest';
 import { rules as flowerLatinRules } from '@playground/game-flower-latin/rules';
 import { manifest as beeOrbit } from '@playground/game-bee-orbit/manifest';
@@ -134,12 +136,14 @@ export const games = [
   flowerPicross,
   beeOrbit,
   flowerLatin,
+  dewHop,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'dew-hop': dewHopRules,
   'flower-latin': flowerLatinRules,
   'bee-orbit': beeOrbitRules,
   'flower-picross': flowerPicrossRules,
