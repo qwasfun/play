@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-mirror-bloom": "1.0.0",
     "@playground/game-dew-hop": "1.0.0",
     "@playground/game-flower-latin": "1.0.0",
     "@playground/game-bee-orbit": "1.0.0",

@@ -1,3 +1,4 @@
+import { art as mirrorBloomArt } from '@playground/game-mirror-bloom/art';
 import { art as dewHopArt } from '@playground/game-dew-hop/art';
 import { art as flowerLatinArt } from '@playground/game-flower-latin/art';
 import { art as beeOrbitArt } from '@playground/game-bee-orbit/art';
@@ -45,6 +46,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'mirror-bloom': mirrorBloomArt,
   'dew-hop': dewHopArt,
   'flower-latin': flowerLatinArt,
   'bee-orbit': beeOrbitArt,
