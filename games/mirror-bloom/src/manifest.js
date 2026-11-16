@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'mirror-bloom',
+  title: '花镜引光',
+  english: 'MIRROR BLOOM',
+  category: '光路推理',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '花圃进度',
+  targetText: '照亮三座花圃',
+  icon: '◈',
+  description: '转动花圃里的斜镜，让一束晨光照亮沿途花朵，再稳稳抵达金色出口。',
+  controls: '点镜旋转 / 方向键选择 / 空格旋转 / Z 撤销',
+  limit: 180,
+  cta: '引入第一束晨光',
+  undo: true,
+  rules: [
+    '晨光从叶片标记处进入；旋转斜镜改变反射方向，让光束照亮全部花朵，并从金色风铃出口离开。',
+    '轻点或点击镜片旋转；键盘用方向键或 WASD 选择，空格或回车旋转，Z、退格或 Delete 撤销。',
+    '每完成一座花圃得 400 分，共三座、满分 1200。每题只有一种镜面组合，180 秒到时按完成数结算。',
+  ],
+};
