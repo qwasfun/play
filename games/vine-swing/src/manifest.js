@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'vine-swing',
+  title: '藤蔓轻荡',
+  english: 'VINE SWING',
+  category: '摆荡反应',
+  tag: '动手',
+  duration: '约 1–2 分钟',
+  extraLabel: '花藤进度',
+  targetText: '看准金色微光，完成十次花藤接力',
+  icon: '❧',
+  lives: 3,
+  description: '跟着花藤左右轻荡，在金色微光掠过身边时松手，飞向下一朵花。',
+  controls: '轻点画布 / 空格、回车、↑ 或 W 松藤',
+  limit: 75,
+  cta: '抓住第一根花藤',
+  rules: [
+    '小种子会挂在花藤下左右轻荡；观察下一朵花的方向，等金色微光靠近中央时松手。',
+    '手机或鼠标轻点画布；键盘按空格、回车、↑ 或 W。时机合适就会飞向下一根花藤。',
+    '每次接力得 120 分，共十次、满分 1200。松手过早或过晚会失去一次机会，三次机会用完或 75 秒到时结束。',
+  ],
+};
