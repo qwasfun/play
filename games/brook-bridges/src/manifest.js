@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'brook-bridges',
+  title: '花溪搭桥',
+  english: 'BROOK BRIDGES',
+  category: '连桥推理',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '溪湾进度',
+  targetText: '连通三处溪湾',
+  icon: '≋',
+  description: '看懂溪石上的数字，在相邻石头之间搭起小桥，让整条花溪连成一片。',
+  controls: '点两块溪石搭桥 / 方向键选择 / 空格连接 / Z 撤销',
+  limit: 180,
+  cta: '走进第一处溪湾',
+  undo: true,
+  rules: [
+    '每块溪石上的数字，是它最终连接的桥梁总数；同一对相邻溪石之间可以搭一座或两座桥。',
+    '桥只能横着或竖着连接视线上最近的溪石，不能穿过其他溪石，也不能彼此交叉；所有溪石必须连成一体。',
+    '轻点两块溪石循环搭一座、两座或拆桥；键盘用方向键或 WASD 选择，空格或回车连接，Z、退格或 Delete 撤销。三处溪湾各 400 分，满分 1200。',
+  ],
+};

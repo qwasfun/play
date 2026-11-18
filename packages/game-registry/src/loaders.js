@@ -29,6 +29,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const loaders = {
+  'brook-bridges': () => import('@playground/game-brook-bridges'),
   'vine-swing': () => import('@playground/game-vine-swing'),
   'mirror-bloom': () => import('@playground/game-mirror-bloom'),
   'dew-hop': () => import('@playground/game-dew-hop'),
