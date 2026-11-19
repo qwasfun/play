@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'twin-fireflies',
+  title: '双萤穿花',
+  english: 'TWIN FIREFLIES',
+  category: '双轨反应',
+  tag: '动手',
+  duration: '约 1 分钟',
+  extraLabel: '花门进度',
+  targetText: '调整双萤间距，连续穿过十二道双花门',
+  icon: '✣',
+  lives: 3,
+  description: '让两只萤火虫并肩飞行，收拢或展开队形，一起穿过间距不同的双花门。',
+  controls: '轻点左/右半边收拢或展开 · ← → 或 A/D',
+  limit: 50,
+  cta: '点亮双萤，开始飞行',
+  rules: [
+    '两只萤火虫会保持对称飞行；看清前方双花门的间距，提前把双萤调到相同宽度。',
+    '轻点画布左半边收拢、右半边展开；键盘使用 ← → 或 A/D，每次移动一档。',
+    '两只萤火虫同时落进花环即得 100 分，共十二道、满分 1200。错过会失去一片护叶，三片用完或 50 秒到时结束。',
+  ],
+};
