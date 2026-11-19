@@ -1,3 +1,4 @@
+import { art as twinFirefliesArt } from '@playground/game-twin-fireflies/art';
 import { art as brookBridgesArt } from '@playground/game-brook-bridges/art';
 import { art as vineSwingArt } from '@playground/game-vine-swing/art';
 import { art as mirrorBloomArt } from '@playground/game-mirror-bloom/art';
@@ -48,6 +49,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'twin-fireflies': twinFirefliesArt,
   'brook-bridges': brookBridgesArt,
   'vine-swing': vineSwingArt,
   'mirror-bloom': mirrorBloomArt,
