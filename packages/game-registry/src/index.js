@@ -1,3 +1,5 @@
+import { manifest as forestCamp } from '@playground/game-forest-camp/manifest';
+import { rules as forestCampRules } from '@playground/game-forest-camp/rules';
 import { manifest as twinFireflies } from '@playground/game-twin-fireflies/manifest';
 import { rules as twinFirefliesRules } from '@playground/game-twin-fireflies/rules';
 import { manifest as brookBridges } from '@playground/game-brook-bridges/manifest';
@@ -149,12 +151,14 @@ export const games = [
   vineSwing,
   brookBridges,
   twinFireflies,
+  forestCamp,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'forest-camp': forestCampRules,
   'twin-fireflies': twinFirefliesRules,
   'brook-bridges': brookBridgesRules,
   'vine-swing': vineSwingRules,
