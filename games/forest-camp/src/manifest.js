@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'forest-camp',
+  title: '林间安帐',
+  english: 'FOREST CAMP',
+  category: '营地推理',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '营地进度',
+  targetText: '安顿三处营地',
+  icon: '⌂',
+  description: '看懂林地四周的数字，在每棵小树旁搭一顶不相碰的帐篷。',
+  controls: '点格切换帐篷 / 方向键选择 / 空格切换 / Z 撤销',
+  limit: 180,
+  cta: '铺开第一张营地图',
+  undo: true,
+  rules: [
+    '每顶帐篷必须与一棵树上下或左右相邻，并与树一一配对；帐篷之间横、竖、斜方向都不能接触。',
+    '林地上方与右侧的数字，分别表示每列和每行应有的帐篷数；树的位置固定，其他格子都可推理。',
+    '轻点空地依次切换帐篷、草叶标记和留空；键盘用方向键或 WASD 选择，空格或回车切换，Z、退格或 Delete 撤销。三处营地各 400 分，满分 1200。',
+  ],
+};
