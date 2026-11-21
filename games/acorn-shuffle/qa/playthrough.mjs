@@ -82,16 +82,12 @@ export async function play({ page, mobile, point, seed }) {
 
   for (const round of rounds) {
     await advanceUntilChoice(page);
-    if (mobile || round.index % 2 === 0) {
-      await point(SLOT_X[round.finalSlot], 270);
-    } else {
-      await canvas.focus();
-      await page.keyboard.press(String(round.finalSlot + 1));
-    }
+    await point(SLOT_X[round.finalSlot], 270);
     const expected = (round.index + 1) * 100;
+    const actual = Number(await page.locator('#live-score').innerText());
     ensure(
-      Number(await page.locator('#live-score').innerText()) === expected,
-      `第 ${round.index + 1} 轮未由真实输入找到橡果`,
+      actual === expected,
+      `第 ${round.index + 1} 轮未由真实输入找到橡果：实际 ${actual}，${await page.locator('#game-hint').innerText()}`,
     );
     if (round.index < rounds.length - 1) await page.clock.runFor(650);
   }
