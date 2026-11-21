@@ -14,6 +14,11 @@ const leftKeys = new Set(['arrowleft', 'a']);
 const rightKeys = new Set(['arrowright', 'd']);
 const confirmKeys = new Set([' ', 'space', 'spacebar', 'enter']);
 
+function numberSlot(key) {
+  const match = /^(?:digit|numpad)?([123])$/.exec(key);
+  return match ? Number(match[1]) - 1 : -1;
+}
+
 export function validPoint(point) {
   return (
     Number.isFinite(point?.x) &&
@@ -198,7 +203,10 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
         if (leftKeys.has(key)) moveSelection(-1);
         else if (rightKeys.has(key)) moveSelection(1);
         else if (confirmKeys.has(key)) settle(selection);
-        else if (/^[123]$/.test(key)) settle(Number(key) - 1);
+        else {
+          const slot = numberSlot(key);
+          if (slot >= 0) settle(slot);
+        }
       }
       if (type === 'primary-down') {
         const slot = slotFromPoint(payload);

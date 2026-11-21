@@ -80,6 +80,13 @@ test('keyboard selection, confirmation and number keys complete a run once', () 
   first.input('key-down', { key: 'Enter', repeat: false });
   assert.equal(first.getState().attempts, 1);
 
+  for (const key of ['Digit1', 'numpad2', '3']) {
+    const keyed = createGame({ seed: 42 });
+    advanceToChoice(keyed, 0);
+    keyed.input('key-down', { key, repeat: false });
+    assert.equal(keyed.getState().attempts, 1, key);
+  }
+
   const results = [];
   const game = createGame({ seed: 17, onFinish: (result) => results.push(result) });
   const rounds = generateRounds(17);

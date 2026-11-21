@@ -85,7 +85,8 @@ export async function play({ page, mobile, point, seed }) {
     if (mobile || round.index % 2 === 0) {
       await point(SLOT_X[round.finalSlot], 270);
     } else {
-      await page.keyboard.press(`Digit${round.finalSlot + 1}`);
+      await canvas.focus();
+      await page.keyboard.press(String(round.finalSlot + 1));
     }
     const expected = (round.index + 1) * 100;
     ensure(
