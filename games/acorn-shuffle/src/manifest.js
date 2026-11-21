@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'acorn-shuffle',
+  title: '叶篮寻果',
+  english: 'ACORN SHUFFLE',
+  category: '动态追踪',
+  tag: '动手',
+  duration: '约 1 分钟',
+  extraLabel: '寻果进度',
+  targetText: '盯住藏着金色橡果的叶篮，十二轮都找对',
+  icon: '♢',
+  lives: 3,
+  description: '记住金色橡果藏进哪只叶篮，跟住交换的叶篮，再把它轻轻找出来。',
+  controls: '轻点叶篮选择 · ← → 移动、空格确认 · 1 2 3 直选',
+  limit: 70,
+  cta: '掀起叶篮，开始寻果',
+  rules: [
+    '每轮先亮出金色橡果所在的叶篮；叶篮盖好后会连续交换位置，请一直盯住它。',
+    '交换停止后轻点对应叶篮；键盘可用 ← → 选择、空格或回车确认，也可按 1、2、3 直接选择。',
+    '每找对一轮得 100 分，共十二轮、满分 1200。选错或迟迟未选会失去一片护叶，三片用完或 70 秒到时结束。',
+  ],
+};
