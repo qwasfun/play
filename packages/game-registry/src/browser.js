@@ -1,3 +1,4 @@
+import { art as petalFoldArt } from '@playground/game-petal-fold/art';
 import { art as acornShuffleArt } from '@playground/game-acorn-shuffle/art';
 import { art as forestCampArt } from '@playground/game-forest-camp/art';
 import { art as twinFirefliesArt } from '@playground/game-twin-fireflies/art';
@@ -51,6 +52,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'petal-fold': petalFoldArt,
   'acorn-shuffle': acornShuffleArt,
   'forest-camp': forestCampArt,
   'twin-fireflies': twinFirefliesArt,
