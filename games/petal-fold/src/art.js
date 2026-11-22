@@ -1,0 +1,6 @@
+import { cloud, svg } from '@playground/game-sdk/art';
+
+export const art = () =>
+  svg(
+    `<rect width="600" height="360" fill="#f5ecdf"/>${cloud(92, 58, 0.5)}<circle cx="518" cy="62" r="31" fill="#efca78"/><path d="M0 260Q138 214 284 250t316-9v119H0Z" fill="#afc9a6"/><g transform="translate(122 72)"><rect width="236" height="236" rx="18" fill="#fff8e7" stroke="#c89a83" stroke-width="6"/><path d="M118 0v236M0 118h236" stroke="#d9b9a6" stroke-width="4" stroke-dasharray="10 8"/><path d="M16 118h206" stroke="#8b9d79" stroke-width="9" stroke-linecap="round"/><path d="m196 96 28 22-28 22" fill="none" stroke="#8b9d79" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><g fill="#d97883"><circle cx="62" cy="61" r="14"/><circle cx="174" cy="61" r="14"/><circle cx="62" cy="175" r="14"/><circle cx="174" cy="175" r="14"/></g></g><g transform="translate(398 136) rotate(8)"><rect width="104" height="104" rx="14" fill="#f6d7c4" stroke="#a66f71" stroke-width="6"/><circle cx="52" cy="52" r="13" fill="#fff6dd" stroke="#a66f71" stroke-width="5"/></g><text x="300" y="338" fill="#6d665b" font-family="system-ui,sans-serif" font-size="20" text-anchor="middle">折一折，猜猜花印展开会落在哪里</text>`,
+  );

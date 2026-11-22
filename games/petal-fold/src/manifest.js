@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'petal-fold',
+  title: '花笺折印',
+  english: 'PETAL FOLD',
+  category: '折叠推理',
+  tag: '动脑',
+  duration: '约 2 分钟',
+  extraLabel: '花笺进度',
+  targetText: '展开六张花笺',
+  icon: '◇',
+  description: '看清花笺的折叠方向和打孔位置，推想展开后花印会落在哪些格子。',
+  controls: '点格标记 / 方向键选择 / 空格切换 / Z 撤销',
+  limit: 120,
+  cta: '铺开第一张花笺',
+  undo: true,
+  rules: [
+    '花笺原本是 4×4 方格；按左侧箭头依次对半折叠，再在折好的小花笺上打一枚花孔。',
+    '想象把花笺完全展开：一次折叠会留下两个对称花印，两次互相垂直的折叠会留下四个。把右侧对应格全部点亮即可。',
+    '触屏或鼠标点格标记；键盘用方向键或 WASD 选择，空格或回车切换，Z、退格或 Delete 撤销。六张花笺各 200 分，满分 1200。',
+  ],
+};

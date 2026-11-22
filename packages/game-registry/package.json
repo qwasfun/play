@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-petal-fold": "1.0.0",
     "@playground/game-acorn-shuffle": "1.0.0",
     "@playground/game-forest-camp": "1.0.0",
     "@playground/game-twin-fireflies": "1.0.0",
