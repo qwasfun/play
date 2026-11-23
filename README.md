@@ -22,7 +22,7 @@
 
 ### 游戏与操作说明
 
-各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢、叶舟托露、花钿入匣、蝶影寻芳、花篱成环、花轮接露、风铃排音、茶炉候火、花窗点彩、蜂环逐蜜、花格成序、露珠跳荷、花镜引光、藤蔓轻荡、花溪搭桥、双萤穿花、林间安帐、叶篮寻果和花笺折印目前仅提供普通模式，其余游戏还提供递进关卡。
+各游戏 README 包含玩法、输入方式、计分与设计说明。果园分篮、纸鸢乘风、茶席四方、花笺逐风、花房暗语、微光花径、露珠相逢、叶舟托露、花钿入匣、蝶影寻芳、花篱成环、花轮接露、风铃排音、茶炉候火、花窗点彩、蜂环逐蜜、花格成序、露珠跳荷、花镜引光、藤蔓轻荡、花溪搭桥、双萤穿花、林间安帐、叶篮寻果、花笺折印和月蛾追光目前仅提供普通模式，其余游戏还提供递进关卡。
 
 | 游戏                                       | 游戏                                        | 游戏                                     |
 | ------------------------------------------ | ------------------------------------------- | ---------------------------------------- |
@@ -43,7 +43,7 @@
 | [花窗点彩](games/flower-picross/README.md) | [蜂环逐蜜](games/bee-orbit/README.md)       | [花格成序](games/flower-latin/README.md) |
 | [露珠跳荷](games/dew-hop/README.md)        | [花镜引光](games/mirror-bloom/README.md)    | [藤蔓轻荡](games/vine-swing/README.md)   |
 | [花溪搭桥](games/brook-bridges/README.md)  | [双萤穿花](games/twin-fireflies/README.md)  | [林间安帐](games/forest-camp/README.md)  |
-| [叶篮寻果](games/acorn-shuffle/README.md)  | [花笺折印](games/petal-fold/README.md)      |                                          |
+| [叶篮寻果](games/acorn-shuffle/README.md)  | [花笺折印](games/petal-fold/README.md)      | [月蛾追光](games/moon-moth/README.md)    |
 
 ## 本地运行
 
