@@ -1,3 +1,5 @@
+import { manifest as moonMoth } from '@playground/game-moon-moth/manifest';
+import { rules as moonMothRules } from '@playground/game-moon-moth/rules';
 import { manifest as petalFold } from '@playground/game-petal-fold/manifest';
 import { rules as petalFoldRules } from '@playground/game-petal-fold/rules';
 import { manifest as acornShuffle } from '@playground/game-acorn-shuffle/manifest';
@@ -158,12 +160,14 @@ export const games = [
   forestCamp,
   acornShuffle,
   petalFold,
+  moonMoth,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'moon-moth': moonMothRules,
   'petal-fold': petalFoldRules,
   'acorn-shuffle': acornShuffleRules,
   'forest-camp': forestCampRules,
