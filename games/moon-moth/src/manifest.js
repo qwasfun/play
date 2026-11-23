@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'moon-moth',
+  title: '月蛾追光',
+  english: 'MOON MOTH',
+  category: '换轨反应',
+  tag: '动手',
+  duration: '约 45 秒',
+  extraLabel: '追光进度',
+  targetText: '切换三条月光花径，连续追上十五盏暖灯',
+  icon: '✦',
+  lives: 3,
+  description: '带月蛾在三条花径间轻盈换轨，追上暖黄花灯，绕开两侧悄悄漫来的薄雾。',
+  controls: '轻点花径换轨 · ↑ ↓ 或 W/S · 1 2 3 直达',
+  limit: 50,
+  cta: '舒展翅膀，追逐月光',
+  rules: [
+    '每道光门只有一条花径亮着暖黄花灯，另外两条会漫起冷雾；在光门抵达前把月蛾移到亮灯花径。',
+    '轻点任意花径即可直接换轨；键盘使用 ↑ ↓ 或 W/S 逐条移动，也可按 1、2、3 直接到达对应花径。',
+    '每追上一盏暖灯得 100 分，共十五盏、满分 1500。撞上冷雾会失去一片护叶，三片用完或 50 秒到时结束。',
+  ],
+};
