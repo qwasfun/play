@@ -13,7 +13,12 @@ import { rules } from '../src/rules.js';
 function complete(game, course, input = 'key-down') {
   for (const gate of course.gates) {
     if (input === 'primary-down') game.input(input, { x: 300, y: LANE_Y[gate.lane] });
-    else game.input(input, { key: String(gate.lane + 1), repeat: false });
+    else {
+      const current = game.getState().lane;
+      const key = gate.lane < current ? 'ArrowUp' : 'ArrowDown';
+      for (let step = 0; step < Math.abs(gate.lane - current); step++)
+        game.input(input, { key, repeat: false });
+    }
     game.update(gate.at - game.getState().elapsed + 0.001);
   }
 }
@@ -33,7 +38,7 @@ test('seeded courses are deterministic, varied and cover all lanes', () => {
   assert.notDeepEqual(generateCourse(42), generateCourse(43));
 });
 
-test('keyboard lane movement and direct keys complete a run once', () => {
+test('keyboard lane movement completes a run once', () => {
   const results = [];
   const game = createGame({ seed: 17, onFinish: (result) => results.push(result) });
   game.input('key-down', { key: 'ArrowUp', repeat: false });
@@ -52,7 +57,7 @@ test('keyboard lane movement and direct keys complete a run once', () => {
   });
   assert.deepEqual(rules.validate(results[0]), []);
   const end = game.getState();
-  game.input('key-down', { key: '1' });
+  game.input('key-down', { key: 'ArrowUp' });
   game.update(999);
   assert.deepEqual(game.getState(), end);
 });
@@ -71,7 +76,11 @@ test('wrong lanes spend leaves and stop after the third mist gate', () => {
   const game = createGame({ seed: 9, onFinish: (result) => results.push(result) });
   const course = generateCourse(9);
   for (const gate of course.gates.slice(0, 3)) {
-    game.input('key-down', { key: String(((gate.lane + 1) % 3) + 1), repeat: false });
+    const wrong = (gate.lane + 1) % 3;
+    const current = game.getState().lane;
+    const key = wrong < current ? 'ArrowUp' : 'ArrowDown';
+    for (let step = 0; step < Math.abs(wrong - current); step++)
+      game.input('key-down', { key, repeat: false });
     game.update(gate.at - game.getState().elapsed + 0.001);
   }
   assert.equal(results.length, 1);
@@ -104,10 +113,10 @@ test('repeated, unknown and out-of-range movement stays safe', () => {
   game.input('key-down', { key: 'x', repeat: false });
   game.input('primary-down', { x: 0, y: 0 });
   assert.equal(game.getState().lane, MOON_MOTH.startLane);
-  game.input('key-down', { key: '1', repeat: false });
   game.input('key-down', { key: 'ArrowUp', repeat: false });
   assert.equal(game.getState().lane, 0);
-  game.input('key-down', { key: '3', repeat: false });
+  game.input('key-down', { key: 'ArrowDown', repeat: false });
+  game.input('key-down', { key: 'ArrowDown', repeat: false });
   game.input('key-down', { key: 'ArrowDown', repeat: false });
   assert.equal(game.getState().lane, 2);
 });
@@ -127,7 +136,7 @@ test('invalid time is ignored, timeout is bounded and destroy stays silent', () 
   const quiet = createGame({ seed: 1, onFinish: (result) => destroyed.push(result) });
   quiet.destroy();
   quiet.update(999);
-  quiet.input('key-down', { key: '1' });
+  quiet.input('key-down', { key: 'ArrowUp' });
   assert.equal(destroyed.length, 0);
 });
 

@@ -9,9 +9,13 @@ async function resumeIfNeeded(page) {
   if (await resume.isVisible()) await resume.click();
 }
 
-async function chooseLane({ page, mobile, point, lane }) {
+async function chooseLane({ page, mobile, point, current, lane }) {
   if (mobile) await point(300, LANE_Y[lane]);
-  else await page.keyboard.press(String(lane + 1));
+  else {
+    const direction = lane < current ? 'ArrowUp' : 'ArrowDown';
+    for (let step = 0; step < Math.abs(lane - current); step++)
+      await page.keyboard.press(direction);
+  }
 }
 
 async function advanceUntilScore(page, expected, budget) {
@@ -79,8 +83,10 @@ export async function play({ page, mobile, point, seed }) {
   await resumeIfNeeded(page);
 
   const course = generateCourse(seed);
+  let lane = MOON_MOTH.startLane;
   for (const gate of course.gates) {
-    await chooseLane({ page, mobile, point, lane: gate.lane });
+    await chooseLane({ page, mobile, point, current: lane, lane: gate.lane });
+    lane = gate.lane;
     await advanceUntilScore(
       page,
       (gate.index + 1) * MOON_MOTH.score,

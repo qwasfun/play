@@ -6,11 +6,6 @@ export { generateCourse, LANE_Y, MOON_MOTH } from './course.js';
 const upKeys = new Set(['arrowup', 'w']);
 const downKeys = new Set(['arrowdown', 's']);
 
-function numberLane(key) {
-  const match = /^(?:digit|numpad)?([123])$/.exec(key);
-  return match ? Number(match[1]) - 1 : -1;
-}
-
 export function validPoint(point) {
   return (
     Number.isFinite(point?.x) &&
@@ -100,10 +95,6 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
         const key = String(payload.key).toLowerCase();
         if (upKeys.has(key)) setLane(Math.max(0, lane - 1));
         else if (downKeys.has(key)) setLane(Math.min(2, lane + 1));
-        else {
-          const target = numberLane(key);
-          if (target >= 0) setLane(target);
-        }
       }
       if (type === 'primary-down') setLane(laneFromPoint(payload));
     },
@@ -149,7 +140,7 @@ export function createGame({ seed, onFinish = () => {}, sound = () => {} }) {
       roundRect(ctx, 54, 386, 492, 31, 15, '#fff9e9');
       label(ctx, message, 300, 402, 13, flash < 0 ? '#a75d58' : '#59685e');
       roundRect(ctx, 125, 438, 350, 28, 14, '#efddbd');
-      label(ctx, '点花径换轨 · ↑ ↓ / W S · 1 2 3 直达', 300, 452, 13, '#6e635b');
+      label(ctx, '点花径换轨 · ↑ ↓ / W S', 300, 452, 13, '#6e635b');
     },
     destroy() {
       finished = true;
