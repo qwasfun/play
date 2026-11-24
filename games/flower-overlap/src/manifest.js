@@ -1,0 +1,22 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'flower-overlap',
+  title: '花影叠窗',
+  english: 'FLOWER OVERLAP',
+  category: '叠影推理',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '花窗进度',
+  targetText: '复原四扇花窗',
+  icon: '▦',
+  description: '旋转三层透明花叶模板，让叠出的深浅花影与目标窗格完全一致。',
+  controls: '点模板旋转 / 左右键选层 / 空格旋转 / Z 撤销',
+  limit: 150,
+  cta: '叠起第一扇花窗',
+  undo: true,
+  rules: [
+    '每扇花窗由珊瑚、青叶、金黄三层透明模板叠成；右侧目标中的数字表示该格被几层花影覆盖。',
+    '点按下方模板使它顺时针旋转 90°，让左侧当前花窗的每格数字和右侧目标完全相同。每道都有唯一叠法。',
+    '键盘用左右键选择模板，空格或回车旋转，Z、退格或 Delete 撤销。复原四扇花窗，每扇 300 分，满分 1200。',
+  ],
+};

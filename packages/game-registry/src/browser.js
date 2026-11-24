@@ -1,3 +1,4 @@
+import { art as flowerOverlapArt } from '@playground/game-flower-overlap/art';
 import { art as moonMothArt } from '@playground/game-moon-moth/art';
 import { art as petalFoldArt } from '@playground/game-petal-fold/art';
 import { art as acornShuffleArt } from '@playground/game-acorn-shuffle/art';
@@ -53,6 +54,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'flower-overlap': flowerOverlapArt,
   'moon-moth': moonMothArt,
   'petal-fold': petalFoldArt,
   'acorn-shuffle': acornShuffleArt,
