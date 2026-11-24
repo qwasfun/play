@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-flower-overlap": "1.0.0",
     "@playground/game-moon-moth": "1.0.0",
     "@playground/game-petal-fold": "1.0.0",
     "@playground/game-acorn-shuffle": "1.0.0",
