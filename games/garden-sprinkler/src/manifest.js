@@ -3,7 +3,7 @@ export const manifest = {
   id: 'garden-sprinkler',
   title: '花洒浇园',
   english: 'GARDEN SPRINKLER',
-  category: '环形瞄准',
+  category: '环形反应',
   tag: '动手',
   duration: '约 1 分钟',
   extraLabel: '浇花进度',
