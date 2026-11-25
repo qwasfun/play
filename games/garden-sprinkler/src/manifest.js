@@ -1,0 +1,21 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'garden-sprinkler',
+  title: '花洒浇园',
+  english: 'GARDEN SPRINKLER',
+  category: '环形瞄准',
+  tag: '动手',
+  duration: '约 1 分钟',
+  extraLabel: '浇花进度',
+  targetText: '浇开十二盆花',
+  icon: '⌁',
+  description: '转动花圃中央的小花洒，对准亮起的花盆及时喷水，让十二盆小花依次醒来。',
+  controls: '点亮起的花盆 / ← → 或 A/D 转向 / 空格喷水',
+  limit: 55,
+  cta: '打开小花洒',
+  rules: [
+    '八个花盆围着中央花洒排成一圈；其中一盆会亮起金色水滴，请在水滴收拢前对准它喷水。',
+    '触屏或鼠标直接点亮起的花盆；键盘用左右键或 A/D 转动花洒，空格或回车喷水。',
+    '浇对一盆得 100 分；喷错花盆或错过水滴会失去一片叶子。浇开十二盆花即得 1200 分，三片叶子用完则本局结束。',
+  ],
+};

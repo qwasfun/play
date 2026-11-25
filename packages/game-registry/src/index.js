@@ -1,3 +1,5 @@
+import { manifest as gardenSprinkler } from '@playground/game-garden-sprinkler/manifest';
+import { rules as gardenSprinklerRules } from '@playground/game-garden-sprinkler/rules';
 import { manifest as flowerOverlap } from '@playground/game-flower-overlap/manifest';
 import { rules as flowerOverlapRules } from '@playground/game-flower-overlap/rules';
 import { manifest as moonMoth } from '@playground/game-moon-moth/manifest';
@@ -164,12 +166,14 @@ export const games = [
   petalFold,
   moonMoth,
   flowerOverlap,
+  gardenSprinkler,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'garden-sprinkler': gardenSprinklerRules,
   'flower-overlap': flowerOverlapRules,
   'moon-moth': moonMothRules,
   'petal-fold': petalFoldRules,

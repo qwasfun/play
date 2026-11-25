@@ -1,0 +1,6 @@
+import { cloud, svg } from '@playground/game-sdk/art';
+
+export const art = () =>
+  svg(
+    `<rect width="600" height="360" fill="#f4eadc"/>${cloud(92, 58, 0.48)}<circle cx="515" cy="62" r="31" fill="#efc96f"/><path d="M0 274Q130 222 292 256t308-10v114H0Z" fill="#a8c6a0"/><g transform="translate(300 178)"><circle r="120" fill="#dbe5bf" stroke="#8da77f" stroke-width="7"/><g fill="#d68187" stroke="#9f6d70" stroke-width="4"><path d="M-14-121q14-28 28 0v34h-28Z"/><path d="M-14 87q14-28 28 0v34h-28Z"/><path d="M87-14q28 14 0 28H53v-28Z"/><path d="M-87-14q-28 14 0 28h34v-28Z"/></g><g fill="#efbf61"><circle cy="-104" r="10"/><circle cy="104" r="10"/><circle cx="104" r="10"/><circle cx="-104" r="10"/></g><circle r="42" fill="#79a9a0" stroke="#527b75" stroke-width="7"/><path d="M0 0 74-74" stroke="#527b75" stroke-width="15" stroke-linecap="round"/><path d="M68-81q25 7 18 31" fill="none" stroke="#6db9c2" stroke-width="8" stroke-linecap="round"/><g fill="#6db9c2"><circle cx="92" cy="-68" r="6"/><circle cx="102" cy="-51" r="5"/><circle cx="82" cy="-46" r="5"/></g></g><text x="300" y="338" fill="#655f56" font-family="system-ui,sans-serif" font-size="20" text-anchor="middle">转一转小花洒，给亮起的花盆一阵清凉</text>`,
+  );
