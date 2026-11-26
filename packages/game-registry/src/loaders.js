@@ -29,6 +29,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const loaders = {
+  'camellia-nim': () => import('@playground/game-camellia-nim'),
   'garden-sprinkler': () => import('@playground/game-garden-sprinkler'),
   'flower-overlap': () => import('@playground/game-flower-overlap'),
   'moon-moth': () => import('@playground/game-moon-moth'),

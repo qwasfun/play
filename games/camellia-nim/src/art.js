@@ -1,0 +1,6 @@
+import { cloud, svg } from '@playground/game-sdk/art';
+
+export const art = () =>
+  svg(
+    `<rect width="600" height="360" fill="#f5ecdc"/>${cloud(100, 54, 0.5)}<circle cx="514" cy="64" r="30" fill="#efc96f"/><path d="M0 275Q142 222 304 259t296-13v114H0Z" fill="#a8c6a0"/><g transform="translate(108 180)"><path d="M0 64Q-20 8 0-66M42 64Q20 8 42-52M84 64Q62 8 84-60" fill="none" stroke="#6f9273" stroke-width="8" stroke-linecap="round"/><g fill="#dc8d91" stroke="#a96870" stroke-width="3"><circle cy="-69" r="24"/><circle cx="42" cy="-55" r="24"/><circle cx="84" cy="-63" r="24"/></g><g fill="#f2c76c"><circle cy="-69" r="8"/><circle cx="42" cy="-55" r="8"/><circle cx="84" cy="-63" r="8"/></g></g><g transform="translate(405 220)"><path d="M-50 26Q-60-25-5-35 44-31 55 20Z" fill="#987f6c"/><path d="M-40 10-56-12M-25 0-35-22M-8-4-10-29M10-3 19-28M28 3 43-19" stroke="#735f54" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="8" r="22" fill="#c99f78"/><circle cx="57" cy="2" r="3" fill="#4f4943"/><path d="M33 24q18 12 35 0" fill="none" stroke="#7b6454" stroke-width="4"/><path d="M-18 34q24 22 48 0" fill="#d5ae73" stroke="#9a7a55" stroke-width="5"/></g><text x="300" y="337" fill="#655f56" font-family="system-ui,sans-serif" font-size="20" text-anchor="middle">想一想，把最后一片茶花留给自己</text>`,
+  );

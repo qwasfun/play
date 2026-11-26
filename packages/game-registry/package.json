@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playground/game-sdk": "1.0.0",
+    "@playground/game-camellia-nim": "1.0.0",
     "@playground/game-garden-sprinkler": "1.0.0",
     "@playground/game-flower-overlap": "1.0.0",
     "@playground/game-moon-moth": "1.0.0",

@@ -150,6 +150,15 @@ test('shift changing keyup letter case cannot leave keyboard owner stuck', () =>
   assert.equal(events[0][1].key, 'w');
   assert.equal(events[1][1].key, 'w');
 });
+test('number keys reach games that offer direct numbered choices', () => {
+  const { canvas, events } = setup();
+  canvas.emit('keydown', { key: '2', repeat: false });
+  canvas.emit('keyup', { key: '2' });
+  assert.deepEqual(events, [
+    ['key-down', { key: '2', repeat: false }],
+    ['key-up', { key: '2' }],
+  ]);
+});
 test('drag moves follow only the owning pointer and stop on cancellation', () => {
   const { canvas, controls, events } = setup();
   down(canvas, 1);

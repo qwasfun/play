@@ -1,0 +1,21 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'camellia-nim',
+  title: '茶花拈数',
+  english: 'CAMELLIA NIM',
+  category: '取子策略',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '花园胜局',
+  targetText: '连赢三座花园',
+  icon: '❀',
+  description: '和抱着竹篮的小刺猬轮流拈走茶花花瓣，想办法把每座花园的最后一片留给自己。',
+  controls: '点花丛、数量和竹篮 / ← → 选花丛 / ↑ ↓ 选数量 / 空格确认',
+  limit: 150,
+  cta: '摆好茶花',
+  rules: [
+    '每座花园有三丛茶花；你和小刺猬轮流行动，每次只能从一丛中拈走 1–3 片花瓣。',
+    '触屏或鼠标依次点花丛、数量和“放进竹篮”；键盘用左右键选择花丛、上下键选择数量，空格或回车确认。',
+    '拈走最后一片者赢下花园。赢一座得 400 分；三座花园全部获胜即得 1200 分。',
+  ],
+};
