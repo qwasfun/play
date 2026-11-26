@@ -20,6 +20,9 @@ export function bindGameInput(canvas, { isRunning, onInput, onUpdate, onPause, s
     'Z',
     'u',
     'U',
+    '1',
+    '2',
+    '3',
     'Backspace',
   ]);
   const coordinates = (event) => {
