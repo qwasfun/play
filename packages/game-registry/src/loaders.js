@@ -29,6 +29,7 @@ export const campaignLoaders = {
   slide: () => import('@playground/game-slide/campaign'),
 };
 export const loaders = {
+  'acorn-glide': () => import('@playground/game-acorn-glide'),
   'camellia-nim': () => import('@playground/game-camellia-nim'),
   'garden-sprinkler': () => import('@playground/game-garden-sprinkler'),
   'flower-overlap': () => import('@playground/game-flower-overlap'),
