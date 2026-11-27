@@ -1,3 +1,5 @@
+import { manifest as acornGlide } from '@playground/game-acorn-glide/manifest';
+import { rules as acornGlideRules } from '@playground/game-acorn-glide/rules';
 import { manifest as camelliaNim } from '@playground/game-camellia-nim/manifest';
 import { rules as camelliaNimRules } from '@playground/game-camellia-nim/rules';
 import { manifest as gardenSprinkler } from '@playground/game-garden-sprinkler/manifest';
@@ -170,12 +172,14 @@ export const games = [
   flowerOverlap,
   gardenSprinkler,
   camelliaNim,
+  acornGlide,
 ];
 export const byId = Object.fromEntries(games.map((game) => [game.id, game]));
 export function leaderboardPolicy(id) {
   return byId[id]?.leaderboard || { normal: false, daily: false, reason: '排行榜：该游戏尚未开放' };
 }
 export const gameRules = {
+  'acorn-glide': acornGlideRules,
   'camellia-nim': camelliaNimRules,
   'garden-sprinkler': gardenSprinklerRules,
   'flower-overlap': flowerOverlapRules,

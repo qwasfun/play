@@ -1,0 +1,21 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'acorn-glide',
+  title: '松果滑盘',
+  english: 'ACORN GLIDE',
+  category: '滑击技巧',
+  tag: '动手',
+  duration: '约 1–2 分钟',
+  extraLabel: '滑盘进度',
+  targetText: '六枚松果入花心',
+  icon: '⌁',
+  description: '在铺着晨露的叶片滑道上调整方向与力度，把六枚松果轻轻滑进远处的花环。',
+  controls: '向后拖动松果并松手 / 方向键调方向与力度 / 空格发射',
+  limit: 75,
+  cta: '摆好松果',
+  rules: [
+    '每局有六条叶片滑道；按住松果向后拖动再松手，拖动方向决定滑行方向，距离决定力度。',
+    '键盘用左右键或 A/D 调整方向，上下键或 W/S 调整力度，空格或回车发射。',
+    '松果停进花心得 200 分，停在外圈内得 100 分；六枚都进花心即得 1200 分。',
+  ],
+};
