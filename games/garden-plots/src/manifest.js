@@ -1,0 +1,21 @@
+export const manifest = {
+  leaderboard: { normal: true, daily: false },
+  id: 'garden-plots',
+  title: '花圃分畦',
+  english: 'GARDEN PLOTS',
+  category: '分区逻辑',
+  tag: '动脑',
+  duration: '约 2–3 分钟',
+  extraLabel: '花圃进度',
+  targetText: '整理三座花圃',
+  icon: '▦',
+  description: '看懂数字花牌，从角到角框出矩形花畦，让每块面积刚好与牌上的数字相同。',
+  controls: '拖动框出矩形 / 方向键移动 / 空格定角 / Z 撤销',
+  limit: 150,
+  cta: '开始分畦',
+  rules: [
+    '每座 5×5 花圃要被五块矩形花畦完整铺满；从一个格子拖到对角即可框出矩形。',
+    '每块花畦必须恰好包含一枚数字花牌，格子数量也必须等于花牌上的数字，花畦之间不能重叠。',
+    '方向键或 WASD 移动光标，空格或回车依次确定两角；Z、退格或 Delete 撤销上一块。每座花圃 400 分，三座共 1200 分。',
+  ],
+};

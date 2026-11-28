@@ -1,3 +1,4 @@
+import { art as gardenPlotsArt } from '@playground/game-garden-plots/art';
 import { art as acornGlideArt } from '@playground/game-acorn-glide/art';
 import { art as camelliaNimArt } from '@playground/game-camellia-nim/art';
 import { art as gardenSprinklerArt } from '@playground/game-garden-sprinkler/art';
@@ -57,6 +58,7 @@ import { art as rainArt } from '@playground/game-rain/art';
 import { art as minesArt } from '@playground/game-mines/art';
 
 export const illustrations = {
+  'garden-plots': gardenPlotsArt,
   'acorn-glide': acornGlideArt,
   'camellia-nim': camelliaNimArt,
   'garden-sprinkler': gardenSprinklerArt,
